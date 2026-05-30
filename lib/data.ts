@@ -1,0 +1,347 @@
+import type { Product, LookbookEntry, SeleccionItem } from './types'
+
+export const PIEZAS_MAYORES: Product[] = [
+  {
+    id: 'pm-sofa-liviano', name: 'Sofá Liviano', tag: 'Sofá · 3 plazas',
+    material: 'Lino crudo · roble', origin: 'Atelier Mestre · Galicia',
+    price: '$ 4.890.000', priceNum: 4890000, aspect: '4/5', category: 'mayor',
+    imageUrl: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=500&q=85',
+    extraImages: [
+      'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=500&q=85',
+      'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=500&q=85',
+    ],
+    specs: [
+      { label: 'Dimensiones', value: '220 × 90 × 80 cm' },
+      { label: 'Plazas', value: '3' },
+      { label: 'Tapizado', value: 'Lino crudo natural' },
+      { label: 'Estructura', value: 'Roble macizo' },
+      { label: 'Relleno', value: 'Fibra HD + plumón' },
+      { label: 'Entrega', value: '8 – 10 semanas' },
+    ],
+  },
+  {
+    id: 'pm-mesa-comedor', name: 'Mesa Comedor Roble', tag: 'Comedor',
+    material: 'Roble macizo curado', origin: 'Taller Olabarria · Navarra',
+    price: '$ 3.480.000', priceNum: 3480000, aspect: '4/5', category: 'mayor',
+    imageUrl: 'https://images.unsplash.com/photo-1449247709967-d4461a6a6103?w=500&q=85',
+    extraImages: [
+      'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=500&q=85',
+      'https://images.unsplash.com/photo-1565791380713-1756b9a05343?w=500&q=85',
+    ],
+    specs: [
+      { label: 'Dimensiones', value: '220 × 100 × 76 cm' },
+      { label: 'Material', value: 'Roble macizo curado 3 años' },
+      { label: 'Acabado', value: 'Aceite natural de tung' },
+      { label: 'Peso', value: '68 kg' },
+      { label: 'Comensales', value: '8 – 10 personas' },
+      { label: 'Entrega', value: '6 – 8 semanas' },
+    ],
+  },
+  {
+    id: 'pm-cabecero-tela', name: 'Cabecero Tela', tag: 'Dormitorio',
+    material: 'Lino · pino macizo', origin: 'Studio Möller · Copenhague',
+    price: '$ 2.190.000', priceNum: 2190000, aspect: '4/5', category: 'mayor',
+    imageUrl: 'https://images.unsplash.com/photo-1588046130717-0eb0c9a3ba15?w=500&q=85',
+    extraImages: [
+      'https://images.unsplash.com/photo-1616046229478-9901c5536a45?w=500&q=85',
+      'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=500&q=85',
+    ],
+    specs: [
+      { label: 'Medidas', value: '180 × 120 cm (para cama 160)' },
+      { label: 'Tapizado', value: 'Lino belga 100%' },
+      { label: 'Estructura', value: 'Pino macizo' },
+      { label: 'Grosor acolchado', value: '8 cm' },
+      { label: 'Disponible en', value: '135, 150, 160, 180 cm' },
+      { label: 'Entrega', value: '4 – 6 semanas' },
+    ],
+  },
+  {
+    id: 'pm-biblioteca', name: 'Biblioteca Mármol', tag: 'Biblioteca',
+    material: 'Mármol · roble', origin: 'Atelier Bonet · Barcelona',
+    price: '$ 5.280.000', priceNum: 5280000, aspect: '4/5', category: 'mayor',
+    imageUrl: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=500&q=85',
+    extraImages: [
+      'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=500&q=85',
+      'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=500&q=85',
+    ],
+    specs: [
+      { label: 'Dimensiones', value: '180 × 35 × 220 cm' },
+      { label: 'Estantes', value: '4 ajustables + base' },
+      { label: 'Material estantes', value: 'Mármol Carrara' },
+      { label: 'Estructura', value: 'Roble macizo' },
+      { label: 'Peso', value: '95 kg' },
+      { label: 'Entrega', value: '10 – 12 semanas' },
+    ],
+  },
+  {
+    id: 'pm-sillon-velvet', name: 'Sillón Velvet', tag: 'Butaca',
+    material: 'Terciopelo · haya', origin: 'Cooperativa Karaca · Turquía',
+    price: '$ 2.890.000', priceNum: 2890000, aspect: '4/5', category: 'mayor',
+    imageUrl: 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=500&q=85',
+    extraImages: [
+      'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=500&q=85',
+      'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=500&q=85',
+    ],
+    specs: [
+      { label: 'Dimensiones', value: '82 × 88 × 90 cm' },
+      { label: 'Tapizado', value: 'Terciopelo 100% algodón' },
+      { label: 'Estructura', value: 'Haya maciza' },
+      { label: 'Relleno asiento', value: 'Espuma HR + plumón' },
+      { label: 'Peso', value: '24 kg' },
+      { label: 'Entrega', value: '6 – 8 semanas' },
+    ],
+  },
+  {
+    id: 'pm-comoda', name: 'Cómoda Travertino', tag: 'Almacenaje',
+    material: 'Madera · piedra', origin: 'Studio Möller · Copenhague',
+    price: '$ 3.150.000', priceNum: 3150000, aspect: '4/5', category: 'mayor',
+    imageUrl: 'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?w=500&q=85',
+    extraImages: [
+      'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=500&q=85',
+      'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=500&q=85',
+    ],
+    specs: [
+      { label: 'Dimensiones', value: '140 × 45 × 85 cm' },
+      { label: 'Cajones', value: '3' },
+      { label: 'Sobre', value: 'Travertino romano' },
+      { label: 'Cuerpo', value: 'MDF lacado mate' },
+      { label: 'Tiradores', value: 'Latón envejecido' },
+      { label: 'Entrega', value: '8 – 10 semanas' },
+    ],
+  },
+]
+
+export const PEQUENOS_TESOROS: Product[] = [
+  {
+    id: 'pt-vela-cedro', name: 'Vela Soja Cedro', material: 'Cera de soja',
+    price: '$ 38.000', priceNum: 38000, category: 'tesoro',
+    imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=400&q=85'],
+    specs: [
+      { label: 'Peso neto', value: '280 g' },
+      { label: 'Duración', value: '55 horas' },
+      { label: 'Aroma', value: 'Cedro & ámbar gris' },
+      { label: 'Sin parafina', value: 'Sí · 100% vegetal' },
+    ],
+  },
+  {
+    id: 'pt-jarron-hueso', name: 'Jarrón Hueso', material: 'Cerámica esmaltada',
+    price: '$ 68.000', priceNum: 68000, category: 'tesoro',
+    imageUrl: 'https://images.unsplash.com/photo-1578500351865-d6c3706f46bc?w=400&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1513519245088-0e12902e35a6?w=400&q=85'],
+    specs: [
+      { label: 'Altura', value: '28 cm' },
+      { label: 'Diámetro boca', value: '8 cm' },
+      { label: 'Material', value: 'Cerámica alta temperatura' },
+      { label: 'Hecho a mano', value: 'Sí · único' },
+    ],
+  },
+  {
+    id: 'pt-cuenco-madera', name: 'Cuenco Madera', material: 'Olivo torneado',
+    price: '$ 54.000', priceNum: 54000, category: 'tesoro',
+    imageUrl: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1578500351865-d6c3706f46bc?w=400&q=85'],
+    specs: [
+      { label: 'Diámetro', value: '22 cm' },
+      { label: 'Altura', value: '7 cm' },
+      { label: 'Material', value: 'Madera de olivo' },
+      { label: 'Acabado', value: 'Aceite de oliva' },
+    ],
+  },
+  {
+    id: 'pt-servilletas', name: 'Servilletas Lino', material: 'Lino · set 4',
+    price: '$ 42.000', priceNum: 42000, category: 'tesoro',
+    imageUrl: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?w=400&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=85'],
+    specs: [
+      { label: 'Dimensiones', value: '45 × 45 cm' },
+      { label: 'Material', value: 'Lino lavado 100%' },
+      { label: 'Unidades', value: '4 servilletas' },
+      { label: 'Cuidado', value: 'Lavado a 40°' },
+    ],
+  },
+  {
+    id: 'pt-bandeja-laton', name: 'Bandeja Latón', material: 'Latón pulido',
+    price: '$ 89.000', priceNum: 89000, category: 'tesoro',
+    imageUrl: 'https://images.unsplash.com/photo-1513519245088-0e12902e35a6?w=400&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1578500351865-d6c3706f46bc?w=400&q=85'],
+    specs: [
+      { label: 'Dimensiones', value: '38 × 28 × 3 cm' },
+      { label: 'Material', value: 'Latón macizo' },
+      { label: 'Acabado', value: 'Pulido a mano' },
+      { label: 'Patina', value: 'Natural con el uso' },
+    ],
+  },
+  {
+    id: 'pt-marco-laton', name: 'Marco Latón', material: 'Latón · A5',
+    price: '$ 52.000', priceNum: 52000, category: 'tesoro',
+    imageUrl: 'https://images.unsplash.com/photo-1572375992501-4b0892d50c69?w=400&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1513519245088-0e12902e35a6?w=400&q=85'],
+    specs: [
+      { label: 'Formato', value: 'A5 · 15 × 21 cm' },
+      { label: 'Material', value: 'Latón 2 mm' },
+      { label: 'Apertura', value: 'Posterior con traba' },
+      { label: 'Disponible en', value: 'A6, A5, A4' },
+    ],
+  },
+  {
+    id: 'pt-plato-deco', name: 'Plato Decorativo', material: 'Cerámica pintada',
+    price: '$ 78.000', priceNum: 78000, category: 'tesoro',
+    imageUrl: 'https://images.unsplash.com/photo-1610701596061-2ecf227e85b2?w=400&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1578500351865-d6c3706f46bc?w=400&q=85'],
+    specs: [
+      { label: 'Diámetro', value: '32 cm' },
+      { label: 'Material', value: 'Cerámica pintada a mano' },
+      { label: 'Motivo', value: 'Botánico abstracto' },
+      { label: 'Uso', value: 'Decorativo · no alimentario' },
+    ],
+  },
+  {
+    id: 'pt-portavelas', name: 'Portavelas', material: 'Cerámica cruda',
+    price: '$ 36.000', priceNum: 36000, category: 'tesoro',
+    imageUrl: 'https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=400&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=85'],
+    specs: [
+      { label: 'Altura', value: '12 cm' },
+      { label: 'Diámetro', value: '8 cm' },
+      { label: 'Vela compatible', value: 'Ø 3,5 – 4 cm' },
+      { label: 'Acabado', value: 'Terracota cruda' },
+    ],
+  },
+  {
+    id: 'pt-libro-color', name: 'Libro · El color', material: 'Tapa dura',
+    price: '$ 48.000', priceNum: 48000, category: 'tesoro',
+    imageUrl: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1572375992501-4b0892d50c69?w=400&q=85'],
+    specs: [
+      { label: 'Formato', value: '24 × 30 cm' },
+      { label: 'Páginas', value: '320' },
+      { label: 'Idioma', value: 'Español / Inglés' },
+      { label: 'Editorial', value: 'Taschen · 2023' },
+    ],
+  },
+  {
+    id: 'pt-incienso', name: 'Incienso Cipres', material: 'Madera prensada',
+    price: '$ 22.000', priceNum: 22000, category: 'tesoro',
+    imageUrl: 'https://images.unsplash.com/photo-1588087879557-3f95f08be4b6?w=400&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=85'],
+    specs: [
+      { label: 'Varillas', value: '20 unidades' },
+      { label: 'Duración c/u', value: '40 minutos' },
+      { label: 'Aroma', value: 'Ciprés & madera de cedro' },
+      { label: 'Soporte', value: 'Incluido' },
+    ],
+  },
+  {
+    id: 'pt-tarro-vidrio', name: 'Tarro Vidrio', material: 'Vidrio soplado',
+    price: '$ 64.000', priceNum: 64000, category: 'tesoro',
+    imageUrl: 'https://images.unsplash.com/photo-1589758438368-0ad531db3366?w=400&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1578500351865-d6c3706f46bc?w=400&q=85'],
+    specs: [
+      { label: 'Capacidad', value: '500 ml' },
+      { label: 'Altura', value: '20 cm' },
+      { label: 'Material', value: 'Vidrio soplado artesanal' },
+      { label: 'Cierre', value: 'Tapa corcho natural' },
+    ],
+  },
+  {
+    id: 'pt-paño-cocina', name: 'Paños Cocina', material: 'Algodón · set 3',
+    price: '$ 28.000', priceNum: 28000, category: 'tesoro',
+    imageUrl: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1616046229478-9901c5536a45?w=400&q=85'],
+    specs: [
+      { label: 'Dimensiones', value: '50 × 70 cm' },
+      { label: 'Material', value: 'Algodón jacquard' },
+      { label: 'Unidades', value: '3 paños' },
+      { label: 'Cuidado', value: 'Lavado a 60°' },
+    ],
+  },
+]
+
+export const SELECCION: SeleccionItem[] = [
+  {
+    id: 'butaca-laurel', name: 'Butaca Laurel',
+    origin: 'Taller Olabarria · Navarra', material: 'Roble · lino crudo',
+    price: '$ 2.480.000', priceNum: 2480000,
+    note: 'La traje de un taller en Pamplona. La estructura es de roble macizo curado al aire. Para un rincón de lectura — no para mirarse.',
+    aspect: '3/4.2', category: 'mayor',
+    imageUrl: 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=600&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=500&q=85'],
+    specs: [
+      { label: 'Dimensiones', value: '74 × 80 × 88 cm' },
+      { label: 'Tapizado', value: 'Lino crudo natural' },
+      { label: 'Estructura', value: 'Roble macizo' },
+      { label: 'Entrega', value: '6 – 8 semanas' },
+    ],
+  },
+  {
+    id: 'mesa-arenisca', name: 'Mesa Arenisca',
+    origin: 'Studio Möller · Copenhague', material: 'Piedra · acero',
+    price: '$ 3.150.000', priceNum: 3150000,
+    note: 'Una sola pieza de arenisca de Gotland. Cada veta es distinta — la mía tiene un mapa imposible.',
+    aspect: '3/4.2', category: 'mayor',
+    imageUrl: 'https://images.unsplash.com/photo-1565791380713-1756b9a05343?w=600&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1449247709967-d4461a6a6103?w=500&q=85'],
+    specs: [
+      { label: 'Dimensiones', value: 'Ø 60 × A 45 cm' },
+      { label: 'Sobre', value: 'Arenisca de Gotland' },
+      { label: 'Base', value: 'Acero negro mate' },
+      { label: 'Entrega', value: '8 – 10 semanas' },
+    ],
+  },
+  {
+    id: 'lampara-pergamino', name: 'Lámpara Pergamino',
+    origin: 'Atelier Bonet · Barcelona', material: 'Latón · pergamino',
+    price: '$ 690.000', priceNum: 690000,
+    note: 'Luz cálida, casi de vela. Se enciende con un cordón de seda.',
+    aspect: '3/4.2', category: 'mayor',
+    imageUrl: 'https://images.unsplash.com/photo-1513506003901-1e6a35f3a9d3?w=600&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=500&q=85'],
+    specs: [
+      { label: 'Altura', value: '42 cm (pantalla 28 cm)' },
+      { label: 'Pantalla', value: 'Pergamino natural' },
+      { label: 'Pie', value: 'Latón bruñido' },
+      { label: 'Bombilla', value: 'E27 · máx. 40W' },
+    ],
+  },
+  {
+    id: 'alfombra-anatolia', name: 'Alfombra Anatolia',
+    origin: 'Cooperativa Karaca · Turquía', material: 'Lana virgen anudada',
+    price: '$ 1.890.000', priceNum: 1890000,
+    note: 'Tejida a mano por mujeres en un pueblo del Egeo. Tarda ocho meses en hacerse.',
+    aspect: '3/4.2', category: 'mayor',
+    imageUrl: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=85',
+    extraImages: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=500&q=85'],
+    specs: [
+      { label: 'Dimensiones', value: '200 × 300 cm' },
+      { label: 'Material', value: 'Lana virgen anudada' },
+      { label: 'Densidad', value: '120 nudos/dm²' },
+      { label: 'Tejido', value: 'A mano · 8 meses' },
+    ],
+  },
+]
+
+export const LOOKBOOK: LookbookEntry[] = [
+  {
+    id: 'estar-norte', n: '01', name: 'Estar del norte', place: 'Piso · Chamberí',
+    desc: 'Luz fría, lana cruda, una pieza por pared.',
+    pieces: ['Butaca Laurel', 'Alfombra Anatolia', 'Cerámica Sojo'],
+    imageUrl: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=85',
+  },
+  {
+    id: 'comedor-lento', n: '02', name: 'Comedor lento', place: 'Casa · Mallorca',
+    desc: 'Mesa de piedra, sillas dispares, sin centro.',
+    pieces: ['Mesa Arenisca', 'Sillas Möller', 'Lámpara Pergamino'],
+    imageUrl: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=800&q=85',
+  },
+  {
+    id: 'estudio-tinta', n: '03', name: 'Estudio de tinta', place: 'Atelier · Salamanca',
+    desc: 'Una mesa larga, paredes encaladas, pocos libros.',
+    pieces: ['Mesa Olmo', 'Silla Hara', 'Lámpara Pergamino'],
+    imageUrl: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=800&q=85',
+  },
+]
+
+export function formatPrice(n: number): string {
+  return '$ ' + Math.round(n).toLocaleString('de-DE')
+}
