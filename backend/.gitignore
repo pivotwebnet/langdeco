@@ -1,0 +1,6 @@
+bin/
+obj/
+*.user
+
+# Contiene la cadena de conexión real de desarrollo (con contraseña) — no versionar.
+appsettings.Development.json
