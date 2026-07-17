@@ -8,6 +8,9 @@ const NAV = [
   { href: '/admin/productos', label: 'Productos', icon: '▤' },
   { href: '/admin/categorias', label: 'Categorías', icon: '◫' },
   { href: '/admin/ventas', label: 'Ventas', icon: '$' },
+  { href: '/admin/presupuestos', label: 'Presupuestos', icon: '≡' },
+  { href: '/admin/base-datos/clientes', label: 'Clientes', icon: '◈' },
+  { href: '/admin/base-datos/proveedores', label: 'Proveedores', icon: '◇' },
   { href: '/admin/clientes', label: 'Consultas', icon: '◎' },
   { href: '/admin/configuracion', label: 'Configuración', icon: '⚙' },
 ]

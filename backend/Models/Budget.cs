@@ -1,26 +1,14 @@
 namespace backend.Models;
 
-public enum ClientType
+public enum BudgetStatus
 {
-    Retail,
-    Wholesale
-}
-
-public enum SaleStatus
-{
-    Pending,
-    Paid,
+    Open,
+    Converted,
+    Expired,
     Cancelled
 }
 
-public enum PaymentMethod
-{
-    Transfer,
-    Cash,
-    Other
-}
-
-public class Sale
+public class Budget
 {
     public int Id { get; set; }
     public int Number { get; set; }
@@ -28,8 +16,7 @@ public class Sale
     public Client? Client { get; set; }
     public CustomerInfo Customer { get; set; } = new();
     public ClientType ClientType { get; set; }
-    public SaleStatus Status { get; set; } = SaleStatus.Pending;
-    public PaymentMethod PaymentMethod { get; set; }
+    public BudgetStatus Status { get; set; } = BudgetStatus.Open;
 
     public decimal Subtotal { get; set; }
     public decimal DiscountPercent { get; set; }
@@ -39,6 +26,7 @@ public class Sale
     public decimal Total { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? ValidUntil { get; set; }
 
-    public List<SaleItem> Items { get; set; } = new();
+    public List<BudgetItem> Items { get; set; } = new();
 }

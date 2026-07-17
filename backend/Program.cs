@@ -2,6 +2,10 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Filters;
+using backend.Services;
+using QuestPDF.Infrastructure;
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +19,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<RequireAdminKeyFilter>();
+builder.Services.AddScoped<DocumentNumberingService>();
+builder.Services.AddScoped<ReceiptPdfService>();
+builder.Services.AddScoped<ClientExcelService>();
+builder.Services.AddScoped<SupplierExcelService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
@@ -32,16 +40,20 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+using (var migrationScope = app.Services.CreateScope())
+{
+    var db = migrationScope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
 
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-    await backend.Data.DbSeeder.SeedAsync(db);
+    using var seedScope = app.Services.CreateScope();
+    await backend.Data.DbSeeder.SeedAsync(seedScope.ServiceProvider.GetRequiredService<AppDbContext>());
 }
 
 app.UseCors("Frontend");

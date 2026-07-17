@@ -2,17 +2,30 @@ using backend.Models;
 
 namespace backend.Dtos;
 
+public record CustomerInput(string Name, string? Contact, string? TaxId, string? Address);
+
+public record CustomerDto(string Name, string? Contact, string? TaxId, string? Address);
+
 public record SaleItemInput(string ProductId, int Quantity);
 
 public record SaleCreateDto(
-    string ClientName, string? ClientContact, ClientType ClientType,
-    PaymentMethod PaymentMethod, SaleStatus? Status, List<SaleItemInput> Items);
+    int? ClientId, CustomerInput Customer, ClientType ClientType,
+    PaymentMethod PaymentMethod, SaleStatus? Status,
+    decimal DiscountPercent, decimal TaxRatePercent,
+    List<SaleItemInput> Items);
+
+public record SaleUpdateDto(
+    int? ClientId, CustomerInput Customer, decimal DiscountPercent, decimal TaxRatePercent,
+    List<SaleItemInput> Items);
 
 public record SaleItemDto(string ProductId, string ProductName, int Quantity, decimal UnitPrice);
 
 public record SaleDto(
-    int Id, string ClientName, string? ClientContact, ClientType ClientType,
-    SaleStatus Status, PaymentMethod PaymentMethod, decimal Total, DateTime CreatedAt,
+    int Id, int Number, int? ClientId, CustomerDto Customer, ClientType ClientType,
+    SaleStatus Status, PaymentMethod PaymentMethod,
+    decimal Subtotal, decimal DiscountPercent, decimal DiscountAmount,
+    decimal TaxRatePercent, decimal TaxAmount, decimal Total,
+    DateTime CreatedAt,
     List<SaleItemDto> Items);
 
 public record SaleStatusUpdateDto(SaleStatus Status);

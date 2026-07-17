@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import type { BackendClient, BackendProduct, BackendSale, ClientType, PaymentMethod, SaleStatus } from '@/lib/backend-types'
+import type { BackendBudget, BackendClient, BackendProduct, BudgetStatus, ClientType } from '@/lib/backend-types'
 import { ReceiptView } from '@/components/admin/ReceiptView'
 import { useEscapeKey } from '@/lib/useEscapeKey'
 
@@ -15,29 +15,30 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   return data as T
 }
 
-const STATUS_LABEL: Record<SaleStatus, string> = { Pending: 'Pendiente', Paid: 'Pagada', Cancelled: 'Cancelada' }
-const STATUS_COLOR: Record<SaleStatus, { bg: string; color: string }> = {
-  Pending: { bg: '#FEF3C7', color: '#92400E' },
-  Paid: { bg: '#D1FAE5', color: '#065F46' },
-  Cancelled: { bg: '#F3F4F6', color: '#6B7280' },
+const STATUS_LABEL: Record<BudgetStatus, string> = { Open: 'Abierto', Converted: 'Convertido en venta', Expired: 'Vencido', Cancelled: 'Cancelado' }
+const STATUS_COLOR: Record<BudgetStatus, { bg: string; color: string }> = {
+  Open: { bg: '#FEF3C7', color: '#92400E' },
+  Converted: { bg: '#D1FAE5', color: '#065F46' },
+  Expired: { bg: '#F3F4F6', color: '#6B7280' },
+  Cancelled: { bg: '#FEE2E2', color: '#991B1B' },
 }
 const CLIENT_TYPE_LABEL: Record<ClientType, string> = { Retail: 'Minorista', Wholesale: 'Mayorista' }
 
-export default function VentasAdmin() {
-  const [sales, setSales] = useState<BackendSale[]>([])
+export default function PresupuestosAdmin() {
+  const [budgets, setBudgets] = useState<BackendBudget[]>([])
   const [products, setProducts] = useState<BackendProduct[]>([])
-  const [statusFilter, setStatusFilter] = useState<SaleStatus | 'all'>('all')
+  const [statusFilter, setStatusFilter] = useState<BudgetStatus | 'all'>('all')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
-  const [receiptSale, setReceiptSale] = useState<BackendSale | null>(null)
+  const [receiptBudget, setReceiptBudget] = useState<BackendBudget | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
       const qs = statusFilter !== 'all' ? `?status=${statusFilter}` : ''
-      setSales(await api<BackendSale[]>(`/sales${qs}`))
+      setBudgets(await api<BackendBudget[]>(`/budgets${qs}`))
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -48,10 +49,10 @@ export default function VentasAdmin() {
   useEffect(() => { load() }, [load])
   useEffect(() => { api<BackendProduct[]>('/products').then(setProducts).catch(() => {}) }, [])
 
-  const changeStatus = async (id: number, status: SaleStatus) => {
+  const changeStatus = async (id: number, status: BudgetStatus) => {
     setError(null)
     try {
-      await api(`/sales/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) })
+      await api(`/budgets/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) })
       await load()
     } catch (e) {
       setError((e as Error).message)
@@ -63,19 +64,19 @@ export default function VentasAdmin() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
         <div>
           <h1 style={{ fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 32, letterSpacing: '-0.02em', margin: 0, color: 'var(--ink)' }}>
-            Ventas
+            Presupuestos
           </h1>
           <p style={{ fontFamily: 'ui-monospace, monospace', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-mute)', marginTop: 6 }}>
-            {sales.length} ventas
+            {budgets.length} presupuestos
           </p>
         </div>
-        <button className="btn" style={{ fontSize: 11 }} onClick={() => setShowForm(true)}>+ Nueva venta manual</button>
+        <button className="btn" style={{ fontSize: 11 }} onClick={() => setShowForm(true)}>+ Nuevo presupuesto</button>
       </div>
 
       {error && <div style={{ background: '#FEE2E2', color: '#991B1B', padding: '10px 16px', marginBottom: 16, fontSize: 13 }}>{error}</div>}
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        {(['all', 'Pending', 'Paid', 'Cancelled'] as const).map((s) => (
+        {(['all', 'Open', 'Converted', 'Expired', 'Cancelled'] as const).map((s) => (
           <button
             key={s}
             onClick={() => setStatusFilter(s)}
@@ -86,77 +87,74 @@ export default function VentasAdmin() {
               fontFamily: 'ui-monospace, monospace', fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase',
             }}
           >
-            {s === 'all' ? 'Todas' : STATUS_LABEL[s]}
+            {s === 'all' ? 'Todos' : STATUS_LABEL[s]}
           </button>
         ))}
       </div>
 
       <div style={{ background: 'white', border: '1px solid var(--line)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 1fr 1fr 100px 120px 200px', padding: '12px 24px', borderBottom: '1px solid var(--line)', background: '#F8F7F4' }}>
-          {['N°', 'Cliente', 'Productos', 'Fecha', 'Total', 'Estado', ''].map((h) => (
+        <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 1fr 1fr 100px 130px 200px', padding: '12px 24px', borderBottom: '1px solid var(--line)', background: '#F8F7F4' }}>
+          {['N°', 'Cliente', 'Productos', 'Vencimiento', 'Total', 'Estado', ''].map((h) => (
             <span key={h} style={{ fontFamily: 'ui-monospace, monospace', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-mute)' }}>{h}</span>
           ))}
         </div>
         {loading && <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-mute)' }}>Cargando...</div>}
-        {!loading && sales.map((s, i) => (
-          <div key={s.id} style={{ display: 'grid', gridTemplateColumns: '60px 1fr 1fr 1fr 100px 120px 200px', padding: '14px 24px', borderBottom: i < sales.length - 1 ? '1px solid var(--line)' : 'none', alignItems: 'center' }}>
-            <div className="mono" style={{ fontSize: 11, color: 'var(--ink-mute)' }}>#{s.number}</div>
+        {!loading && budgets.map((b, i) => (
+          <div key={b.id} style={{ display: 'grid', gridTemplateColumns: '60px 1fr 1fr 1fr 100px 130px 200px', padding: '14px 24px', borderBottom: i < budgets.length - 1 ? '1px solid var(--line)' : 'none', alignItems: 'center' }}>
+            <div className="mono" style={{ fontSize: 11, color: 'var(--ink-mute)' }}>#{b.number}</div>
             <div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 500 }}>{s.customer.name}</div>
-              <div className="mono" style={{ fontSize: 9, color: 'var(--ink-mute)' }}>{CLIENT_TYPE_LABEL[s.clientType]} · {s.paymentMethod}</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 500 }}>{b.customer.name}</div>
+              <div className="mono" style={{ fontSize: 9, color: 'var(--ink-mute)' }}>{CLIENT_TYPE_LABEL[b.clientType]}</div>
             </div>
             <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
-              {s.items.map((it) => `${it.quantity}× ${it.productName}`).join(', ')}
+              {b.items.map((it) => `${it.quantity}× ${it.productName}`).join(', ')}
             </div>
-            <div className="mono" style={{ fontSize: 10, color: 'var(--ink-mute)' }}>{new Date(s.createdAt).toLocaleString('es-AR')}</div>
-            <div className="mono" style={{ fontSize: 11 }}>$ {s.total.toLocaleString('de-DE')}</div>
+            <div className="mono" style={{ fontSize: 10, color: 'var(--ink-mute)' }}>{b.validUntil ? new Date(b.validUntil).toLocaleDateString('es-AR') : '-'}</div>
+            <div className="mono" style={{ fontSize: 11 }}>$ {b.total.toLocaleString('de-DE')}</div>
             <div>
-              <span style={{ ...STATUS_COLOR[s.status], padding: '4px 10px', borderRadius: 999, fontSize: 9, fontFamily: 'ui-monospace, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                {STATUS_LABEL[s.status]}
+              <span style={{ ...STATUS_COLOR[b.status], padding: '4px 10px', borderRadius: 999, fontSize: 9, fontFamily: 'ui-monospace, monospace', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                {STATUS_LABEL[b.status]}
               </span>
             </div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button onClick={() => setReceiptSale(s)} style={linkBtn}>Ver comprobante</button>
-              {s.status === 'Pending' && (
+              <button onClick={() => setReceiptBudget(b)} style={linkBtn}>Ver comprobante</button>
+              {b.status === 'Open' && (
                 <>
-                  <button onClick={() => changeStatus(s.id, 'Paid')} style={linkBtn}>Marcar pagada</button>
-                  <button onClick={() => changeStatus(s.id, 'Cancelled')} style={{ ...linkBtn, color: '#991B1B' }}>Cancelar</button>
+                  <button onClick={() => changeStatus(b.id, 'Converted')} style={linkBtn}>Convertir en venta</button>
+                  <button onClick={() => changeStatus(b.id, 'Cancelled')} style={{ ...linkBtn, color: '#991B1B' }}>Cancelar</button>
                 </>
-              )}
-              {s.status === 'Paid' && (
-                <button onClick={() => changeStatus(s.id, 'Cancelled')} style={{ ...linkBtn, color: '#991B1B' }}>Cancelar</button>
               )}
             </div>
           </div>
         ))}
-        {!loading && sales.length === 0 && (
+        {!loading && budgets.length === 0 && (
           <div style={{ padding: '40px 24px', textAlign: 'center', fontFamily: 'var(--font-edit)', fontStyle: 'italic', color: 'var(--ink-mute)', fontSize: 18 }}>
-            Sin ventas.
+            Sin presupuestos.
           </div>
         )}
       </div>
 
       {showForm && (
-        <NewSaleModal
+        <NewBudgetModal
           onClose={() => setShowForm(false)}
-          onCreated={(sale) => { setShowForm(false); load(); setReceiptSale(sale) }}
+          onCreated={(budget) => { setShowForm(false); load(); setReceiptBudget(budget) }}
         />
       )}
 
-      {receiptSale && (
+      {receiptBudget && (
         <ReceiptView
-          kind="sale"
-          record={receiptSale}
+          kind="budget"
+          record={receiptBudget}
           products={products}
-          onClose={() => setReceiptSale(null)}
-          onUpdated={(updated) => { setReceiptSale(updated as BackendSale); load() }}
+          onClose={() => setReceiptBudget(null)}
+          onUpdated={(updated) => { setReceiptBudget(updated as BackendBudget); load() }}
         />
       )}
     </div>
   )
 }
 
-function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: (sale: BackendSale) => void }) {
+function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated: (budget: BackendBudget) => void }) {
   const [products, setProducts] = useState<BackendProduct[]>([])
   const [clients, setClients] = useState<BackendClient[]>([])
   const [selectedClientId, setSelectedClientId] = useState<number | ''>('')
@@ -165,8 +163,7 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const [clientTaxId, setClientTaxId] = useState('')
   const [clientAddress, setClientAddress] = useState('')
   const [clientType, setClientType] = useState<ClientType>('Retail')
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Transfer')
-  const [status, setStatus] = useState<'Pending' | 'Paid'>('Pending')
+  const [validUntil, setValidUntil] = useState('')
   const [discountPercent, setDiscountPercent] = useState(0)
   const [taxRatePercent, setTaxRatePercent] = useState(0)
   const [items, setItems] = useState<{ productId: string; quantity: number }[]>([])
@@ -216,16 +213,18 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 
     setSaving(true)
     try {
-      const sale = await api<BackendSale>('/sales', {
+      const budget = await api<BackendBudget>('/budgets', {
         method: 'POST',
         body: JSON.stringify({
           clientId: selectedClientId || null,
           customer: { name: clientName, contact: clientContact || null, taxId: clientTaxId || null, address: clientAddress || null },
-          clientType, paymentMethod, status, discountPercent, taxRatePercent,
+          clientType,
+          validUntil: validUntil ? new Date(validUntil).toISOString() : null,
+          discountPercent, taxRatePercent,
           items: items.map((it) => ({ productId: it.productId, quantity: it.quantity })),
         }),
       })
-      onCreated(sale)
+      onCreated(budget)
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -236,7 +235,7 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'grid', placeItems: 'center', zIndex: 100, padding: 20 }}>
       <form onSubmit={onSubmit} style={{ background: 'white', width: 600, maxHeight: '90vh', overflowY: 'auto', padding: 32 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 500, margin: '0 0 20px' }}>Nueva venta manual</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 500, margin: '0 0 20px' }}>Nuevo presupuesto</h2>
 
         {error && <div style={{ background: '#FEE2E2', color: '#991B1B', padding: '10px 16px', marginBottom: 16, fontSize: 13 }}>{error}</div>}
 
@@ -260,18 +259,8 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
               <option value="Wholesale">Mayorista</option>
             </select>
           </Field>
-          <Field label="Medio de pago">
-            <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} style={inputStyle}>
-              <option value="Transfer">Transferencia</option>
-              <option value="Cash">Efectivo</option>
-              <option value="Other">Otro</option>
-            </select>
-          </Field>
-          <Field label="Estado inicial">
-            <select value={status} onChange={(e) => setStatus(e.target.value as 'Pending' | 'Paid')} style={inputStyle}>
-              <option value="Pending">Pendiente</option>
-              <option value="Paid">Pagada</option>
-            </select>
+          <Field label="Válido hasta (opcional)">
+            <input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} style={inputStyle} />
           </Field>
           <Field label="Bonificación %">
             <input type="number" min={0} max={100} value={discountPercent} onChange={(e) => setDiscountPercent(Number(e.target.value))} style={inputStyle} />
@@ -310,7 +299,7 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 
         <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
           <button className="btn" type="submit" disabled={saving} style={{ flex: 1, justifyContent: 'center' }}>
-            {saving ? 'Guardando...' : 'Registrar venta'}
+            {saving ? 'Guardando...' : 'Crear presupuesto'}
           </button>
           <button className="btn ghost" type="button" onClick={onClose} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
         </div>

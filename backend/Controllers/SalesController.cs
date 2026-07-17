@@ -4,6 +4,7 @@ using backend.Attributes;
 using backend.Data;
 using backend.Dtos;
 using backend.Models;
+using backend.Services;
 
 namespace backend.Controllers;
 
@@ -20,14 +21,27 @@ public class SalesController : ControllerBase
     };
 
     private readonly AppDbContext _db;
+    private readonly DocumentNumberingService _numbering;
+    private readonly ReceiptPdfService _pdf;
 
-    public SalesController(AppDbContext db) => _db = db;
+    public SalesController(AppDbContext db, DocumentNumberingService numbering, ReceiptPdfService pdf)
+    {
+        _db = db;
+        _numbering = numbering;
+        _pdf = pdf;
+    }
 
     [HttpPost]
     public async Task<ActionResult<SaleDto>> Create(SaleCreateDto input)
     {
         if (input.Items is null || input.Items.Count == 0)
             return BadRequest(new { error = "La venta debe tener al menos un producto" });
+
+        if (string.IsNullOrWhiteSpace(input.Customer?.Name))
+            return BadRequest(new { error = "El nombre del cliente es obligatorio" });
+
+        if (input.ClientId is not null && !await _db.Clients.AnyAsync(c => c.Id == input.ClientId))
+            return BadRequest(new { error = "El cliente indicado no existe" });
 
         var status = input.Status ?? SaleStatus.Pending;
         if (status != SaleStatus.Pending && status != SaleStatus.Paid)
@@ -37,15 +51,23 @@ public class SalesController : ControllerBase
 
         var sale = new Sale
         {
-            ClientName = input.ClientName,
-            ClientContact = input.ClientContact,
+            ClientId = input.ClientId,
+            Customer = new CustomerInfo
+            {
+                Name = input.Customer.Name,
+                Contact = input.Customer.Contact,
+                TaxId = input.Customer.TaxId,
+                Address = input.Customer.Address,
+            },
             ClientType = input.ClientType,
             PaymentMethod = input.PaymentMethod,
             Status = status,
+            DiscountPercent = input.DiscountPercent,
+            TaxRatePercent = input.TaxRatePercent,
             CreatedAt = DateTime.UtcNow,
         };
 
-        decimal total = 0;
+        decimal subtotal = 0;
 
         foreach (var itemInput in input.Items)
         {
@@ -63,7 +85,7 @@ public class SalesController : ControllerBase
             if (rowsUpdated == 0)
                 return BadRequest(new { error = $"Stock insuficiente para '{product.Name}'" });
 
-            total += product.Price * itemInput.Quantity;
+            subtotal += product.Price * itemInput.Quantity;
 
             sale.Items.Add(new SaleItem
             {
@@ -74,8 +96,94 @@ public class SalesController : ControllerBase
             });
         }
 
-        sale.Total = total;
+        var totals = DocumentTotalsCalculator.Compute(subtotal, input.DiscountPercent, input.TaxRatePercent);
+        sale.Subtotal = totals.Subtotal;
+        sale.DiscountAmount = totals.DiscountAmount;
+        sale.TaxAmount = totals.TaxAmount;
+        sale.Total = totals.Total;
+        sale.Number = await _numbering.NextNumberAsync(DocumentType.Sale);
+
         _db.Sales.Add(sale);
+        await _db.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        return Ok(ToDto(sale));
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult<SaleDto>> Update(int id, SaleUpdateDto input)
+    {
+        if (input.Items is null || input.Items.Count == 0)
+            return BadRequest(new { error = "La venta debe tener al menos un producto" });
+
+        if (string.IsNullOrWhiteSpace(input.Customer?.Name))
+            return BadRequest(new { error = "El nombre del cliente es obligatorio" });
+
+        if (input.ClientId is not null && !await _db.Clients.AnyAsync(c => c.Id == input.ClientId))
+            return BadRequest(new { error = "El cliente indicado no existe" });
+
+        await using var tx = await _db.Database.BeginTransactionAsync();
+
+        var sale = await _db.Sales.Include(s => s.Items).FirstOrDefaultAsync(s => s.Id == id);
+        if (sale is null) return NotFound();
+
+        if (sale.Status != SaleStatus.Pending)
+            return BadRequest(new { error = "Solo se pueden editar ventas pendientes" });
+
+        foreach (var oldItem in sale.Items)
+        {
+            await _db.Products
+                .Where(p => p.Id == oldItem.ProductId)
+                .ExecuteUpdateAsync(s => s.SetProperty(p => p.Stock, p => p.Stock + oldItem.Quantity));
+        }
+
+        sale.Items.Clear();
+        decimal subtotal = 0;
+
+        foreach (var itemInput in input.Items)
+        {
+            if (itemInput.Quantity <= 0)
+                return BadRequest(new { error = "La cantidad debe ser mayor a 0" });
+
+            var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == itemInput.ProductId && p.Active);
+            if (product is null)
+                return BadRequest(new { error = $"Producto '{itemInput.ProductId}' no existe o está inactivo" });
+
+            var rowsUpdated = await _db.Products
+                .Where(p => p.Id == product.Id && p.Stock >= itemInput.Quantity)
+                .ExecuteUpdateAsync(s => s.SetProperty(p => p.Stock, p => p.Stock - itemInput.Quantity));
+
+            if (rowsUpdated == 0)
+                return BadRequest(new { error = $"Stock insuficiente para '{product.Name}'" });
+
+            subtotal += product.Price * itemInput.Quantity;
+
+            sale.Items.Add(new SaleItem
+            {
+                ProductId = product.Id,
+                ProductName = product.Name,
+                Quantity = itemInput.Quantity,
+                UnitPrice = product.Price,
+            });
+        }
+
+        sale.ClientId = input.ClientId;
+        sale.Customer = new CustomerInfo
+        {
+            Name = input.Customer.Name,
+            Contact = input.Customer.Contact,
+            TaxId = input.Customer.TaxId,
+            Address = input.Customer.Address,
+        };
+        sale.DiscountPercent = input.DiscountPercent;
+        sale.TaxRatePercent = input.TaxRatePercent;
+
+        var totals = DocumentTotalsCalculator.Compute(subtotal, input.DiscountPercent, input.TaxRatePercent);
+        sale.Subtotal = totals.Subtotal;
+        sale.DiscountAmount = totals.DiscountAmount;
+        sale.TaxAmount = totals.TaxAmount;
+        sale.Total = totals.Total;
+
         await _db.SaveChangesAsync();
         await tx.CommitAsync();
 
@@ -133,6 +241,29 @@ public class SalesController : ControllerBase
         return Ok(ToDto(sale));
     }
 
+    [HttpGet("{id}/pdf")]
+    public async Task<IActionResult> GetPdf(int id)
+    {
+        var sale = await _db.Sales.Include(s => s.Items).AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+        if (sale is null) return NotFound();
+
+        var company = await _db.CompanySettings.AsNoTracking().FirstOrDefaultAsync() ?? new CompanySettings();
+
+        var netExempt = sale.TaxRatePercent == 0 ? sale.Subtotal - sale.DiscountAmount : 0;
+        var receipt = new Dtos.ReceiptData(
+            "VENTA", sale.Number, sale.CreatedAt, null,
+            sale.Customer.Name, sale.Customer.TaxId, sale.Customer.Address, sale.Customer.Contact,
+            sale.Items.Select(i => new Dtos.ReceiptItemData(
+                i.ProductId, i.ProductName, i.Quantity, i.UnitPrice, 0,
+                i.Quantity * i.UnitPrice, sale.TaxRatePercent,
+                i.Quantity * i.UnitPrice * (1 + sale.TaxRatePercent / 100m))).ToList(),
+            sale.Subtotal, sale.DiscountPercent, sale.DiscountAmount,
+            sale.TaxRatePercent, sale.TaxAmount, netExempt, sale.Total);
+
+        var bytes = _pdf.Generate(receipt, company);
+        return File(bytes, "application/pdf", $"venta-{sale.Number}.pdf");
+    }
+
     [HttpGet("summary")]
     public async Task<ActionResult<SalesSummaryDto>> Summary()
     {
@@ -165,6 +296,10 @@ public class SalesController : ControllerBase
     }
 
     private static SaleDto ToDto(Sale s) => new(
-        s.Id, s.ClientName, s.ClientContact, s.ClientType, s.Status, s.PaymentMethod, s.Total, s.CreatedAt,
+        s.Id, s.Number, s.ClientId,
+        new CustomerDto(s.Customer.Name, s.Customer.Contact, s.Customer.TaxId, s.Customer.Address),
+        s.ClientType, s.Status, s.PaymentMethod,
+        s.Subtotal, s.DiscountPercent, s.DiscountAmount, s.TaxRatePercent, s.TaxAmount, s.Total,
+        s.CreatedAt,
         s.Items.Select(i => new SaleItemDto(i.ProductId, i.ProductName, i.Quantity, i.UnitPrice)).ToList());
 }

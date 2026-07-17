@@ -31,6 +31,14 @@ export interface BackendProduct {
 export type ClientType = 'Retail' | 'Wholesale'
 export type SaleStatus = 'Pending' | 'Paid' | 'Cancelled'
 export type PaymentMethod = 'Transfer' | 'Cash' | 'Other'
+export type BudgetStatus = 'Open' | 'Converted' | 'Expired' | 'Cancelled'
+
+export interface BackendCustomer {
+  name: string
+  contact: string | null
+  taxId: string | null
+  address: string | null
+}
 
 export interface BackendSaleItem {
   productId: string
@@ -41,14 +49,104 @@ export interface BackendSaleItem {
 
 export interface BackendSale {
   id: number
-  clientName: string
-  clientContact: string | null
+  number: number
+  clientId: number | null
+  customer: BackendCustomer
   clientType: ClientType
   status: SaleStatus
   paymentMethod: PaymentMethod
+  subtotal: number
+  discountPercent: number
+  discountAmount: number
+  taxRatePercent: number
+  taxAmount: number
   total: number
   createdAt: string
   items: BackendSaleItem[]
+}
+
+export interface BackendBudgetItem {
+  productId: string
+  productName: string
+  quantity: number
+  unitPrice: number
+}
+
+export interface BackendBudget {
+  id: number
+  number: number
+  clientId: number | null
+  customer: BackendCustomer
+  clientType: ClientType
+  status: BudgetStatus
+  validUntil: string | null
+  subtotal: number
+  discountPercent: number
+  discountAmount: number
+  taxRatePercent: number
+  taxAmount: number
+  total: number
+  createdAt: string
+  items: BackendBudgetItem[]
+}
+
+export type IvaCondition = 'ResponsableInscripto' | 'Monotributo' | 'Exento' | 'ConsumidorFinal' | 'NoCategorizado'
+export type DefaultReceiptType = 'FacturaA' | 'FacturaB' | 'FacturaC' | 'Recibo' | 'Presupuesto'
+
+export interface BackendContactPerson {
+  name: string
+  role: string | null
+  cell: string | null
+  phone: string | null
+  email: string | null
+}
+
+export interface BackendCustomField {
+  label: string
+  value: string
+}
+
+interface BackendPartyBase {
+  id: number
+  companyOrFullName: string
+  firstName: string | null
+  lastName: string | null
+  cell: string | null
+  phone: string | null
+  email: string | null
+  webPage: string | null
+  address: string | null
+  province: string | null
+  postalCode: string | null
+  locality: string | null
+  note: string | null
+  initialBalance: number
+  billingCompanyOrFullName: string
+  taxId: string | null
+  ivaCondition: IvaCondition
+  defaultReceiptType: DefaultReceiptType
+  billingPhone: string | null
+  billingCell: string | null
+  fiscalAddress: string | null
+  fiscalLocality: string | null
+  fiscalProvince: string | null
+  fiscalPostalCode: string | null
+  active: boolean
+  contactPersons: BackendContactPerson[]
+  customFields: BackendCustomField[]
+}
+
+export interface BackendClient extends BackendPartyBase {
+  nicknameML: string | null
+  salesCategory: string | null
+  salesDiscountPercent: number
+  noteForClient: string | null
+}
+
+export interface BackendSupplier extends BackendPartyBase {
+  purchasesCategory: string | null
+  purchasesDiscountPercent: number
+  noteInternal: string | null
 }
 
 export interface ProductRanking {

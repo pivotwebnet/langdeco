@@ -10,14 +10,28 @@ async function handle(request: NextRequest, path: string[]): Promise<NextRespons
 
   const targetPath = `/api/${path.join('/')}${request.nextUrl.search}`
   const hasBody = !['GET', 'HEAD', 'DELETE'].includes(request.method)
+  const incomingContentType = request.headers.get('content-type') || ''
+  const isJsonBody = hasBody && (incomingContentType === '' || incomingContentType.includes('application/json'))
 
   const res = await forwardToBackend(targetPath, {
     method: request.method,
-    headers: { 'Content-Type': 'application/json' },
-    body: hasBody ? await request.text() : undefined,
+    headers: isJsonBody ? { 'Content-Type': 'application/json' } : (incomingContentType ? { 'Content-Type': incomingContentType } : {}),
+    body: hasBody ? (isJsonBody ? await request.text() : await request.arrayBuffer()) : undefined,
   })
 
   const contentType = res.headers.get('content-type') || ''
+
+  if (contentType.includes('application/pdf') || contentType.includes('spreadsheetml.sheet')) {
+    const buffer = await res.arrayBuffer()
+    return new NextResponse(buffer, {
+      status: res.status,
+      headers: {
+        'Content-Type': contentType,
+        'Content-Disposition': res.headers.get('content-disposition') || (contentType.includes('application/pdf') ? 'inline' : 'attachment'),
+      },
+    })
+  }
+
   if (res.status === 204 || !contentType.includes('application/json')) {
     return new NextResponse(null, { status: res.status })
   }
