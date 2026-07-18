@@ -5,6 +5,7 @@ import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { ParallaxElement } from '@/components/ui/ParallaxElement'
+import { FurnitureHotspot } from '@/components/ui/FurnitureHotspot'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
 import * as Icon from '@/components/ui/Icon'
 import type { HeroVariant } from '@/lib/types'
@@ -123,10 +124,10 @@ export function Hero({ variant = 'editorial' }: HeroProps) {
         <div className="hero-text-col">
           <h1 ref={titleRef} className="display hero-h1" style={{ fontSize: 48, margin: '0 0 6px' }}>
             <span style={{ display: 'block', overflow: 'hidden', lineHeight: 1.06 }}>
-              <span className="hero-line" style={{ display: 'block' }}>Amamos</span>
+              <span className="hero-line" style={{ display: 'block' }}>El hogar es</span>
             </span>
             <span style={{ display: 'block', overflow: 'hidden', lineHeight: 1.06 }}>
-              <em className="hero-line" style={{ display: 'block', fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>Lo que hacemos</em>
+              <em className="hero-line" style={{ display: 'block', fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>donde comienza la historia</em>
             </span>
           </h1>
 
@@ -141,7 +142,7 @@ export function Hero({ variant = 'editorial' }: HeroProps) {
           <RevealOnScroll delay={3}>
             <div className="hero-bottom" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <p className="edit" style={{ fontSize: 16, margin: 0, lineHeight: 1.4, maxWidth: 230 }}>
-                Piezas escogidas a mano por <strong style={{ fontWeight: 500, fontStyle: 'normal' }}>Carmen Longo</strong>, para hogares que no tienen prisa.
+                Y en <strong style={{ fontWeight: 500, fontStyle: 'normal' }}>Las Lang</strong> vas a encontrar el mueble que va a acompañar ese proceso.
               </p>
               <Icon.ArrowDown style={{ color: 'var(--ink)' }} />
             </div>
@@ -158,13 +159,22 @@ export function Hero({ variant = 'editorial' }: HeroProps) {
         </RevealOnScroll>
       </div>
 
-      <ParallaxElement speed={0.55} rotate={-8} style={{ top: '32%', right: -54, width: 150, height: 210, zIndex: 5 }} tag="3D · monstera">
+      {/*
+        Piezas flotantes clickeables: hover en desktop (escala + label), tap navega directo en mobile.
+        Mapeo mueble → categoría es provisorio (el catálogo hoy solo tiene "mayor"/"tesoro",
+        no hay categorías por tipo de mueble todavía) — cambiar cat= acá cuando existan categorías reales.
+      */}
+      <FurnitureHotspot href="/?cat=mayor#catalogo" label="Sillón" speed={0.55} rotate={-8} style={{ top: '28%', right: -58, width: 150, height: 190 }}>
         <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.3)' }} />
-      </ParallaxElement>
+      </FurnitureHotspot>
 
-      <ParallaxElement speed={0.3} rotate={4} style={{ bottom: '6%', left: -40, width: 110, height: 110, zIndex: 5 }} tag="3D · jarrón cerámica">
-        <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.3)', borderRadius: '50%' }} />
-      </ParallaxElement>
+      <FurnitureHotspot href="/?cat=tesoro#catalogo" label="Lámpara" speed={0.4} rotate={5} style={{ top: '4%', left: -34, width: 88, height: 168 }}>
+        <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.3)', borderRadius: '999px 999px 8px 8px' }} />
+      </FurnitureHotspot>
+
+      <FurnitureHotspot href="/?cat=tesoro#catalogo" label="Mesa de luz" speed={0.3} rotate={4} style={{ bottom: '4%', left: -44, width: 120, height: 110 }}>
+        <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.3)' }} />
+      </FurnitureHotspot>
     </section>
   )
 }

@@ -19,8 +19,13 @@ const tabStyle = (active: boolean) => ({
   fontWeight: 500, transition: 'background 0.25s, color 0.25s',
 })
 
-export function Productos({ products }: { products: Product[] }) {
-  const [tab, setTab]   = useState<'mayores' | 'tesoros'>('mayores')
+interface ProductosProps {
+  products: Product[]
+  initialCategory?: 'mayor' | 'tesoro'
+}
+
+export function Productos({ products, initialCategory }: ProductosProps) {
+  const [tab, setTab] = useState<'mayores' | 'tesoros'>(initialCategory === 'tesoro' ? 'tesoros' : 'mayores')
   const [added, setAdded] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const { add } = useCart()

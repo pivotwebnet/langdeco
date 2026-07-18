@@ -13,6 +13,7 @@ public class Product
 
     public decimal Price { get; set; }
     public decimal? OriginalPrice { get; set; }
+    public decimal? WholesalePrice { get; set; }
     public int Stock { get; set; }
 
     public string? Note { get; set; }

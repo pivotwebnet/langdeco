@@ -7,12 +7,12 @@ import { ParallaxElement } from '@/components/ui/ParallaxElement'
 import * as Icon from '@/components/ui/Icon'
 import type { Product } from '@/lib/types'
 
-interface SeleccionCarmenProps {
+interface FavoritosProps {
   showBadge?: boolean
   items: Product[]
 }
 
-export function SeleccionCarmen({ showBadge = false, items: SELECCION }: SeleccionCarmenProps) {
+export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProps) {
   const [active, setActive] = useState(0)
   const [added, setAdded] = useState<string | null>(null)
   const { add } = useCart()
@@ -73,7 +73,7 @@ export function SeleccionCarmen({ showBadge = false, items: SELECCION }: Selecci
                 )}
                 {showBadge && i === 0 && (
                   <div style={{ position: 'absolute', top: 12, left: 12, padding: '6px 10px', background: 'var(--ink)', color: 'var(--bg)', fontSize: 9, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 500 }}>
-                    ★ Pieza Carmen
+                    ★ Favorito
                   </div>
                 )}
                 <button

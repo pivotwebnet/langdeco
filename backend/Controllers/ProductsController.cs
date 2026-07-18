@@ -75,6 +75,7 @@ public class ProductsController : ControllerBase
             Origin = input.Origin,
             Price = input.Price,
             OriginalPrice = input.OriginalPrice,
+            WholesalePrice = input.WholesalePrice,
             Stock = input.Stock,
             Note = input.Note,
             Aspect = input.Aspect,
@@ -110,6 +111,7 @@ public class ProductsController : ControllerBase
         product.Origin = input.Origin;
         product.Price = input.Price;
         product.OriginalPrice = input.OriginalPrice;
+        product.WholesalePrice = input.WholesalePrice;
         product.Stock = input.Stock;
         product.Note = input.Note;
         product.Aspect = input.Aspect;
@@ -177,6 +179,9 @@ public class ProductsController : ControllerBase
         if (input.OriginalPrice is not null && input.OriginalPrice <= input.Price)
             return "El precio original (tachado) debe ser mayor que el precio";
 
+        if (input.WholesalePrice is not null && input.WholesalePrice >= input.Price)
+            return "El precio mayorista debe ser menor que el precio";
+
         if (input.Images.Count > 6)
             return "Máximo 6 fotos por producto";
 
@@ -209,7 +214,7 @@ public class ProductsController : ControllerBase
 
     private static ProductDto ToDto(Product p) => new(
         p.Id, p.Name, p.CategoryId, p.Category?.Name ?? p.CategoryId, p.Tag,
-        p.Material, p.Origin, p.Price, p.OriginalPrice, p.Stock,
+        p.Material, p.Origin, p.Price, p.OriginalPrice, p.WholesalePrice, p.Stock,
         p.Note, p.Aspect, p.Active, p.Featured,
         p.Specs.OrderBy(s => s.Order).Select(s => new ProductSpecDto(s.Label, s.Value)).ToList(),
         p.Images.OrderBy(i => i.Order).Select(i => i.Url).ToList());

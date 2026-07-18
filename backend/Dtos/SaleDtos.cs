@@ -6,26 +6,27 @@ public record CustomerInput(string Name, string? Contact, string? TaxId, string?
 
 public record CustomerDto(string Name, string? Contact, string? TaxId, string? Address);
 
-public record SaleItemInput(string ProductId, int Quantity);
+public record SaleItemInput(string ProductId, int Quantity, ClientType PriceType = ClientType.Retail);
 
 public record SaleCreateDto(
     int? ClientId, CustomerInput Customer, ClientType ClientType,
     PaymentMethod PaymentMethod, SaleStatus? Status,
-    decimal DiscountPercent, decimal TaxRatePercent,
+    DiscountType DiscountType, decimal DiscountPercent, decimal DiscountFixedAmount, decimal TaxRatePercent,
     List<SaleItemInput> Items);
 
 public record SaleUpdateDto(
-    int? ClientId, CustomerInput Customer, decimal DiscountPercent, decimal TaxRatePercent,
+    int? ClientId, CustomerInput Customer,
+    DiscountType DiscountType, decimal DiscountPercent, decimal DiscountFixedAmount, decimal TaxRatePercent,
     List<SaleItemInput> Items);
 
-public record SaleItemDto(string ProductId, string ProductName, int Quantity, decimal UnitPrice);
+public record SaleItemDto(string ProductId, string ProductName, int Quantity, decimal UnitPrice, ClientType PriceType);
 
 public record SaleDto(
     int Id, int Number, int? ClientId, CustomerDto Customer, ClientType ClientType,
     SaleStatus Status, PaymentMethod PaymentMethod,
-    decimal Subtotal, decimal DiscountPercent, decimal DiscountAmount,
+    decimal Subtotal, DiscountType DiscountType, decimal DiscountPercent, decimal DiscountFixedAmount, decimal DiscountAmount,
     decimal TaxRatePercent, decimal TaxAmount, decimal Total,
-    DateTime CreatedAt,
+    DateTime CreatedAt, int? BudgetId,
     List<SaleItemDto> Items);
 
 public record SaleStatusUpdateDto(SaleStatus Status);

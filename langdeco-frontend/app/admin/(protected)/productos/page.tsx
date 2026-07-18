@@ -279,7 +279,7 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
           <Field label="Destacado">
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
               <input type="checkbox" checked={form.featured} onChange={(e) => set('featured', e.target.checked)} />
-              <span style={{ fontSize: 13 }}>Selección de Carmen</span>
+              <span style={{ fontSize: 13 }}>Selección destacada</span>
             </label>
           </Field>
         </div>

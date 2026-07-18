@@ -23,12 +23,18 @@ public class SalesController : ControllerBase
     private readonly AppDbContext _db;
     private readonly DocumentNumberingService _numbering;
     private readonly ReceiptPdfService _pdf;
+    private readonly StockService _stock;
+    private readonly BudgetLifecycleService _lifecycle;
 
-    public SalesController(AppDbContext db, DocumentNumberingService numbering, ReceiptPdfService pdf)
+    public SalesController(
+        AppDbContext db, DocumentNumberingService numbering, ReceiptPdfService pdf,
+        StockService stock, BudgetLifecycleService lifecycle)
     {
         _db = db;
         _numbering = numbering;
         _pdf = pdf;
+        _stock = stock;
+        _lifecycle = lifecycle;
     }
 
     [HttpPost]
@@ -62,41 +68,33 @@ public class SalesController : ControllerBase
             ClientType = input.ClientType,
             PaymentMethod = input.PaymentMethod,
             Status = status,
+            DiscountType = input.DiscountType,
             DiscountPercent = input.DiscountPercent,
+            DiscountFixedAmount = input.DiscountFixedAmount,
             TaxRatePercent = input.TaxRatePercent,
             CreatedAt = DateTime.UtcNow,
         };
 
-        decimal subtotal = 0;
-
-        foreach (var itemInput in input.Items)
+        decimal subtotal;
+        try
         {
-            if (itemInput.Quantity <= 0)
-                return BadRequest(new { error = "La cantidad debe ser mayor a 0" });
-
-            var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == itemInput.ProductId && p.Active);
-            if (product is null)
-                return BadRequest(new { error = $"Producto '{itemInput.ProductId}' no existe o está inactivo" });
-
-            var rowsUpdated = await _db.Products
-                .Where(p => p.Id == product.Id && p.Stock >= itemInput.Quantity)
-                .ExecuteUpdateAsync(s => s.SetProperty(p => p.Stock, p => p.Stock - itemInput.Quantity));
-
-            if (rowsUpdated == 0)
-                return BadRequest(new { error = $"Stock insuficiente para '{product.Name}'" });
-
-            subtotal += product.Price * itemInput.Quantity;
-
-            sale.Items.Add(new SaleItem
-            {
-                ProductId = product.Id,
-                ProductName = product.Name,
-                Quantity = itemInput.Quantity,
-                UnitPrice = product.Price,
-            });
+            subtotal = await BuildItemsAsync(sale.Items, input.Items);
+        }
+        catch (PricingException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (ItemValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (StockException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
 
-        var totals = DocumentTotalsCalculator.Compute(subtotal, input.DiscountPercent, input.TaxRatePercent);
+        var totals = DocumentTotalsCalculator.Compute(
+            subtotal, input.DiscountType, input.DiscountPercent, input.DiscountFixedAmount, input.TaxRatePercent);
         sale.Subtotal = totals.Subtotal;
         sale.DiscountAmount = totals.DiscountAmount;
         sale.TaxAmount = totals.TaxAmount;
@@ -131,40 +129,26 @@ public class SalesController : ControllerBase
             return BadRequest(new { error = "Solo se pueden editar ventas pendientes" });
 
         foreach (var oldItem in sale.Items)
-        {
-            await _db.Products
-                .Where(p => p.Id == oldItem.ProductId)
-                .ExecuteUpdateAsync(s => s.SetProperty(p => p.Stock, p => p.Stock + oldItem.Quantity));
-        }
+            await _stock.IncrementAsync(oldItem.ProductId, oldItem.Quantity);
 
         sale.Items.Clear();
-        decimal subtotal = 0;
 
-        foreach (var itemInput in input.Items)
+        decimal subtotal;
+        try
         {
-            if (itemInput.Quantity <= 0)
-                return BadRequest(new { error = "La cantidad debe ser mayor a 0" });
-
-            var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == itemInput.ProductId && p.Active);
-            if (product is null)
-                return BadRequest(new { error = $"Producto '{itemInput.ProductId}' no existe o está inactivo" });
-
-            var rowsUpdated = await _db.Products
-                .Where(p => p.Id == product.Id && p.Stock >= itemInput.Quantity)
-                .ExecuteUpdateAsync(s => s.SetProperty(p => p.Stock, p => p.Stock - itemInput.Quantity));
-
-            if (rowsUpdated == 0)
-                return BadRequest(new { error = $"Stock insuficiente para '{product.Name}'" });
-
-            subtotal += product.Price * itemInput.Quantity;
-
-            sale.Items.Add(new SaleItem
-            {
-                ProductId = product.Id,
-                ProductName = product.Name,
-                Quantity = itemInput.Quantity,
-                UnitPrice = product.Price,
-            });
+            subtotal = await BuildItemsAsync(sale.Items, input.Items);
+        }
+        catch (PricingException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (ItemValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (StockException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
 
         sale.ClientId = input.ClientId;
@@ -175,10 +159,13 @@ public class SalesController : ControllerBase
             TaxId = input.Customer.TaxId,
             Address = input.Customer.Address,
         };
+        sale.DiscountType = input.DiscountType;
         sale.DiscountPercent = input.DiscountPercent;
+        sale.DiscountFixedAmount = input.DiscountFixedAmount;
         sale.TaxRatePercent = input.TaxRatePercent;
 
-        var totals = DocumentTotalsCalculator.Compute(subtotal, input.DiscountPercent, input.TaxRatePercent);
+        var totals = DocumentTotalsCalculator.Compute(
+            subtotal, input.DiscountType, input.DiscountPercent, input.DiscountFixedAmount, input.TaxRatePercent);
         sale.Subtotal = totals.Subtotal;
         sale.DiscountAmount = totals.DiscountAmount;
         sale.TaxAmount = totals.TaxAmount;
@@ -228,15 +215,14 @@ public class SalesController : ControllerBase
         if (input.Status == SaleStatus.Cancelled)
         {
             foreach (var item in sale.Items)
-            {
-                await _db.Products
-                    .Where(p => p.Id == item.ProductId)
-                    .ExecuteUpdateAsync(s => s.SetProperty(p => p.Stock, p => p.Stock + item.Quantity));
-            }
+                await _stock.IncrementAsync(item.ProductId, item.Quantity);
         }
 
         sale.Status = input.Status;
         await _db.SaveChangesAsync();
+
+        if (input.Status == SaleStatus.Cancelled && sale.BudgetId is not null)
+            await _lifecycle.ReopenIfConvertedAsync(sale.BudgetId.Value);
 
         return Ok(ToDto(sale));
     }
@@ -295,11 +281,55 @@ public class SalesController : ControllerBase
         return Ok(new SalesSummaryDto(revenue, averageTicket, paidSales.Count, retailRevenue, wholesaleRevenue, ranking, lowStock));
     }
 
-    private static SaleDto ToDto(Sale s) => new(
+    /// <summary>
+    /// Crea los SaleItem a partir del input, resolviendo el precio unitario según PriceType
+    /// y descontando stock de forma atómica (400 si no alcanza).
+    /// </summary>
+    private async Task<decimal> BuildItemsAsync(List<SaleItem> items, List<SaleItemInput> inputs)
+    {
+        decimal subtotal = 0;
+
+        foreach (var itemInput in inputs)
+        {
+            if (itemInput.Quantity <= 0)
+                throw new ItemValidationException("La cantidad debe ser mayor a 0");
+
+            var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == itemInput.ProductId && p.Active);
+            if (product is null)
+                throw new ItemValidationException($"Producto '{itemInput.ProductId}' no existe o está inactivo");
+
+            var unitPrice = PricingService.ResolveUnitPrice(product, itemInput.PriceType);
+
+            var decremented = await _stock.TryDecrementAsync(product.Id, itemInput.Quantity);
+            if (!decremented)
+                throw new StockException($"Stock insuficiente para '{product.Name}'");
+
+            subtotal += unitPrice * itemInput.Quantity;
+
+            items.Add(new SaleItem
+            {
+                ProductId = product.Id,
+                ProductName = product.Name,
+                Quantity = itemInput.Quantity,
+                UnitPrice = unitPrice,
+                PriceType = itemInput.PriceType,
+            });
+        }
+
+        return subtotal;
+    }
+
+    internal static SaleDto ToDto(Sale s) => new(
         s.Id, s.Number, s.ClientId,
         new CustomerDto(s.Customer.Name, s.Customer.Contact, s.Customer.TaxId, s.Customer.Address),
         s.ClientType, s.Status, s.PaymentMethod,
-        s.Subtotal, s.DiscountPercent, s.DiscountAmount, s.TaxRatePercent, s.TaxAmount, s.Total,
-        s.CreatedAt,
-        s.Items.Select(i => new SaleItemDto(i.ProductId, i.ProductName, i.Quantity, i.UnitPrice)).ToList());
+        s.Subtotal, s.DiscountType, s.DiscountPercent, s.DiscountFixedAmount, s.DiscountAmount,
+        s.TaxRatePercent, s.TaxAmount, s.Total,
+        s.CreatedAt, s.BudgetId,
+        s.Items.Select(i => new SaleItemDto(i.ProductId, i.ProductName, i.Quantity, i.UnitPrice, i.PriceType)).ToList());
+}
+
+internal class StockException : Exception
+{
+    public StockException(string message) : base(message) { }
 }

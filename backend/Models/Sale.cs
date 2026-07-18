@@ -32,13 +32,18 @@ public class Sale
     public PaymentMethod PaymentMethod { get; set; }
 
     public decimal Subtotal { get; set; }
+    public DiscountType DiscountType { get; set; } = DiscountType.Percent;
     public decimal DiscountPercent { get; set; }
+    public decimal DiscountFixedAmount { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal TaxRatePercent { get; set; }
     public decimal TaxAmount { get; set; }
     public decimal Total { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public int? BudgetId { get; set; }
+    public Budget? Budget { get; set; }
 
     public List<SaleItem> Items { get; set; } = new();
 }

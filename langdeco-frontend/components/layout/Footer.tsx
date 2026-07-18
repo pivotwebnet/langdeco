@@ -3,8 +3,8 @@ import type { CSSProperties, ReactNode } from 'react'
 const FOOTER_LINKS = {
   coleccion: [
     { label: 'Catálogo',              href: '#catalogo' },
-    { label: 'La Selección de Carmen',href: '#seleccion' },
-    { label: 'Lookbook',              href: '#lookbook' },
+    { label: 'Nuestra Selección',     href: '#seleccion' },
+    { label: 'Inspiración',           href: '#inspiracion' },
     { label: 'Piezas Mayores',        href: '#catalogo' },
     { label: 'Pequeños Tesoros',      href: '#catalogo' },
   ],
@@ -12,7 +12,7 @@ const FOOTER_LINKS = {
     { label: 'Visita el showroom',       href: '#visita' },
     { label: 'Asesoría de interiorismo', href: '#visita' },
     { label: 'Diario',                   href: '#' },
-    { label: 'Sobre Carmen Longo',       href: '#' },
+    { label: 'Sobre Nosotros',           href: '#' },
   ],
 }
 

@@ -11,7 +11,7 @@ interface HeaderProps {
 
 const NAV_LINKS = [
   { label: 'Catálogo', href: '#catalogo' },
-  { label: 'Lookbook', href: '#lookbook' },
+  { label: 'Inspiración', href: '#inspiracion' },
   { label: 'La selección', href: '#seleccion' },
   { label: 'Visita', href: '#visita' },
 ]
@@ -19,7 +19,7 @@ const NAV_LINKS = [
 const DRAWER_LINKS = [
   { label: 'Catálogo', href: '#catalogo' },
   { label: 'La Selección', href: '#seleccion' },
-  { label: 'Lookbook', href: '#lookbook' },
+  { label: 'Inspiración', href: '#inspiracion' },
   { label: 'Visita el showroom', href: '#visita' },
   { label: 'Diario', href: '#' },
 ]

@@ -5,22 +5,25 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { CartDrawer } from '@/components/layout/CartDrawer'
 import { Hero } from '@/components/sections/Hero'
-import { Manifesto } from '@/components/sections/Manifesto'
-import { SeleccionCarmen } from '@/components/sections/SeleccionCarmen'
-import { Lookbook } from '@/components/sections/Lookbook'
+import { Favoritos } from '@/components/sections/Favoritos'
+import { Inspiracion } from '@/components/sections/Inspiracion'
 import { Productos } from '@/components/sections/Productos'
 import { Visita } from '@/components/sections/Visita'
 import { ScrollAnimator } from '@/components/ui/ScrollAnimator'
 import { Marquee } from '@/components/ui/Marquee'
+import { PromoBar } from '@/components/ui/PromoBar'
 import * as Icon from '@/components/ui/Icon'
 import type { Product } from '@/lib/types'
+import type { SiteContent } from '@/lib/site-content'
 
 interface HomeClientProps {
   products: Product[]
   featured: Product[]
+  initialCategory?: 'mayor' | 'tesoro'
+  siteContent: SiteContent
 }
 
-export default function HomeClient({ products, featured }: HomeClientProps) {
+export default function HomeClient({ products, featured, initialCategory, siteContent }: HomeClientProps) {
   const [cartOpen, setCartOpen] = useState(false)
   const [scrollY, setScrollY]   = useState(0)
   const fillRef = useRef<HTMLDivElement>(null)
@@ -60,6 +63,8 @@ export default function HomeClient({ products, featured }: HomeClientProps) {
       <div className="stage">
         <div className="device" id="device">
 
+          <PromoBar text={siteContent.promoBar} />
+
           {/* Scroll progress */}
           <div className="scroll-track">
             <div ref={fillRef} className="fill" />
@@ -69,16 +74,14 @@ export default function HomeClient({ products, featured }: HomeClientProps) {
 
           <Hero variant="editorial" />
 
-          <Manifesto />
-
-          <SeleccionCarmen showBadge items={featured} />
+          <Favoritos showBadge items={featured} />
 
           {/* Animated marquee ticker */}
           <Marquee />
 
-          <Lookbook />
+          <Inspiracion items={siteContent.inspiracion} />
 
-          <Productos products={products} />
+          <Productos products={products} initialCategory={initialCategory} />
 
           <Visita />
 
@@ -101,10 +104,10 @@ export default function HomeClient({ products, featured }: HomeClientProps) {
         <button
           className="wa-pill"
           onClick={() => window.open('https://wa.me/34914321860', '_blank')}
-          aria-label="Hablar con Carmen por WhatsApp"
+          aria-label="Hablar por WhatsApp"
         >
           <div className="dot"><Icon.Whatsapp /></div>
-          <span>Hablar con Carmen</span>
+          <span>Hablar por WhatsApp</span>
         </button>
       </div>
     </>

@@ -19,7 +19,9 @@ public class Budget
     public BudgetStatus Status { get; set; } = BudgetStatus.Open;
 
     public decimal Subtotal { get; set; }
+    public DiscountType DiscountType { get; set; } = DiscountType.Percent;
     public decimal DiscountPercent { get; set; }
+    public decimal DiscountFixedAmount { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal TaxRatePercent { get; set; }
     public decimal TaxAmount { get; set; }
@@ -27,6 +29,10 @@ public class Budget
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ValidUntil { get; set; }
+
+    public int? ConvertedSaleId { get; set; }
+    public Sale? ConvertedSale { get; set; }
+    public DateTime? ConvertedAt { get; set; }
 
     public List<BudgetItem> Items { get; set; } = new();
 }

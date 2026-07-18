@@ -1,4 +1,4 @@
-import type { Product, LookbookEntry, SeleccionItem } from './types'
+import type { Product, SeleccionItem } from './types'
 
 export const PIEZAS_MAYORES: Product[] = [
   {
@@ -318,27 +318,6 @@ export const SELECCION: SeleccionItem[] = [
       { label: 'Densidad', value: '120 nudos/dm²' },
       { label: 'Tejido', value: 'A mano · 8 meses' },
     ],
-  },
-]
-
-export const LOOKBOOK: LookbookEntry[] = [
-  {
-    id: 'estar-norte', n: '01', name: 'Estar del norte', place: 'Piso · Chamberí',
-    desc: 'Luz fría, lana cruda, una pieza por pared.',
-    pieces: ['Butaca Laurel', 'Alfombra Anatolia', 'Cerámica Sojo'],
-    imageUrl: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=85',
-  },
-  {
-    id: 'comedor-lento', n: '02', name: 'Comedor lento', place: 'Casa · Mallorca',
-    desc: 'Mesa de piedra, sillas dispares, sin centro.',
-    pieces: ['Mesa Arenisca', 'Sillas Möller', 'Lámpara Pergamino'],
-    imageUrl: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=800&q=85',
-  },
-  {
-    id: 'estudio-tinta', n: '03', name: 'Estudio de tinta', place: 'Atelier · Salamanca',
-    desc: 'Una mesa larga, paredes encaladas, pocos libros.',
-    pieces: ['Mesa Olmo', 'Silla Hara', 'Lámpara Pergamino'],
-    imageUrl: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=800&q=85',
   },
 ]
 

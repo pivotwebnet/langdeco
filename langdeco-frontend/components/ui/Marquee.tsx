@@ -11,12 +11,9 @@ interface MarqueeProps {
 }
 
 const DEFAULT_ITEMS = [
-  'Piezas Atemporales',
-  'Artesanía Honesta',
-  'Curaduría · Madrid',
-  'Desde 1994',
+  'Desde 2014',
   'Materiales que Duran',
-  'Casa & Curaduría',
+  'Piezas Atemporales',
 ]
 
 export function Marquee({ items = DEFAULT_ITEMS, speed = 22, dark = false }: MarqueeProps) {

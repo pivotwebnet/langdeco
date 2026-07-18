@@ -6,7 +6,7 @@ const MOCK_INQUIRIES = [
   { id: '1', client: 'María González', email: 'maria@gmail.com', msg: 'Tengo un salón de 28 m² mirando al norte. Busco una butaca para un rincón de lectura.', products: ['Butaca Laurel'], time: '20/05/2026 · 14:32', status: 'pending' as const },
   { id: '2', client: 'Andrés Martínez', email: 'andres.m@icloud.com', msg: 'Me interesa la Mesa Arenisca pero necesito saber si las medidas se adaptan a un comedor de 3×4m.', products: ['Mesa Arenisca'], time: '20/05/2026 · 09:15', status: 'replied' as const },
   { id: '3', client: 'Laura Pérez', email: 'laup@outlook.es', msg: 'Busco algo para un dormitorio pequeño. Presupuesto hasta 3.000€.', products: ['Cabecero Tela', 'Alfombra Anatolia'], time: '19/05/2026 · 18:44', status: 'pending' as const },
-  { id: '4', client: 'Carlos Ruiz', email: 'carlos.ruiz@empresa.com', msg: 'Quiero ver las piezas de la selección de Carmen en persona.', products: [], time: '19/05/2026 · 11:20', status: 'closed' as const },
+  { id: '4', client: 'Carlos Ruiz', email: 'carlos.ruiz@empresa.com', msg: 'Quiero ver las piezas de la selección destacada en persona.', products: [], time: '19/05/2026 · 11:20', status: 'closed' as const },
 ]
 
 const STATUS_LABEL = { pending: 'Pendiente', replied: 'Respondida', closed: 'Cerrada' }
@@ -96,7 +96,7 @@ export default function ClientesAdmin() {
 
             <div style={{ display: 'flex', gap: 10, marginTop: 'auto' }}>
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(`Hola ${inquiry.client.split(' ')[0]}, soy Carmen de LasLongDeco. Sobre tu consulta...`)}`}
+                href={`https://wa.me/?text=${encodeURIComponent(`Hola ${inquiry.client.split(' ')[0]}, te escribimos de LasLongDeco. Sobre tu consulta...`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn"

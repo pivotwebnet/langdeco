@@ -122,7 +122,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
               className="btn"
               style={{ width: '100%', justifyContent: 'center' }}
               onClick={() => {
-                const msg = encodeURIComponent(`Hola Carmen, me interesan estas piezas:\n${items.map(i => `• ${i.name} (${i.qty}x) — ${i.price}`).join('\n')}\nTotal estimado: ${formatPrice(total)}`)
+                const msg = encodeURIComponent(`Hola, me interesan estas piezas:\n${items.map(i => `• ${i.name} (${i.qty}x) — ${i.price}`).join('\n')}\nTotal estimado: ${formatPrice(total)}`)
                 window.open(`https://wa.me/34914321860?text=${msg}`, '_blank')
               }}
             >

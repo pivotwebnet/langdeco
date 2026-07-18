@@ -41,6 +41,7 @@ public class AppDbContext : DbContext
             entity.Property(p => p.Material).IsRequired().HasMaxLength(200);
             entity.Property(p => p.Price).HasPrecision(12, 2);
             entity.Property(p => p.OriginalPrice).HasPrecision(12, 2);
+            entity.Property(p => p.WholesalePrice).HasPrecision(12, 2);
 
             entity.HasOne(p => p.Category)
                 .WithMany(c => c.Products)
@@ -61,7 +62,9 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Sale>(entity =>
         {
             entity.Property(s => s.Subtotal).HasPrecision(12, 2);
+            entity.Property(s => s.DiscountType).HasConversion<string>().HasMaxLength(20);
             entity.Property(s => s.DiscountPercent).HasPrecision(5, 2);
+            entity.Property(s => s.DiscountFixedAmount).HasPrecision(12, 2);
             entity.Property(s => s.DiscountAmount).HasPrecision(12, 2);
             entity.Property(s => s.TaxRatePercent).HasPrecision(5, 2);
             entity.Property(s => s.TaxAmount).HasPrecision(12, 2);
@@ -88,11 +91,17 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(s => s.ClientId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(s => s.Budget)
+                .WithMany()
+                .HasForeignKey(s => s.BudgetId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<SaleItem>(entity =>
         {
             entity.Property(i => i.UnitPrice).HasPrecision(12, 2);
+            entity.Property(i => i.PriceType).HasConversion<string>().HasMaxLength(20);
 
             entity.HasOne(i => i.Product)
                 .WithMany()
@@ -103,7 +112,9 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Budget>(entity =>
         {
             entity.Property(b => b.Subtotal).HasPrecision(12, 2);
+            entity.Property(b => b.DiscountType).HasConversion<string>().HasMaxLength(20);
             entity.Property(b => b.DiscountPercent).HasPrecision(5, 2);
+            entity.Property(b => b.DiscountFixedAmount).HasPrecision(12, 2);
             entity.Property(b => b.DiscountAmount).HasPrecision(12, 2);
             entity.Property(b => b.TaxRatePercent).HasPrecision(5, 2);
             entity.Property(b => b.TaxAmount).HasPrecision(12, 2);
@@ -129,11 +140,17 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(b => b.ClientId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(b => b.ConvertedSale)
+                .WithMany()
+                .HasForeignKey(b => b.ConvertedSaleId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<BudgetItem>(entity =>
         {
             entity.Property(i => i.UnitPrice).HasPrecision(12, 2);
+            entity.Property(i => i.PriceType).HasConversion<string>().HasMaxLength(20);
 
             entity.HasOne(i => i.Product)
                 .WithMany()

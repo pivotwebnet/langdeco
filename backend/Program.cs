@@ -23,6 +23,8 @@ builder.Services.AddScoped<DocumentNumberingService>();
 builder.Services.AddScoped<ReceiptPdfService>();
 builder.Services.AddScoped<ClientExcelService>();
 builder.Services.AddScoped<SupplierExcelService>();
+builder.Services.AddScoped<StockService>();
+builder.Services.AddScoped<BudgetLifecycleService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
