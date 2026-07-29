@@ -78,31 +78,34 @@ export default function ContenidoAdmin() {
     }
   }
 
-  if (loading) return <p>Cargando…</p>
-  if (!content) return <p style={{ color: 'crimson' }}>{error || 'No se pudo cargar el contenido'}</p>
+  if (loading) return <div className="adm-loading">Cargando…</div>
+  if (!content) return <div className="adm-alert error">{error || 'No se pudo cargar el contenido'}</div>
 
   return (
     <div style={{ maxWidth: 760 }}>
-      <h1 style={{ fontSize: 24, fontWeight: 500, margin: '0 0 4px' }}>Contenido del sitio</h1>
-      <p style={{ color: 'var(--ink-mute)', fontSize: 13, margin: '0 0 28px' }}>
-        Barra de promociones y las 3 imágenes de Inspiración de la home.
-      </p>
+      <div className="adm-page-head">
+        <div>
+          <h1 className="adm-title">Contenido del sitio</h1>
+          <p className="adm-eyebrow">Barra de promociones y las 3 imágenes de Inspiración de la home.</p>
+        </div>
+      </div>
 
-      {error && <p style={{ color: 'crimson', fontSize: 13 }}>{error}</p>}
+      {error && <div className="adm-alert error">{error}</div>}
 
       <section style={{ marginBottom: 36 }}>
         <Field label="Barra de promociones (arriba del header)">
           <input
+            className="adm-input"
             value={content.promoBar}
             onChange={(e) => setPromoBar(e.target.value)}
             placeholder="20% Descuento en contado o efectivo · 3 cuotas sin interés · Rafaela, Santa Fe"
-            style={{ ...inputStyle, width: '100%' }}
+            style={{ width: '100%' }}
           />
         </Field>
       </section>
 
       <section>
-        <h2 style={{ fontSize: 16, fontWeight: 500, margin: '0 0 12px' }}>Inspiración</h2>
+        <h2 className="adm-section-title">Inspiración</h2>
         {content.inspiracion.map((item, i) => (
           <InspiracionCard
             key={i}
@@ -116,10 +119,10 @@ export default function ContenidoAdmin() {
       </section>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24 }}>
-        <button className="btn" onClick={onSave} disabled={saving}>
+        <button className="adm-btn" onClick={onSave} disabled={saving}>
           {saving ? 'Guardando...' : 'Guardar cambios'}
         </button>
-        {saved && <span style={{ fontSize: 13, color: 'var(--leaf)' }}>Guardado ✓</span>}
+        {saved && <span className="adm-badge ok">Guardado ✓</span>}
       </div>
     </div>
   )
@@ -135,9 +138,9 @@ function InspiracionCard({ index, item, uploading, onChange, onUpload }: {
   const fileRef = useRef<HTMLInputElement>(null)
 
   return (
-    <div style={{ display: 'flex', gap: 16, padding: 16, border: '1px solid var(--line)', marginBottom: 12 }}>
+    <div className="adm-card" style={{ display: 'flex', gap: 16, padding: 16, marginBottom: 12 }}>
       <div style={{ flexShrink: 0, width: 120 }}>
-        <div style={{ width: 120, height: 150, background: '#ECEAE4', overflow: 'hidden', marginBottom: 8, position: 'relative' }}>
+        <div style={{ width: 120, height: 150, background: 'var(--adm-surface-2)', overflow: 'hidden', marginBottom: 8, position: 'relative' }}>
           {item.imageUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={item.imageUrl} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -150,25 +153,26 @@ function InspiracionCard({ index, item, uploading, onChange, onUpload }: {
           style={{ display: 'none' }}
           onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = '' }}
         />
-        <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={smallBtnStyle}>
+        <button type="button" className="adm-btn ghost sm" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ width: '100%' }}>
           {uploading ? 'Subiendo...' : 'Cambiar foto'}
         </button>
       </div>
 
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <Field label="Nombre"><input value={item.name} onChange={(e) => onChange({ name: e.target.value })} style={inputStyle} /></Field>
-        <Field label="Lugar"><input value={item.place} onChange={(e) => onChange({ place: e.target.value })} style={inputStyle} /></Field>
+      <div className="adm-grid-2" style={{ flex: 1, gap: 10 }}>
+        <Field label="Nombre"><input className="adm-input" value={item.name} onChange={(e) => onChange({ name: e.target.value })} style={{ width: '100%' }} /></Field>
+        <Field label="Lugar"><input className="adm-input" value={item.place} onChange={(e) => onChange({ place: e.target.value })} style={{ width: '100%' }} /></Field>
         <div style={{ gridColumn: '1 / -1' }}>
           <Field label="Descripción">
-            <textarea value={item.desc} onChange={(e) => onChange({ desc: e.target.value })} rows={2} style={{ ...inputStyle, width: '100%', resize: 'vertical' }} />
+            <textarea className="adm-textarea" value={item.desc} onChange={(e) => onChange({ desc: e.target.value })} rows={2} />
           </Field>
         </div>
         <div style={{ gridColumn: '1 / -1' }}>
           <Field label="Piezas (separadas por coma)">
             <input
+              className="adm-input"
               value={item.pieces.join(', ')}
               onChange={(e) => onChange({ pieces: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) })}
-              style={{ ...inputStyle, width: '100%' }}
+              style={{ width: '100%' }}
             />
           </Field>
         </div>
@@ -179,12 +183,9 @@ function InspiracionCard({ index, item, uploading, onChange, onUpload }: {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 4 }}>
-      <label style={{ display: 'block', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-mute)', marginBottom: 4 }}>{label}</label>
+    <div className="adm-field">
+      <label className="adm-field-label">{label}</label>
       {children}
     </div>
   )
 }
-
-const inputStyle: React.CSSProperties = { padding: '8px 10px', border: '1px solid var(--line)', fontSize: 13, fontFamily: 'var(--font-ui)' }
-const smallBtnStyle: React.CSSProperties = { padding: '4px 10px', border: '1px solid var(--line)', background: 'white', cursor: 'pointer', fontSize: 11, width: '100%' }

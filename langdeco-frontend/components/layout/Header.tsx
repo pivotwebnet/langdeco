@@ -1,36 +1,59 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useCart } from '@/lib/cart'
+import Link from 'next/link'
+import { useGSAP } from '@gsap/react'
+import gsap from 'gsap'
+import { useCart, useCartUI } from '@/lib/cart'
+import { Tooltip } from '@/components/ui/Tooltip'
+import { Magnetic } from '@/components/ui/Magnetic'
 import * as Icon from '@/components/ui/Icon'
 
 interface HeaderProps {
-  onCartOpen: () => void
   logoFont?: string
 }
 
 const NAV_LINKS = [
-  { label: 'Catálogo', href: '#catalogo' },
-  { label: 'Inspiración', href: '#inspiracion' },
-  { label: 'La selección', href: '#seleccion' },
-  { label: 'Visita', href: '#visita' },
+  { label: 'Catálogo', href: '/#catalogo' },
+  { label: 'Inspiración', href: '/#inspiracion' },
+  { label: 'La selección', href: '/#seleccion' },
+  { label: 'Visita', href: '/#visita' },
+  { label: 'Visualizador', href: '/visualizador' },
 ]
 
 const DRAWER_LINKS = [
-  { label: 'Catálogo', href: '#catalogo' },
-  { label: 'La Selección', href: '#seleccion' },
-  { label: 'Inspiración', href: '#inspiracion' },
-  { label: 'Visita el showroom', href: '#visita' },
-  { label: 'Diario', href: '#' },
+  { label: 'Catálogo', href: '/#catalogo' },
+  { label: 'La Selección', href: '/#seleccion' },
+  { label: 'Inspiración', href: '/#inspiracion' },
+  { label: 'Visualizador de espacios', href: '/visualizador' },
+  { label: 'Visita el showroom', href: '/#visita' },
 ]
 
-export function Header({ onCartOpen, logoFont = 'Sail' }: HeaderProps) {
+export function Header({ logoFont = 'Sail' }: HeaderProps) {
   const { count } = useCart()
+  const { open: onCartOpen } = useCartUI()
   const [menuOpen, setMenuOpen]     = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [scrolled, setScrolled]     = useState(false)
   const [query, setQuery]           = useState('')
   const inputRef                    = useRef<HTMLInputElement>(null)
+  const cartCountRef                = useRef<HTMLSpanElement>(null)
+  const cartBadgeRef                = useRef<HTMLSpanElement>(null)
+  const prevCount                   = useRef(count)
+
+  /* ── bump + flash del contador cuando se agrega algo al carrito ─ */
+  useGSAP(() => {
+    if (count > prevCount.current) {
+      for (const el of [cartCountRef.current, cartBadgeRef.current]) {
+        if (!el) continue
+        gsap.fromTo(el,
+          { scale: 1.5, color: 'var(--leaf)' },
+          { scale: 1, color: 'inherit', duration: 0.6, ease: 'power2.out' }
+        )
+      }
+    }
+    prevCount.current = count
+  }, { dependencies: [count] })
 
   /* ── scroll condensed ─────────────────────────────────── */
   useEffect(() => {
@@ -84,13 +107,13 @@ export function Header({ onCartOpen, logoFont = 'Sail' }: HeaderProps) {
         {/* Desktop: nav left */}
         <nav className="nav-left dt-only" aria-label="Navegación principal">
           {NAV_LINKS.slice(0, 2).map((l) => (
-            <a key={l.href} href={l.href} className="nav-link">{l.label}</a>
+            <Link key={l.href} href={l.href} className="nav-link">{l.label}</Link>
           ))}
         </nav>
 
         {/* Logo — always visible */}
-        <a
-          href="#"
+        <Link
+          href="/"
           style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
           aria-label="LasLongDeco — inicio"
         >
@@ -100,24 +123,32 @@ export function Header({ onCartOpen, logoFont = 'Sail' }: HeaderProps) {
             alt="LasLongDeco"
             className="logo-img"
           />
-        </a>
+        </Link>
 
         {/* Desktop: nav right */}
         <nav className="nav-right dt-only" aria-label="Navegación secundaria">
           {NAV_LINKS.slice(2).map((l) => (
-            <a key={l.href} href={l.href} className="nav-link">{l.label}</a>
+            <Link key={l.href} href={l.href} className="nav-link">{l.label}</Link>
           ))}
-          <button
-            className="icon-btn search-btn"
-            aria-label="Buscar"
-            onClick={() => setSearchOpen(true)}
-          >
-            <Icon.Search />
-          </button>
-          <button onClick={onCartOpen} aria-label="Ver selección" className="cart-pill">
-            <Icon.Cart />
-            <span style={{ minWidth: 14, textAlign: 'center' }}>{count}</span>
-          </button>
+          <Tooltip label="Buscar" side="bottom">
+            <Magnetic>
+              <button
+                className="icon-btn search-btn"
+                aria-label="Buscar"
+                onClick={() => setSearchOpen(true)}
+              >
+                <Icon.Search />
+              </button>
+            </Magnetic>
+          </Tooltip>
+          <Tooltip label="Ver selección" side="bottom">
+            <Magnetic>
+              <button onClick={onCartOpen} aria-label="Ver selección" className="cart-pill">
+                <Icon.Cart />
+                <span ref={cartCountRef} style={{ minWidth: 14, textAlign: 'center', display: 'inline-block' }}>{count}</span>
+              </button>
+            </Magnetic>
+          </Tooltip>
         </nav>
 
         {/* Mobile: search + cart group */}
@@ -140,7 +171,7 @@ export function Header({ onCartOpen, logoFont = 'Sail' }: HeaderProps) {
           >
             <Icon.Cart />
             {count > 0 && (
-              <span style={{
+              <span ref={cartBadgeRef} style={{
                 position: 'absolute', top: 2, right: 2,
                 width: 14, height: 14, borderRadius: 999,
                 background: 'var(--ink)', color: 'var(--bg)',
@@ -331,10 +362,10 @@ export function Header({ onCartOpen, logoFont = 'Sail' }: HeaderProps) {
             borderBottom: '1px solid var(--line)',
             flexShrink: 0,
           }}>
-            <a href="#" onClick={closeAll} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <Link href="/" onClick={closeAll} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/assets/logo.png" alt="LasLongDeco" style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
-            </a>
+            </Link>
             <button
               className="icon-btn"
               onClick={() => setMenuOpen(false)}
@@ -347,8 +378,8 @@ export function Header({ onCartOpen, logoFont = 'Sail' }: HeaderProps) {
 
           {/* Nav links */}
           <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-            {DRAWER_LINKS.map(({ label, href }, i) => (
-              <a
+            {DRAWER_LINKS.map(({ label, href }) => (
+              <Link
                 key={label}
                 href={href}
                 onClick={closeAll}
@@ -365,10 +396,8 @@ export function Header({ onCartOpen, logoFont = 'Sail' }: HeaderProps) {
                 onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent' }}
               >
                 <span>{label}</span>
-                <span className="mono" style={{ fontSize: 9, color: 'var(--ink-mute)' }}>
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-              </a>
+                <Icon.Arrow style={{ width: 12, height: 12, color: 'var(--ink-mute)' }} />
+              </Link>
             ))}
           </nav>
 

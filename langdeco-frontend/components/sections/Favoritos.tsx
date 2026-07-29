@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
-import { ParallaxElement } from '@/components/ui/ParallaxElement'
-import * as Icon from '@/components/ui/Icon'
+import { ProductCard } from '@/components/ui/ProductCard'
 import type { Product } from '@/lib/types'
 
 interface FavoritosProps {
@@ -16,6 +16,7 @@ export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProp
   const [active, setActive] = useState(0)
   const [added, setAdded] = useState<string | null>(null)
   const { add } = useCart()
+  const router = useRouter()
 
   const onAdd = (p: Product) => {
     add(p)
@@ -29,7 +30,7 @@ export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProp
         <RevealOnScroll>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
             <span className="kicker" />
-            <span className="mono">{String(active + 1).padStart(2, '0')} / {String(SELECCION.length).padStart(2, '0')}</span>
+            <span className="mono">{SELECCION.length} piezas</span>
           </div>
         </RevealOnScroll>
 
@@ -65,46 +66,14 @@ export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProp
             delay={Math.min(i, 3)}
             style={{ flex: '0 0 78%', scrollSnapAlign: 'start', position: 'relative' }}
           >
-            <article data-card>
-              <div style={{ position: 'relative', width: '100%', aspectRatio: p.aspect, marginBottom: 14, background: '#ECEAE4', overflow: 'hidden' }}>
-                {p.imageUrl && (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img data-reveal="clip" src={p.imageUrl} alt={p.name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
-                )}
-                {showBadge && i === 0 && (
-                  <div style={{ position: 'absolute', top: 12, left: 12, padding: '6px 10px', background: 'var(--ink)', color: 'var(--bg)', fontSize: 9, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 500 }}>
-                    ★ Favorito
-                  </div>
-                )}
-                <button
-                  aria-label="Añadir"
-                  onClick={() => onAdd(p)}
-                  style={{
-                    position: 'absolute', right: 10, bottom: 10,
-                    width: 36, height: 36, borderRadius: 999,
-                    background: added === p.id ? 'var(--leaf)' : 'var(--bg)',
-                    color: added === p.id ? 'var(--bg)' : 'var(--ink)',
-                    border: 0, cursor: 'pointer', display: 'grid', placeItems: 'center',
-                    boxShadow: '0 4px 14px -4px rgba(0,0,0,0.25)',
-                    transition: 'background 0.25s, color 0.25s',
-                    fontSize: added === p.id ? 16 : 'inherit',
-                  }}
-                >
-                  {added === p.id ? '✓' : <Icon.Plus />}
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-                <h3 style={{ fontFamily: 'var(--font-ui)', fontSize: 17, fontWeight: 500, margin: 0, letterSpacing: '-0.005em' }}>{p.name}</h3>
-                <span className="mono">{p.price}</span>
-              </div>
-              <div className="mono" style={{ marginBottom: 10 }}>{p.material}</div>
-              <p className="edit" style={{ fontSize: 14, lineHeight: 1.45, margin: '0 0 8px', color: 'var(--ink-soft)' }}>
-                <span style={{ fontStyle: 'normal', fontFamily: 'var(--font-ui)', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', marginRight: 6, color: 'var(--ink-mute)' }}>Nota ·</span>
-                {p.note}
-              </p>
-              <div className="mono" style={{ color: 'var(--ink-mute)' }}>{p.origin}</div>
-            </article>
+            <ProductCard
+              p={p}
+              variant="strip"
+              onAdd={onAdd}
+              added={added}
+              showBadge={showBadge && i === 0}
+              onSelect={(prod) => router.push(`/producto/${prod.id}`)}
+            />
           </RevealOnScroll>
         ))}
         <div style={{ flex: '0 0 24px' }} />
@@ -116,10 +85,6 @@ export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProp
           <span key={p.id} style={{ width: i === active ? 18 : 6, height: 2, background: i === active ? 'var(--ink)' : 'var(--line)', transition: 'width 0.3s, background 0.3s' }} />
         ))}
       </div>
-
-      <ParallaxElement speed={0.5} rotate={-7} style={{ top: '18%', left: -70, width: 160, height: 160, zIndex: 1 }} tag="3D · sillón flotante">
-        <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.3)' }} />
-      </ParallaxElement>
     </section>
   )
 }

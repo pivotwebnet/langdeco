@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useReducer, useEffect, useState, type ReactNode } from 'react'
 import type { CartItem, Product } from './types'
 
 const CART_KEY = '__lld_cart_v1'
@@ -88,5 +88,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
 export function useCart() {
   const ctx = useContext(CartContext)
   if (!ctx) throw new Error('useCart must be used within CartProvider')
+  return ctx
+}
+
+/* ── Cart drawer UI state — global, para que el mismo drawer se abra
+   desde el header, el catálogo o el botón flotante en cualquier página. */
+interface CartUIContextValue {
+  isOpen: boolean
+  open: () => void
+  close: () => void
+}
+
+const CartUIContext = createContext<CartUIContextValue | null>(null)
+
+export function CartUIProvider({ children }: { children: ReactNode }) {
+  const [isOpen, setIsOpen] = useState(false)
+  return (
+    <CartUIContext.Provider value={{ isOpen, open: () => setIsOpen(true), close: () => setIsOpen(false) }}>
+      {children}
+    </CartUIContext.Provider>
+  )
+}
+
+export function useCartUI() {
+  const ctx = useContext(CartUIContext)
+  if (!ctx) throw new Error('useCartUI must be used within CartUIProvider')
   return ctx
 }

@@ -251,13 +251,18 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet("summary")]
-    public async Task<ActionResult<SalesSummaryDto>> Summary()
+    public async Task<ActionResult<SalesSummaryDto>> Summary([FromQuery] DateTime? from, [FromQuery] DateTime? to)
     {
-        var paidSales = await _db.Sales
+        var query = _db.Sales
             .Include(s => s.Items)
             .Where(s => s.Status == SaleStatus.Paid)
             .AsNoTracking()
-            .ToListAsync();
+            .AsQueryable();
+
+        if (from.HasValue) query = query.Where(s => s.CreatedAt >= from.Value);
+        if (to.HasValue) query = query.Where(s => s.CreatedAt <= to.Value);
+
+        var paidSales = await query.ToListAsync();
 
         var revenue = paidSales.Sum(s => s.Total);
         var averageTicket = paidSales.Count > 0 ? revenue / paidSales.Count : 0;

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
+import { ProductCard } from '@/components/ui/ProductCard'
 import * as Icon from '@/components/ui/Icon'
 import type { Product } from '@/lib/types'
 
@@ -108,7 +109,7 @@ export function Productos({ products, initialCategory }: ProductosProps) {
           >
             {pageItems.map((p, i) => (
               <RevealOnScroll key={`${p.id}-${page}`} delay={Math.min(i, 3)}>
-                <ProductCard p={p} onAdd={onAdd} added={added} onSelect={(prod) => router.push(`/producto/${prod.id}`)} />
+                <ProductCard p={p} variant="grid" onAdd={onAdd} added={added} onSelect={(prod) => router.push(`/producto/${prod.id}`)} />
               </RevealOnScroll>
             ))}
           </div>
@@ -134,67 +135,5 @@ export function Productos({ products, initialCategory }: ProductosProps) {
           </div>
         )}
     </section>
-  )
-}
-
-function ProductCard({ p, onAdd, added, onSelect }: {
-  p: Product
-  onAdd: (p: Product) => void
-  added: string | null
-  onSelect: (p: Product) => void
-}) {
-  return (
-    <article className="prod-card" onClick={() => onSelect(p)}>
-      <div
-        className="prod-card-img"
-        style={{ position: 'relative', width: '100%', aspectRatio: p.aspect || '4/5', background: '#ECEAE4', marginBottom: 14, overflow: 'hidden' }}
-      >
-        {p.imageUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={p.imageUrl} alt={p.name}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
-          />
-        )}
-        <div className="prod-card-overlay" />
-        <div className="prod-card-gradient" />
-        <div className="prod-card-price-label">{p.price}</div>
-
-        {p.tag && (
-          <div className="mono" style={{ position: 'absolute', top: 10, left: 10, zIndex: 3, padding: '5px 9px', background: 'rgba(242,241,237,0.92)', fontSize: 8, letterSpacing: '0.12em' }}>
-            {p.tag}
-          </div>
-        )}
-
-        <button
-          aria-label="Añadir al carrito"
-          onClick={e => { e.stopPropagation(); onAdd(p) }}
-          style={{
-            position: 'absolute', right: 10, bottom: 10, zIndex: 4,
-            width: 36, height: 36, borderRadius: 999,
-            background: added === p.id ? 'var(--leaf)' : 'rgba(242,241,237,0.96)',
-            color: added === p.id ? 'var(--bg)' : 'var(--ink)',
-            border: 0, cursor: 'pointer', display: 'grid', placeItems: 'center',
-            boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)',
-            transition: 'background 0.25s, color 0.25s',
-            fontSize: added === p.id ? 16 : 'inherit',
-          }}
-        >
-          {added === p.id ? '✓' : <Icon.Plus />}
-        </button>
-      </div>
-
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
-          <h3 style={{ fontFamily: 'var(--font-ui)', fontSize: 17, fontWeight: 500, margin: 0, letterSpacing: '-0.01em', lineHeight: 1.25 }}>
-            {p.name}
-          </h3>
-          <span style={{ fontFamily: 'ui-monospace,"SF Mono",Menlo,monospace', fontSize: 13, letterSpacing: '0.04em', color: 'var(--ink)', fontWeight: 500, flexShrink: 0, marginTop: 2 }}>
-            {p.price}
-          </span>
-        </div>
-        <div className="mono" style={{ marginBottom: 3, fontSize: 10 }}>{p.material}</div>
-        {p.origin && <div className="mono" style={{ color: 'var(--ink-mute)', fontSize: 9 }}>{p.origin}</div>}
-      </div>
-    </article>
   )
 }

@@ -10,13 +10,45 @@ async function api<T>(path: string): Promise<T> {
   return data as T
 }
 
+type RangePreset = 3 | 6 | 12 | 'custom'
+
+function toDateInputValue(d: Date): string {
+  return d.toISOString().slice(0, 10)
+}
+
 export default function AdminDashboard() {
   const [summary, setSummary] = useState<SalesSummary | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const [preset, setPreset] = useState<RangePreset>(12)
+  const [customFrom, setCustomFrom] = useState('')
+  const [customTo, setCustomTo] = useState('')
 
   useEffect(() => {
-    api<SalesSummary>('/sales/summary').then(setSummary).catch((e) => setError((e as Error).message))
-  }, [])
+    let from: string | null = null
+    let to: string | null = null
+
+    if (preset === 'custom') {
+      if (!customFrom || !customTo) return
+      from = customFrom
+      to = customTo
+    } else {
+      const fromDate = new Date()
+      fromDate.setMonth(fromDate.getMonth() - preset)
+      from = toDateInputValue(fromDate)
+    }
+
+    const params = new URLSearchParams()
+    if (from) params.set('from', from)
+    if (to) params.set('to', to)
+
+    setLoading(true)
+    api<SalesSummary>(`/sales/summary?${params.toString()}`)
+      .then(setSummary)
+      .catch((e) => setError((e as Error).message))
+      .finally(() => setLoading(false))
+  }, [preset, customFrom, customTo])
 
   const stats = summary ? [
     { label: 'Ingresos (cobrados)', value: `$ ${summary.revenue.toLocaleString('de-DE')}` },
@@ -27,67 +59,110 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <div style={{ marginBottom: 40 }}>
-        <h1 style={{ fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 36, letterSpacing: '-0.02em', margin: 0, color: 'var(--ink)' }}>
-          Panel de control
-        </h1>
-        <p style={{ fontFamily: 'ui-monospace, monospace', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-mute)', marginTop: 8 }}>
-          LasLongDeco · Casa &amp; Curaduría
-        </p>
+      <div className="adm-page-head">
+        <div>
+          <h1 className="adm-title">Panel de control</h1>
+          <p className="adm-eyebrow">LasLongDeco · Casa &amp; Curaduría</p>
+        </div>
       </div>
 
-      {error && <div style={{ background: '#FEE2E2', color: '#991B1B', padding: '10px 16px', marginBottom: 24, fontSize: 13 }}>{error}</div>}
+      <div className="adm-toolbar">
+        {([3, 6, 12] as const).map((m) => (
+          <button
+            key={m}
+            className={`adm-btn sm ${preset === m ? '' : 'ghost'}`}
+            onClick={() => setPreset(m)}
+          >
+            {m} meses
+          </button>
+        ))}
+        <button
+          className={`adm-btn sm ${preset === 'custom' ? '' : 'ghost'}`}
+          onClick={() => setPreset('custom')}
+        >
+          Rango libre
+        </button>
+
+        {preset === 'custom' && (
+          <>
+            <input
+              className="adm-input"
+              type="date"
+              value={customFrom}
+              onChange={(e) => setCustomFrom(e.target.value)}
+              style={{ width: 150 }}
+            />
+            <span style={{ alignSelf: 'center' }}>a</span>
+            <input
+              className="adm-input"
+              type="date"
+              value={customTo}
+              onChange={(e) => setCustomTo(e.target.value)}
+              style={{ width: 150 }}
+            />
+          </>
+        )}
+      </div>
+
+      {error && <div className="adm-alert error">{error}</div>}
 
       {/* Stats grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 48 }}>
-        {stats.map((s) => (
-          <div key={s.label} style={{ background: 'white', border: '1px solid var(--line)', padding: '24px 28px' }}>
-            <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--ink-mute)', marginBottom: 12 }}>
-              {s.label}
-            </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 32, lineHeight: 1, color: 'var(--ink)' }}>
-              {s.value}
-            </div>
-          </div>
-        ))}
+      <div className="adm-stat-grid">
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="adm-stat-card">
+                <div className="adm-skel" style={{ width: 90, height: 9, marginBottom: 14 }} />
+                <div className="adm-skel" style={{ width: 60, height: 26 }} />
+              </div>
+            ))
+          : stats.map((s) => (
+              <div key={s.label} className="adm-stat-card">
+                <div className="adm-stat-label">{s.label}</div>
+                <div className="adm-stat-value">{s.value}</div>
+              </div>
+            ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+      <div className="adm-grid-2" style={{ display: 'grid', gap: 24 }}>
         {/* Ranking */}
         <div>
-          <h2 style={{ fontFamily: 'var(--font-ui)', fontWeight: 400, fontSize: 18, letterSpacing: '-0.01em', margin: '0 0 20px', color: 'var(--ink)' }}>
-            Más vendidos
-          </h2>
-          <div style={{ background: 'white', border: '1px solid var(--line)' }}>
-            {summary?.ranking.length ? summary.ranking.map((r, i) => (
-              <div key={r.productId} style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 24px', borderBottom: i < summary.ranking.length - 1 ? '1px solid var(--line)' : 'none' }}>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 500 }}>{r.productName}</div>
-                  <div className="mono" style={{ fontSize: 9, color: 'var(--ink-mute)' }}>{r.quantitySold} unidades vendidas</div>
+          <h2 className="adm-section-title">Más vendidos</h2>
+          <div className="adm-card">
+            {loading ? (
+              <div className="adm-loading">Cargando…</div>
+            ) : summary?.ranking.length ? (
+              summary.ranking.map((r, i) => (
+                <div key={r.productId} style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 22px', borderBottom: i < summary.ranking.length - 1 ? '1px solid var(--adm-border)' : 'none' }}>
+                  <div>
+                    <div className="adm-table-name">{r.productName}</div>
+                    <div className="adm-table-sub">{r.quantitySold} unidades vendidas</div>
+                  </div>
+                  <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>$ {r.revenue.toLocaleString('de-DE')}</div>
                 </div>
-                <div className="mono" style={{ fontSize: 12 }}>$ {r.revenue.toLocaleString('de-DE')}</div>
-              </div>
-            )) : (
-              <div style={{ padding: '32px 24px', textAlign: 'center', color: 'var(--ink-mute)', fontSize: 13 }}>Sin ventas cobradas todavía.</div>
+              ))
+            ) : (
+              <div className="adm-empty">Sin ventas cobradas todavía.</div>
             )}
           </div>
         </div>
 
         {/* Reposición de stock */}
         <div>
-          <h2 style={{ fontFamily: 'var(--font-ui)', fontWeight: 400, fontSize: 18, letterSpacing: '-0.01em', margin: '0 0 20px', color: 'var(--ink)' }}>
-            Reposición de stock
-          </h2>
-          <div style={{ background: 'white', border: '1px solid var(--line)' }}>
-            {summary?.lowStock.length ? summary.lowStock.map((p, i) => (
-              <div key={p.productId} style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 24px', borderBottom: i < summary.lowStock.length - 1 ? '1px solid var(--line)' : 'none' }}>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: 14 }}>{p.productName}</span>
-                <span className="mono" style={{ fontSize: 11, color: p.stock === 0 ? '#991B1B' : '#92400E' }}>
-                  {p.stock === 0 ? 'Agotado' : `${p.stock} unidades`}
-                </span>
-              </div>
-            )) : (
-              <div style={{ padding: '32px 24px', textAlign: 'center', color: 'var(--ink-mute)', fontSize: 13 }}>Todo con stock suficiente.</div>
+          <h2 className="adm-section-title">Reposición de stock</h2>
+          <div className="adm-card">
+            {loading ? (
+              <div className="adm-loading">Cargando…</div>
+            ) : summary?.lowStock.length ? (
+              summary.lowStock.map((p, i) => (
+                <div key={p.productId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 22px', borderBottom: i < summary.lowStock.length - 1 ? '1px solid var(--adm-border)' : 'none' }}>
+                  <span style={{ fontSize: 14 }}>{p.productName}</span>
+                  <span className={`adm-badge ${p.stock === 0 ? 'danger' : 'warn'}`}>
+                    {p.stock === 0 ? 'Agotado' : `${p.stock} unidades`}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="adm-empty">Todo con stock suficiente.</div>
             )}
           </div>
         </div>

@@ -21,9 +21,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#F8F7F4', fontFamily: 'var(--font-ui)' }}>
+    <div className="adm-shell">
       <AdminSidebar />
-      <main style={{ flex: 1, padding: '40px 48px', overflowY: 'auto' }}>
+      <main className="adm-main">
         {children}
       </main>
     </div>

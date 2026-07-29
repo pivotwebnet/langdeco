@@ -1,11 +1,19 @@
 'use client'
 
+import Link from 'next/link'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
-import { ParallaxElement } from '@/components/ui/ParallaxElement'
+import { Magnetic } from '@/components/ui/Magnetic'
 import * as Icon from '@/components/ui/Icon'
-import type { LookbookEntry } from '@/lib/types'
+import type { LookbookEntry, Product } from '@/lib/types'
 
-export function Inspiracion({ items }: { items: LookbookEntry[] }) {
+interface InspiracionProps {
+  items: LookbookEntry[]
+  products: Product[]
+}
+
+export function Inspiracion({ items, products }: InspiracionProps) {
+  const matchProduct = (pieceName: string) =>
+    products.find((prod) => prod.name.trim().toLowerCase() === pieceName.trim().toLowerCase())
   return (
     <section data-dt="lookbook" id="inspiracion" style={{ position: 'relative', padding: '72px 0', background: 'var(--ink)', color: 'var(--bg)', overflow: 'hidden' }}>
       <div className="look-header" style={{ padding: '0 24px', marginBottom: 32 }}>
@@ -71,18 +79,27 @@ export function Inspiracion({ items }: { items: LookbookEntry[] }) {
                 <p className="edit" style={{ fontSize: 16, lineHeight: 1.4, margin: '4px 0 12px', color: 'rgba(242,241,237,0.8)' }}>
                   {l.desc}
                 </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {l.pieces.map((p) => (
-                    <span
-                      key={p}
-                      style={{ fontSize: 11, padding: '6px 10px', border: '1px solid rgba(242,241,237,0.2)', color: 'rgba(242,241,237,0.85)', letterSpacing: '0.04em', cursor: 'pointer', transition: 'background 0.2s, color 0.2s' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg)'; e.currentTarget.style.color = 'var(--ink)' }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(242,241,237,0.85)' }}
-                    >
-                      {p}
-                    </span>
-                  ))}
-                </div>
+                {(() => {
+                  const linkedPieces = l.pieces
+                    .map((name) => matchProduct(name))
+                    .filter((prod): prod is Product => !!prod)
+                  if (linkedPieces.length === 0) return null
+                  return (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {linkedPieces.map((prod) => (
+                        <Link
+                          key={prod.id}
+                          href={`/producto/${prod.id}`}
+                          style={{ fontSize: 11, padding: '6px 10px', border: '1px solid rgba(242,241,237,0.2)', color: 'rgba(242,241,237,0.85)', letterSpacing: '0.04em', cursor: 'pointer', transition: 'background 0.2s, color 0.2s', textDecoration: 'none' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg)'; e.currentTarget.style.color = 'var(--ink)' }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(242,241,237,0.85)' }}
+                        >
+                          {prod.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )
+                })()}
               </div>
             </article>
           </RevealOnScroll>
@@ -90,14 +107,12 @@ export function Inspiracion({ items }: { items: LookbookEntry[] }) {
       </div>
 
       <div style={{ padding: '40px 24px 0', textAlign: 'center' }}>
-        <button className="btn" style={{ background: 'transparent', color: 'var(--bg)', borderColor: 'rgba(242,241,237,0.4)' }}>
-          Ver Inspiración completa <Icon.Arrow />
-        </button>
+        <Magnetic>
+          <Link href="/#catalogo" className="btn" style={{ background: 'transparent', color: 'var(--bg)', borderColor: 'rgba(242,241,237,0.4)', textDecoration: 'none' }}>
+            Ver todo el catálogo <Icon.Arrow />
+          </Link>
+        </Magnetic>
       </div>
-
-      <ParallaxElement speed={0.35} rotate={4} style={{ top: '8%', left: -60, width: 130, height: 180, zIndex: 1, opacity: 0.6 }}>
-        <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.15)' }} />
-      </ParallaxElement>
     </section>
   )
 }

@@ -51,38 +51,47 @@ export default function ConfiguracionAdmin() {
 
   return (
     <div>
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 32, letterSpacing: '-0.02em', margin: 0, color: 'var(--ink)' }}>
-          Configuración
-        </h1>
+      <div className="adm-page-head">
+        <div>
+          <h1 className="adm-title">Configuración</h1>
+        </div>
       </div>
 
-      <div style={{ background: 'white', border: '1px solid var(--line)', padding: '28px 32px', maxWidth: 420, marginBottom: 24 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 500, margin: '0 0 20px' }}>Cambiar contraseña</h2>
+      <div className="adm-card" style={{ padding: '28px 32px', maxWidth: 420, marginBottom: 24 }}>
+        <h2 className="adm-card-title" style={{ marginBottom: 20 }}>Cambiar contraseña</h2>
 
         <form onSubmit={onSubmit}>
-          <label style={{ display: 'block', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-mute)', marginBottom: 6 }}>Contraseña actual</label>
-          <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required
-            style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--line)', marginBottom: 16, fontSize: 14 }} />
+          <Field label="Contraseña actual">
+            <input className="adm-input" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required style={{ width: '100%' }} />
+          </Field>
 
-          <label style={{ display: 'block', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-mute)', marginBottom: 6 }}>Nueva contraseña</label>
-          <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8}
-            style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--line)', marginBottom: 16, fontSize: 14 }} />
+          <Field label="Nueva contraseña">
+            <input className="adm-input" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8} style={{ width: '100%' }} />
+          </Field>
 
-          <label style={{ display: 'block', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-mute)', marginBottom: 6 }}>Confirmar nueva contraseña</label>
-          <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={8}
-            style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--line)', marginBottom: 20, fontSize: 14 }} />
+          <Field label="Confirmar nueva contraseña">
+            <input className="adm-input" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={8} style={{ width: '100%' }} />
+          </Field>
 
-          {error && <p style={{ color: '#B91C1C', fontSize: 13, marginBottom: 16 }}>{error}</p>}
-          {success && <p style={{ color: '#065F46', fontSize: 13, marginBottom: 16 }}>Contraseña actualizada.</p>}
+          {error && <div className="adm-alert error">{error}</div>}
+          {success && <div className="adm-alert success">Contraseña actualizada.</div>}
 
-          <button type="submit" disabled={saving} className="btn" style={{ width: '100%', justifyContent: 'center' }}>
+          <button type="submit" disabled={saving} className="adm-btn" style={{ width: '100%', marginTop: 4 }}>
             {saving ? 'Guardando...' : 'Actualizar contraseña'}
           </button>
         </form>
       </div>
 
-      <button onClick={onLogout} className="btn ghost" style={{ fontSize: 12 }}>Cerrar sesión</button>
+      <button onClick={onLogout} className="adm-btn ghost">Cerrar sesión</button>
+    </div>
+  )
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="adm-field" style={{ marginBottom: 16 }}>
+      <label className="adm-field-label">{label}</label>
+      {children}
     </div>
   )
 }

@@ -33,24 +33,27 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#F8F7F4', fontFamily: 'var(--font-ui)' }}>
-      <form onSubmit={onSubmit} style={{ background: 'white', border: '1px solid var(--line)', padding: '40px 36px', width: 340 }}>
+    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--adm-bg)', fontFamily: 'var(--font-ui)' }}>
+      <form onSubmit={onSubmit} className="adm-card" style={{ padding: '40px 36px', width: 340 }}>
         <div style={{ fontFamily: 'var(--font-script)', fontSize: 26, marginBottom: 4 }}>LasLongDeco</div>
         <h1 style={{ fontSize: 18, fontWeight: 500, margin: '0 0 24px' }}>Ingresar al panel</h1>
 
-        <label style={{ display: 'block', fontSize: 11, marginBottom: 6, color: 'var(--ink-mute)' }}>Contraseña</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          autoFocus
-          style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--line)', marginBottom: 20, fontSize: 14 }}
-        />
+        <div className="adm-field">
+          <label className="adm-field-label">Contraseña</label>
+          <input
+            className="adm-input"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoFocus
+            style={{ width: '100%' }}
+          />
+        </div>
 
-        {error && <p style={{ color: '#B91C1C', fontSize: 13, marginBottom: 16 }}>{error}</p>}
+        {error && <div className="adm-alert error" style={{ marginTop: 16 }}>{error}</div>}
 
-        <button type="submit" disabled={loading} className="btn" style={{ width: '100%', justifyContent: 'center' }}>
+        <button type="submit" disabled={loading} className="adm-btn" style={{ width: '100%', marginTop: 20 }}>
           {loading ? 'Ingresando...' : 'Ingresar'}
         </button>
       </form>

@@ -97,6 +97,16 @@ export function Facebook(props: IconProps) {
   )
 }
 
+export function ImageOff(props: IconProps) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1" {...props}>
+      <rect x="2.5" y="4.5" width="17" height="13" rx="1"/>
+      <circle cx="8" cy="9.5" r="1.6"/>
+      <path d="M4 15.5l4.5-4.5 3 3 2-2L19.5 17"/>
+    </svg>
+  )
+}
+
 export function Trash(props: IconProps) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>

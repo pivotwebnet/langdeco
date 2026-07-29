@@ -133,79 +133,75 @@ export default function ProductosAdmin() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
+      <div className="adm-page-head">
         <div>
-          <h1 style={{ fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 32, letterSpacing: '-0.02em', margin: 0, color: 'var(--ink)' }}>
-            Productos
-          </h1>
-          <p style={{ fontFamily: 'ui-monospace, monospace', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-mute)', marginTop: 6 }}>
-            {filtered.length} piezas
-          </p>
+          <h1 className="adm-title">Productos</h1>
+          <p className="adm-eyebrow">{filtered.length} piezas</p>
         </div>
-        <button className="btn" style={{ fontSize: 11 }} onClick={openCreate}>+ Añadir pieza</button>
+        <button className="adm-btn" onClick={openCreate}>+ Añadir pieza</button>
       </div>
 
-      {error && <div style={{ background: '#FEE2E2', color: '#991B1B', padding: '10px 16px', marginBottom: 16, fontSize: 13 }}>{error}</div>}
+      {error && <div className="adm-alert error">{error}</div>}
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className="adm-toolbar">
         <input
+          className="adm-input"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar pieza..."
-          style={{ flex: 1, maxWidth: 280, border: '1px solid var(--line)', background: 'white', padding: '10px 14px', fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink)', outline: 'none' }}
+          style={{ flex: 1, maxWidth: 280 }}
         />
-        <select value={filter} onChange={(e) => setFilter(e.target.value)} style={{ padding: '10px 14px', border: '1px solid var(--line)', fontSize: 13 }}>
+        <select className="adm-select" value={filter} onChange={(e) => setFilter(e.target.value)}>
           <option value="all">Todas las categorías</option>
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <label style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <label className="adm-checkbox-row">
           <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
           Mostrar inactivos
         </label>
       </div>
 
-      <div style={{ background: 'white', border: '1px solid var(--line)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 80px 100px 140px', padding: '12px 24px', borderBottom: '1px solid var(--line)', background: '#F8F7F4' }}>
-          {['Nombre', 'Categoría', 'Precio', 'Stock', 'Estado', ''].map((h) => (
-            <span key={h} style={{ fontFamily: 'ui-monospace, monospace', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-mute)' }}>{h}</span>
-          ))}
-        </div>
-        {loading && <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-mute)' }}>Cargando...</div>}
-        {!loading && filtered.map((p, i) => (
-          <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 80px 100px 140px', padding: '16px 24px', borderBottom: i < filtered.length - 1 ? '1px solid var(--line)' : 'none', alignItems: 'center', opacity: p.active ? 1 : 0.5 }}>
-            <div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 500, color: 'var(--ink)', marginBottom: 2 }}>
-                {p.name}{p.featured && ' ★'}
-              </div>
-              <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 9, letterSpacing: '0.08em', color: 'var(--ink-mute)', textTransform: 'uppercase' }}>{p.tag || '—'}</div>
-            </div>
-            <div style={{ fontSize: 13, color: 'var(--ink-soft)' }}>{p.categoryName}</div>
-            <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: 'var(--ink)' }}>$ {p.price.toLocaleString('de-DE')}</div>
-            <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>{p.stock}</div>
-            <div>
-              <span className="mono" style={{ fontSize: 9, color: p.active ? '#065F46' : '#991B1B' }}>{p.active ? 'Activo' : 'Inactivo'}</span>
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => openEdit(p)} style={{ background: 'none', border: 0, cursor: 'pointer', fontFamily: 'ui-monospace, monospace', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-mute)', padding: 0 }}>
-                Editar
-              </button>
-              {p.active ? (
-                <button onClick={() => onDelete(p)} style={{ background: 'none', border: 0, cursor: 'pointer', fontFamily: 'ui-monospace, monospace', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#991B1B', padding: 0 }}>
-                  Eliminar
-                </button>
-              ) : (
-                <button onClick={() => onActivate(p)} style={{ background: 'none', border: 0, cursor: 'pointer', fontFamily: 'ui-monospace, monospace', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#065F46', padding: 0 }}>
-                  Reactivar
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-        {!loading && filtered.length === 0 && (
-          <div style={{ padding: '40px 24px', textAlign: 'center', fontFamily: 'var(--font-edit)', fontStyle: 'italic', color: 'var(--ink-mute)', fontSize: 18 }}>
-            Sin resultados.
-          </div>
-        )}
+      <div className="adm-card adm-table-wrap">
+        <table className="adm-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Categoría</th>
+              <th>Precio</th>
+              <th>Stock</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && (
+              <tr><td colSpan={6}><div className="adm-loading">Cargando…</div></td></tr>
+            )}
+            {!loading && filtered.map((p) => (
+              <tr key={p.id} className={p.active ? '' : 'inactive'}>
+                <td>
+                  <div className="adm-table-name">{p.name}{p.featured && ' ★'}</div>
+                  <div className="adm-table-sub">{p.tag || '—'}</div>
+                </td>
+                <td>{p.categoryName}</td>
+                <td className="mono">$ {p.price.toLocaleString('de-DE')}</td>
+                <td className="mono">{p.stock}</td>
+                <td><span className={`adm-badge ${p.active ? 'ok' : 'danger'}`}>{p.active ? 'Activo' : 'Inactivo'}</span></td>
+                <td>
+                  <div className="adm-table-actions">
+                    <button className="adm-link-btn" onClick={() => openEdit(p)}>Editar</button>
+                    {p.active ? (
+                      <button className="adm-link-btn danger" onClick={() => onDelete(p)}>Eliminar</button>
+                    ) : (
+                      <button className="adm-link-btn success" onClick={() => onActivate(p)}>Reactivar</button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!loading && filtered.length === 0 && <div className="adm-empty">Sin resultados.</div>}
       </div>
 
       {form && (
@@ -251,53 +247,53 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
   const removeImage = (i: number) => set('images', form.images.filter((_, idx) => idx !== i))
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'grid', placeItems: 'center', zIndex: 100, padding: 20 }}>
-      <div style={{ background: 'white', width: 640, maxHeight: '90vh', overflowY: 'auto', padding: 32 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 500, margin: '0 0 20px' }}>{isNew ? 'Nueva pieza' : 'Editar pieza'}</h2>
+    <div className="adm-modal-backdrop">
+      <div className="adm-modal">
+        <h2 className="adm-modal-title">{isNew ? 'Nueva pieza' : 'Editar pieza'}</h2>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+        <div className="adm-grid-2" style={{ marginBottom: 12 }}>
           <Field label="Id (slug)">
-            <input value={form.id} onChange={(e) => set('id', e.target.value)} disabled={!isNew} placeholder="mesa-comedor" style={inputStyle} />
+            <input className="adm-input" value={form.id} onChange={(e) => set('id', e.target.value)} disabled={!isNew} placeholder="mesa-comedor" style={{ width: '100%' }} />
           </Field>
           <Field label="Categoría">
-            <select value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)} style={inputStyle}>
+            <select className="adm-select" value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)} style={{ width: '100%' }}>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </Field>
         </div>
 
-        <Field label="Nombre"><input value={form.name} onChange={(e) => set('name', e.target.value)} style={{ ...inputStyle, width: '100%' }} /></Field>
+        <Field label="Nombre"><input className="adm-input" value={form.name} onChange={(e) => set('name', e.target.value)} style={{ width: '100%' }} /></Field>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-          <Field label="Tag (opcional)"><input value={form.tag} onChange={(e) => set('tag', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Aspecto (ej. 4/5)"><input value={form.aspect} onChange={(e) => set('aspect', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Material"><input value={form.material} onChange={(e) => set('material', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Origen (opcional)"><input value={form.origin} onChange={(e) => set('origin', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Precio"><input type="number" value={form.price} onChange={(e) => set('price', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Precio tachado (opcional)"><input type="number" value={form.originalPrice} onChange={(e) => set('originalPrice', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Stock"><input type="number" value={form.stock} onChange={(e) => set('stock', e.target.value)} style={inputStyle} /></Field>
+        <div className="adm-grid-2" style={{ marginTop: 12 }}>
+          <Field label="Tag (opcional)"><input className="adm-input" value={form.tag} onChange={(e) => set('tag', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Aspecto (ej. 4/5)"><input className="adm-input" value={form.aspect} onChange={(e) => set('aspect', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Material"><input className="adm-input" value={form.material} onChange={(e) => set('material', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Origen (opcional)"><input className="adm-input" value={form.origin} onChange={(e) => set('origin', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Precio"><input className="adm-input" type="number" value={form.price} onChange={(e) => set('price', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Precio tachado (opcional)"><input className="adm-input" type="number" value={form.originalPrice} onChange={(e) => set('originalPrice', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Stock"><input className="adm-input" type="number" value={form.stock} onChange={(e) => set('stock', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Destacado">
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+            <label className="adm-checkbox-row" style={{ marginTop: 8 }}>
               <input type="checkbox" checked={form.featured} onChange={(e) => set('featured', e.target.checked)} />
-              <span style={{ fontSize: 13 }}>Selección destacada</span>
+              <span>Selección destacada</span>
             </label>
           </Field>
         </div>
 
         <Field label="Nota curatorial (opcional)">
-          <textarea value={form.note} onChange={(e) => set('note', e.target.value)} rows={2} style={{ ...inputStyle, width: '100%', resize: 'vertical' }} />
+          <textarea className="adm-textarea" value={form.note} onChange={(e) => set('note', e.target.value)} rows={2} />
         </Field>
 
         <div style={{ marginTop: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span className="mono">Ficha técnica</span>
-            <button type="button" onClick={addSpec} style={smallBtnStyle}>+ Agregar</button>
+            <button type="button" className="adm-btn ghost sm" onClick={addSpec}>+ Agregar</button>
           </div>
           {form.specs.map((s, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-              <input value={s.label} onChange={(e) => updateSpec(i, 'label', e.target.value)} placeholder="Etiqueta" style={{ ...inputStyle, flex: 1 }} />
-              <input value={s.value} onChange={(e) => updateSpec(i, 'value', e.target.value)} placeholder="Valor" style={{ ...inputStyle, flex: 1 }} />
-              <button type="button" onClick={() => removeSpec(i)} style={smallBtnStyle}>✕</button>
+              <input className="adm-input" value={s.label} onChange={(e) => updateSpec(i, 'label', e.target.value)} placeholder="Etiqueta" style={{ flex: 1 }} />
+              <input className="adm-input" value={s.value} onChange={(e) => updateSpec(i, 'value', e.target.value)} placeholder="Valor" style={{ flex: 1 }} />
+              <button type="button" className="adm-btn ghost sm" onClick={() => removeSpec(i)}>✕</button>
             </div>
           ))}
         </div>
@@ -305,21 +301,21 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
         <div style={{ marginTop: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span className="mono">Fotos (URL, hasta 6 — la primera es la portada)</span>
-            <button type="button" onClick={addImage} disabled={form.images.length >= 6} style={smallBtnStyle}>+ Agregar</button>
+            <button type="button" className="adm-btn ghost sm" onClick={addImage} disabled={form.images.length >= 6}>+ Agregar</button>
           </div>
           {form.images.map((url, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-              <input value={url} onChange={(e) => updateImage(i, e.target.value)} placeholder="https://..." style={{ ...inputStyle, flex: 1 }} />
-              <button type="button" onClick={() => removeImage(i)} style={smallBtnStyle}>✕</button>
+              <input className="adm-input" value={url} onChange={(e) => updateImage(i, e.target.value)} placeholder="https://..." style={{ flex: 1 }} />
+              <button type="button" className="adm-btn ghost sm" onClick={() => removeImage(i)}>✕</button>
             </div>
           ))}
         </div>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-          <button className="btn" onClick={onSave} disabled={saving} style={{ flex: 1, justifyContent: 'center' }}>
+          <button className="adm-btn" onClick={onSave} disabled={saving} style={{ flex: 1 }}>
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
-          <button className="btn ghost" onClick={onCancel} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
+          <button className="adm-btn ghost" onClick={onCancel} style={{ flex: 1 }}>Cancelar</button>
         </div>
       </div>
     </div>
@@ -328,12 +324,9 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 4 }}>
-      <label style={{ display: 'block', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-mute)', marginBottom: 4 }}>{label}</label>
+    <div className="adm-field">
+      <label className="adm-field-label">{label}</label>
       {children}
     </div>
   )
 }
-
-const inputStyle: React.CSSProperties = { padding: '8px 10px', border: '1px solid var(--line)', fontSize: 13, fontFamily: 'var(--font-ui)' }
-const smallBtnStyle: React.CSSProperties = { padding: '4px 10px', border: '1px solid var(--line)', background: 'white', cursor: 'pointer', fontSize: 11 }

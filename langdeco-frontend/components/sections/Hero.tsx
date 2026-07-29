@@ -4,9 +4,9 @@ import { useRef } from 'react'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { ParallaxElement } from '@/components/ui/ParallaxElement'
-import { FurnitureHotspot } from '@/components/ui/FurnitureHotspot'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
+import { SplitChars } from '@/components/ui/SplitChars'
+import { Magnetic } from '@/components/ui/Magnetic'
 import * as Icon from '@/components/ui/Icon'
 import type { HeroVariant } from '@/lib/types'
 
@@ -37,12 +37,19 @@ export function Hero({ variant = 'editorial' }: HeroProps) {
 
   useGSAP(() => {
     if (!titleRef.current) return
-    const lines = titleRef.current.querySelectorAll<HTMLElement>('.hero-line')
-    gsap.fromTo(lines,
+    const chars = titleRef.current.querySelectorAll<HTMLElement>('.split-char')
+    const masks = titleRef.current.querySelectorAll<HTMLElement>('.split-mask')
+
+    // Entrada: letra por letra al cargar/scrollear a la vista. Al terminar,
+    // liberamos la máscara overflow:hidden — si no, ascendentes como la "d" quedan recortados.
+    gsap.fromTo(chars,
       { yPercent: 108, opacity: 0 },
-      { yPercent: 0, opacity: 1, duration: 1.25, ease: 'expo.out', stagger: 0.22, delay: 0.25 }
+      {
+        yPercent: 0, opacity: 1, duration: 0.9, ease: 'expo.out', stagger: 0.018, delay: 0.25,
+        onComplete: () => masks.forEach((m) => { m.style.overflow = 'visible' }),
+      }
     )
-  })
+  }, { scope: titleRef })
 
   if (variant === 'cinematic') {
     return (
@@ -63,14 +70,13 @@ export function Hero({ variant = 'editorial' }: HeroProps) {
                 </h1>
               </RevealOnScroll>
             </div>
-            <button className="btn" style={{ borderColor: '#F2F1ED', background: '#F2F1ED', color: '#0A0A0A' }}>
-              Ver la selección <Icon.Arrow />
-            </button>
+            <Magnetic>
+              <button className="btn" style={{ borderColor: '#F2F1ED', background: '#F2F1ED', color: '#0A0A0A' }}>
+                Ver la selección <Icon.Arrow />
+              </button>
+            </Magnetic>
           </div>
         </div>
-        <ParallaxElement speed={0.45} rotate={-6} style={{ top: '24%', right: -60, width: 180, height: 240, zIndex: 5 }} tag="3D · monstera deliciosa">
-          <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.3)' }} />
-        </ParallaxElement>
       </section>
     )
   }
@@ -102,10 +108,6 @@ export function Hero({ variant = 'editorial' }: HeroProps) {
             </div>
           </div>
         </RevealOnScroll>
-
-        <ParallaxElement speed={0.4} rotate={5} style={{ top: '40%', left: -50, width: 140, height: 200, zIndex: 5 }} tag="3D · palmera salón">
-          <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.3)' }} />
-        </ParallaxElement>
       </section>
     )
   }
@@ -124,10 +126,12 @@ export function Hero({ variant = 'editorial' }: HeroProps) {
         <div className="hero-text-col">
           <h1 ref={titleRef} className="display hero-h1" style={{ fontSize: 48, margin: '0 0 6px' }}>
             <span style={{ display: 'block', overflow: 'hidden', lineHeight: 1.06 }}>
-              <span className="hero-line" style={{ display: 'block' }}>El hogar es</span>
+              <span style={{ display: 'block' }}><SplitChars text="El hogar es" /></span>
             </span>
             <span style={{ display: 'block', overflow: 'hidden', lineHeight: 1.06 }}>
-              <em className="hero-line" style={{ display: 'block', fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>donde comienza la historia</em>
+              <em style={{ display: 'block', fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>
+                <SplitChars text="donde comienza la historia" />
+              </em>
             </span>
           </h1>
 
@@ -158,23 +162,6 @@ export function Hero({ variant = 'editorial' }: HeroProps) {
           </div>
         </RevealOnScroll>
       </div>
-
-      {/*
-        Piezas flotantes clickeables: hover en desktop (escala + label), tap navega directo en mobile.
-        Mapeo mueble → categoría es provisorio (el catálogo hoy solo tiene "mayor"/"tesoro",
-        no hay categorías por tipo de mueble todavía) — cambiar cat= acá cuando existan categorías reales.
-      */}
-      <FurnitureHotspot href="/?cat=mayor#catalogo" label="Sillón" speed={0.55} rotate={-8} style={{ top: '28%', right: -58, width: 150, height: 190 }}>
-        <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.3)' }} />
-      </FurnitureHotspot>
-
-      <FurnitureHotspot href="/?cat=tesoro#catalogo" label="Lámpara" speed={0.4} rotate={5} style={{ top: '4%', left: -34, width: 88, height: 168 }}>
-        <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.3)', borderRadius: '999px 999px 8px 8px' }} />
-      </FurnitureHotspot>
-
-      <FurnitureHotspot href="/?cat=tesoro#catalogo" label="Mesa de luz" speed={0.3} rotate={4} style={{ bottom: '4%', left: -44, width: 120, height: 110 }}>
-        <div style={{ width: '100%', height: '100%', background: 'rgba(255,255,255,0.3)' }} />
-      </FurnitureHotspot>
     </section>
   )
 }

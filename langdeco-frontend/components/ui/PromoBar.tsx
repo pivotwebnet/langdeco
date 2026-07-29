@@ -1,18 +1,31 @@
 'use client'
 
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 
 export function PromoBar({ text }: { text: string }) {
   const trackRef = useRef<HTMLDivElement>(null)
+  const itemRef = useRef<HTMLSpanElement>(null)
+  const [copies, setCopies] = useState(4)
+
+  // Calcula cuántas copias del texto hacen falta para que la tira nunca
+  // se quede corta (evita el hueco/corte que se veía al llegar al borde).
+  useEffect(() => {
+    const item = itemRef.current
+    if (!item) return
+    const itemWidth = item.getBoundingClientRect().width || 1
+    const needed = Math.ceil((window.innerWidth * 2) / itemWidth) + 2
+    setCopies(Math.max(needed, 4))
+  }, [text])
 
   useGSAP(() => {
     const track = trackRef.current
-    if (!track) return
-    const totalW = track.scrollWidth / 2
-    gsap.fromTo(track, { x: 0 }, { x: -totalW, duration: 26, ease: 'none', repeat: -1 })
-  }, { scope: trackRef })
+    if (!track || copies < 2) return
+    const totalW = track.scrollWidth / copies
+    const tween = gsap.fromTo(track, { x: 0 }, { x: -totalW, duration: 26, ease: 'none', repeat: -1 })
+    return () => { tween.kill() }
+  }, { scope: trackRef, dependencies: [copies, text] })
 
   if (!text) return null
 
@@ -23,12 +36,14 @@ export function PromoBar({ text }: { text: string }) {
         position: 'sticky', top: 0, zIndex: 41,
         height: 'var(--promo-h)', overflow: 'hidden',
         background: 'var(--ink)', display: 'flex', alignItems: 'center',
+        width: '100%',
       }}
     >
       <div ref={trackRef} style={{ display: 'flex', whiteSpace: 'nowrap', width: 'max-content' }}>
-        {[text, text].map((t, i) => (
+        {Array.from({ length: copies }).map((_, i) => (
           <span
             key={i}
+            ref={i === 0 ? itemRef : undefined}
             style={{
               display: 'inline-flex', alignItems: 'center',
               paddingRight: 48,
@@ -37,7 +52,7 @@ export function PromoBar({ text }: { text: string }) {
               color: 'var(--bg)',
             }}
           >
-            {t}
+            {text}
           </span>
         ))}
       </div>

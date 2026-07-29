@@ -1,13 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
+import { useGSAP } from '@gsap/react'
+import gsap from 'gsap'
 import { useCart } from '@/lib/cart'
 import { Header } from '@/components/layout/Header'
-import { CartDrawer } from '@/components/layout/CartDrawer'
 import { Footer } from '@/components/layout/Footer'
+import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
 import * as Icon from '@/components/ui/Icon'
 import type { Product } from '@/lib/types'
+
+const WHATSAPP_NUMBER = '5493492287864'
 
 interface Props {
   product: Product
@@ -16,11 +20,18 @@ interface Props {
 
 export function ProductoDetalle({ product, related }: Props) {
   const [imgIdx, setImgIdx]   = useState(0)
+  const [imgError, setImgError] = useState(false)
   const [added, setAdded]     = useState(false)
-  const [cartOpen, setCartOpen] = useState(false)
+  const ctaRef = useRef<HTMLButtonElement>(null)
   const { add } = useCart()
 
   const allImages = [product.imageUrl, ...(product.extraImages ?? [])].filter(Boolean) as string[]
+  const showMainImage = !!allImages[imgIdx] && !imgError
+
+  useGSAP(() => {
+    if (!added || !ctaRef.current) return
+    gsap.fromTo(ctaRef.current, { scale: 1 }, { scale: 1.04, duration: 0.16, ease: 'power2.out', yoyo: true, repeat: 1 })
+  }, { dependencies: [added] })
 
   const onAdd = () => {
     add(product)
@@ -28,10 +39,13 @@ export function ProductoDetalle({ product, related }: Props) {
     setTimeout(() => setAdded(false), 1400)
   }
 
+  const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+    `Hola, me interesa consultar por "${product.name}" (${product.price}). ¿Me pasás más información?`
+  )}`
+
   return (
     <>
-      <Header onCartOpen={() => setCartOpen(true)} />
-      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+      <Header />
 
       <main style={{ paddingTop: 'var(--header-h)', minHeight: '100vh', background: 'var(--bg)' }}>
 
@@ -57,10 +71,12 @@ export function ProductoDetalle({ product, related }: Props) {
 
           {/* Gallery */}
           <div className="pd-gallery">
-            <div className="pd-main-img">
-              {allImages[imgIdx] && (
+            <div className="pd-main-wrap">
+              {showMainImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img key={allImages[imgIdx]} src={allImages[imgIdx]} alt={product.name} />
+                <img key={allImages[imgIdx]} src={allImages[imgIdx]} alt={product.name} onError={() => setImgError(true)} />
+              ) : (
+                <ImagePlaceholder size={36} />
               )}
             </div>
             {allImages.length > 1 && (
@@ -69,7 +85,7 @@ export function ProductoDetalle({ product, related }: Props) {
                   <button
                     key={i}
                     className={`pd-thumb${i === imgIdx ? ' active' : ''}`}
-                    onClick={() => setImgIdx(i)}
+                    onClick={() => { setImgIdx(i); setImgError(false) }}
                     aria-label={`Imagen ${i + 1}`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -92,9 +108,6 @@ export function ProductoDetalle({ product, related }: Props) {
             <div className="pd-price">{product.price}</div>
 
             <div className="mono" style={{ marginBottom: 4, marginTop: 16 }}>{product.material}</div>
-            {product.origin && (
-              <div className="mono" style={{ color: 'var(--ink-mute)' }}>{product.origin}</div>
-            )}
 
             {/* Ficha técnica */}
             {product.specs && product.specs.length > 0 && (
@@ -112,14 +125,27 @@ export function ProductoDetalle({ product, related }: Props) {
               </div>
             )}
 
-            <button
-              className={`btn pd-cta${added ? ' added' : ''}`}
-              onClick={onAdd}
-            >
-              {added
-                ? <><span>✓</span>&nbsp;Añadido a la selección</>
-                : <><Icon.Plus />&nbsp;Añadir a la selección</>}
-            </button>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                ref={ctaRef}
+                className={`btn pd-cta${added ? ' added' : ''}`}
+                onClick={onAdd}
+                style={{ flex: 1 }}
+              >
+                {added
+                  ? <><span>✓</span>&nbsp;Añadido a la selección</>
+                  : <><Icon.Plus />&nbsp;Añadir a la selección</>}
+              </button>
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pd-wa-cta"
+                aria-label={`Consultar por ${product.name} en WhatsApp`}
+              >
+                <Icon.Whatsapp />
+              </a>
+            </div>
 
             <div className="mono" style={{ marginTop: 16, fontSize: 9, color: 'var(--ink-mute)', lineHeight: 1.7 }}>
               Consultas por WhatsApp · Envíos a todo el país<br />
@@ -136,13 +162,15 @@ export function ProductoDetalle({ product, related }: Props) {
               <div className="mono" style={{ marginBottom: 28, fontSize: 9, letterSpacing: '0.22em' }}>
                 También te puede gustar
               </div>
-              <div className="pd-related-grid">
+              <div className="pd-related-track">
                 {related.map(p => (
                   <Link key={p.id} href={`/producto/${p.id}`} className="pd-related-card">
-                    <div className="pd-related-img">
-                      {p.imageUrl && (
+                    <div className="pd-related-img" style={{ position: 'relative' }}>
+                      {p.imageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={p.imageUrl} alt={p.name} />
+                      ) : (
+                        <ImagePlaceholder size={18} />
                       )}
                     </div>
                     <div style={{

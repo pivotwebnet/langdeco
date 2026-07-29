@@ -1,18 +1,17 @@
 import type { CSSProperties, ReactNode } from 'react'
+import Link from 'next/link'
 
 const FOOTER_LINKS = {
   coleccion: [
-    { label: 'Catálogo',              href: '#catalogo' },
-    { label: 'Nuestra Selección',     href: '#seleccion' },
-    { label: 'Inspiración',           href: '#inspiracion' },
-    { label: 'Piezas Mayores',        href: '#catalogo' },
-    { label: 'Pequeños Tesoros',      href: '#catalogo' },
+    { label: 'Catálogo',              href: '/#catalogo' },
+    { label: 'Nuestra Selección',     href: '/#seleccion' },
+    { label: 'Inspiración',           href: '/#inspiracion' },
+    { label: 'Piezas Mayores',        href: '/#catalogo' },
+    { label: 'Pequeños Tesoros',      href: '/#catalogo' },
   ],
   showroom: [
-    { label: 'Visita el showroom',       href: '#visita' },
-    { label: 'Asesoría de interiorismo', href: '#visita' },
-    { label: 'Diario',                   href: '#' },
-    { label: 'Sobre Nosotros',           href: '#' },
+    { label: 'Visita el showroom',       href: '/#visita' },
+    { label: 'Asesoría de interiorismo', href: '/#visita' },
   ],
 }
 
@@ -30,14 +29,14 @@ const linkStyle: CSSProperties = {
 
 function FooterLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <a
+    <Link
       href={href}
       style={linkStyle}
       onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(242,241,237,0.95)' }}
       onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(242,241,237,0.58)' }}
     >
       {children}
-    </a>
+    </Link>
   )
 }
 
@@ -50,14 +49,14 @@ export function Footer() {
 
         {/* Brand */}
         <div className="footer-brand">
-          <a href="#" style={{ textDecoration: 'none', display: 'inline-block', marginBottom: 14 }}>
+          <Link href="/" style={{ textDecoration: 'none', display: 'inline-block', marginBottom: 14 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/assets/logo.png"
               alt="LasLongDeco"
               style={{ height: 52, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.88 }}
             />
-          </a>
+          </Link>
           <div className="mono" style={{ color: 'rgba(242,241,237,0.3)', marginBottom: 18 }}>
             Casa &amp; curaduría · desde 1994
           </div>
@@ -108,12 +107,14 @@ export function Footer() {
               Sgto. Cabral 104<br />S2300 Rafaela · Santa Fe
             </div>
             <a
-              href="tel:+34914321860"
+              href="https://wa.me/5493492287864"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{ ...linkStyle, marginTop: 2 }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(242,241,237,0.95)' }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(242,241,237,0.58)' }}
             >
-              +34 914 32 18 60
+              Hablar con nosotros
             </a>
             <a
               href="mailto:asesoria@laslongdeco.es"
@@ -124,7 +125,7 @@ export function Footer() {
               asesoria@laslongdeco.es
             </a>
             <div style={{ marginTop: 6, fontSize: 12, color: 'rgba(242,241,237,0.36)', lineHeight: 1.55 }}>
-              Lun — Vie · 10:30 – 20:00<br />Sáb · 11:00 – 14:30
+              9:00 – 12:00<br />15:30 – 19:30
             </div>
           </div>
         </div>

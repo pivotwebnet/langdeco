@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useCart } from '@/lib/cart'
 import * as Icon from '@/components/ui/Icon'
+import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
 import { formatPrice } from '@/lib/data'
 
 interface CartDrawerProps {
@@ -70,8 +71,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
           ) : (
             items.map((item) => (
               <div key={item.id} style={{ display: 'flex', gap: 16, paddingBottom: 24, borderBottom: '1px solid var(--line)', marginBottom: 24 }}>
-                {/* Image placeholder */}
-                <div style={{ width: 72, height: 88, background: '#ECEAE4', flexShrink: 0, borderRadius: 4 }} />
+                <CartItemImage src={item.imageUrl} alt={item.name} />
 
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -123,10 +123,10 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
               style={{ width: '100%', justifyContent: 'center' }}
               onClick={() => {
                 const msg = encodeURIComponent(`Hola, me interesan estas piezas:\n${items.map(i => `• ${i.name} (${i.qty}x) — ${i.price}`).join('\n')}\nTotal estimado: ${formatPrice(total)}`)
-                window.open(`https://wa.me/34914321860?text=${msg}`, '_blank')
+                window.open(`https://wa.me/5493492287864?text=${msg}`, '_blank')
               }}
             >
-              <Icon.Whatsapp /> Consultar con Cande
+              <Icon.Whatsapp /> Hablar con nosotros
             </button>
             <button
               onClick={clear}
@@ -138,5 +138,26 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
         )}
       </div>
     </>
+  )
+}
+
+function CartItemImage({ src, alt }: { src?: string; alt: string }) {
+  const [error, setError] = useState(false)
+  const showImage = !!src && !error
+
+  return (
+    <div style={{ position: 'relative', width: 72, height: 88, background: '#ECEAE4', flexShrink: 0, borderRadius: 4, overflow: 'hidden' }}>
+      {showImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={alt}
+          onError={() => setError(true)}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+        />
+      ) : (
+        <ImagePlaceholder size={18} />
+      )}
+    </div>
   )
 }

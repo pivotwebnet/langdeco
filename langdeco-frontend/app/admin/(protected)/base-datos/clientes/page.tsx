@@ -184,72 +184,75 @@ export default function ClientesAdmin() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
+      <div className="adm-page-head">
         <div>
-          <h1 style={{ fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 32, letterSpacing: '-0.02em', margin: 0, color: 'var(--ink)' }}>
-            Clientes
-          </h1>
-          <p style={{ fontFamily: 'ui-monospace, monospace', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-mute)', marginTop: 6 }}>
-            {clients.length} clientes
-          </p>
+          <h1 className="adm-title">Clientes</h1>
+          <p className="adm-eyebrow">{clients.length} clientes</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <a className="btn ghost" style={{ fontSize: 11 }} href="/api/admin/backend/clients/export" download="clientes.xlsx">Exportar Excel</a>
-          <button className="btn ghost" style={{ fontSize: 11 }} onClick={() => fileInputRef.current?.click()}>Importar Excel</button>
+          <a className="adm-btn ghost" href="/api/admin/backend/clients/export" download="clientes.xlsx">Exportar Excel</a>
+          <button className="adm-btn ghost" onClick={() => fileInputRef.current?.click()}>Importar Excel</button>
           <input ref={fileInputRef} type="file" accept=".xlsx" onChange={onImportFile} style={{ display: 'none' }} />
-          <button className="btn" style={{ fontSize: 11 }} onClick={openCreate}>+ Nuevo Cliente</button>
+          <button className="adm-btn" onClick={openCreate}>+ Nuevo Cliente</button>
         </div>
       </div>
 
-      {error && <div style={{ background: '#FEE2E2', color: '#991B1B', padding: '10px 16px', marginBottom: 16, fontSize: 13 }}>{error}</div>}
-      {importMsg && <div style={{ background: '#D1FAE5', color: '#065F46', padding: '10px 16px', marginBottom: 16, fontSize: 13 }}>{importMsg}</div>}
+      {error && <div className="adm-alert error">{error}</div>}
+      {importMsg && <div className="adm-alert success">{importMsg}</div>}
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+      <div className="adm-toolbar">
         <input
+          className="adm-input"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por nombre o CUIT..."
-          style={{ flex: 1, maxWidth: 280, border: '1px solid var(--line)', background: 'white', padding: '10px 14px', fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink)', outline: 'none' }}
+          style={{ flex: 1, maxWidth: 280 }}
         />
-        <label style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <label className="adm-checkbox-row">
           <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
           Mostrar inactivos
         </label>
       </div>
 
-      <div style={{ background: 'white', border: '1px solid var(--line)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 100px 140px', padding: '12px 24px', borderBottom: '1px solid var(--line)', background: '#F8F7F4' }}>
-          {['Nombre', 'CUIT', 'Contacto', 'Estado', ''].map((h) => (
-            <span key={h} style={{ fontFamily: 'ui-monospace, monospace', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-mute)' }}>{h}</span>
-          ))}
-        </div>
-        {loading && <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-mute)' }}>Cargando...</div>}
-        {!loading && clients.map((c, i) => (
-          <div key={c.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 100px 140px', padding: '14px 24px', borderBottom: i < clients.length - 1 ? '1px solid var(--line)' : 'none', alignItems: 'center', opacity: c.active ? 1 : 0.5 }}>
-            <div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 500 }}>{c.companyOrFullName}</div>
-              <div className="mono" style={{ fontSize: 9, color: 'var(--ink-mute)' }}>{IVA_CONDITION_LABEL[c.ivaCondition]}</div>
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{c.taxId || '-'}</div>
-            <div style={{ fontSize: 12, color: 'var(--ink-soft)' }}>{c.phone || c.cell || c.email || '-'}</div>
-            <div>
-              <span className="mono" style={{ fontSize: 9, color: c.active ? '#065F46' : '#991B1B' }}>{c.active ? 'Activo' : 'Inactivo'}</span>
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => openEdit(c)} style={linkBtn}>Editar</button>
-              {c.active ? (
-                <button onClick={() => onDelete(c)} style={{ ...linkBtn, color: '#991B1B' }}>Eliminar</button>
-              ) : (
-                <button onClick={() => onActivate(c)} style={{ ...linkBtn, color: '#065F46' }}>Reactivar</button>
-              )}
-            </div>
-          </div>
-        ))}
-        {!loading && clients.length === 0 && (
-          <div style={{ padding: '40px 24px', textAlign: 'center', fontFamily: 'var(--font-edit)', fontStyle: 'italic', color: 'var(--ink-mute)', fontSize: 18 }}>
-            Sin clientes.
-          </div>
-        )}
+      <div className="adm-card adm-table-wrap">
+        <table className="adm-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>CUIT</th>
+              <th>Contacto</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && (
+              <tr><td colSpan={5}><div className="adm-loading">Cargando…</div></td></tr>
+            )}
+            {!loading && clients.map((c) => (
+              <tr key={c.id} className={c.active ? '' : 'inactive'}>
+                <td>
+                  <div className="adm-table-name">{c.companyOrFullName}</div>
+                  <div className="adm-table-sub">{IVA_CONDITION_LABEL[c.ivaCondition]}</div>
+                </td>
+                <td>{c.taxId || '-'}</td>
+                <td>{c.phone || c.cell || c.email || '-'}</td>
+                <td><span className={`adm-badge ${c.active ? 'ok' : 'danger'}`}>{c.active ? 'Activo' : 'Inactivo'}</span></td>
+                <td>
+                  <div className="adm-table-actions">
+                    <button className="adm-link-btn" onClick={() => openEdit(c)}>Editar</button>
+                    {c.active ? (
+                      <button className="adm-link-btn danger" onClick={() => onDelete(c)}>Eliminar</button>
+                    ) : (
+                      <button className="adm-link-btn success" onClick={() => onActivate(c)}>Reactivar</button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!loading && clients.length === 0 && <div className="adm-empty">Sin clientes.</div>}
       </div>
 
       {form && (
@@ -296,107 +299,107 @@ function ClientFormModal({ form, isNew, saving, onChange, onCancel, onSave }: {
   const removeField = (i: number) => set('customFields', form.customFields.filter((_, idx) => idx !== i))
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'grid', placeItems: 'center', zIndex: 100, padding: 20 }}>
-      <div style={{ background: 'white', width: 680, maxHeight: '90vh', overflowY: 'auto', padding: 32 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 500, margin: '0 0 20px' }}>{isNew ? 'Nuevo Cliente' : 'Editar Cliente'}</h2>
+    <div className="adm-modal-backdrop">
+      <div className="adm-modal" style={{ width: 680 }}>
+        <h2 className="adm-modal-title">{isNew ? 'Nuevo Cliente' : 'Editar Cliente'}</h2>
 
         <SectionTitle>Cliente</SectionTitle>
         <Field label="Nombre de la Empresa o Nombre y Apellido">
-          <input value={form.companyOrFullName} onChange={(e) => set('companyOrFullName', e.target.value)} style={{ ...inputStyle, width: '100%' }} />
+          <input className="adm-input" value={form.companyOrFullName} onChange={(e) => set('companyOrFullName', e.target.value)} style={{ width: '100%' }} />
         </Field>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 8 }}>
-          <Field label="Nombre"><input value={form.firstName} onChange={(e) => set('firstName', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Apellido"><input value={form.lastName} onChange={(e) => set('lastName', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Cel."><input value={form.cell} onChange={(e) => set('cell', e.target.value)} placeholder="+54 9 11 2345-678" style={inputStyle} /></Field>
-          <Field label="Teléfono"><input value={form.phone} onChange={(e) => set('phone', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Email"><input value={form.email} onChange={(e) => set('email', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Apodo ML"><input value={form.nicknameML} onChange={(e) => set('nicknameML', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Página Web"><input value={form.webPage} onChange={(e) => set('webPage', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Domicilio"><input value={form.address} onChange={(e) => set('address', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Provincia"><input value={form.province} onChange={(e) => set('province', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Localidad"><input value={form.locality} onChange={(e) => set('locality', e.target.value)} style={inputStyle} /></Field>
-          <Field label="C.P."><input value={form.postalCode} onChange={(e) => set('postalCode', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Saldo Inicial"><input type="number" value={form.initialBalance} onChange={(e) => set('initialBalance', e.target.value)} style={inputStyle} /></Field>
+        <div className="adm-grid-2" style={{ marginTop: 8 }}>
+          <Field label="Nombre"><input className="adm-input" value={form.firstName} onChange={(e) => set('firstName', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Apellido"><input className="adm-input" value={form.lastName} onChange={(e) => set('lastName', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Cel."><input className="adm-input" value={form.cell} onChange={(e) => set('cell', e.target.value)} placeholder="+54 9 11 2345-678" style={{ width: '100%' }} /></Field>
+          <Field label="Teléfono"><input className="adm-input" value={form.phone} onChange={(e) => set('phone', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Email"><input className="adm-input" value={form.email} onChange={(e) => set('email', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Apodo ML"><input className="adm-input" value={form.nicknameML} onChange={(e) => set('nicknameML', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Página Web"><input className="adm-input" value={form.webPage} onChange={(e) => set('webPage', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Domicilio"><input className="adm-input" value={form.address} onChange={(e) => set('address', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Provincia"><input className="adm-input" value={form.province} onChange={(e) => set('province', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Localidad"><input className="adm-input" value={form.locality} onChange={(e) => set('locality', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="C.P."><input className="adm-input" value={form.postalCode} onChange={(e) => set('postalCode', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Saldo Inicial"><input className="adm-input" type="number" value={form.initialBalance} onChange={(e) => set('initialBalance', e.target.value)} style={{ width: '100%' }} /></Field>
         </div>
         <Field label="Nota">
-          <textarea value={form.note} onChange={(e) => set('note', e.target.value)} rows={2} style={{ ...inputStyle, width: '100%', resize: 'vertical' }} />
+          <textarea className="adm-textarea" value={form.note} onChange={(e) => set('note', e.target.value)} rows={2} />
         </Field>
 
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span className="mono">Personas de Contacto</span>
-            <button type="button" onClick={addContact} style={smallBtnStyle}>+ Agregar Persona de Contacto</button>
+            <button type="button" className="adm-btn ghost sm" onClick={addContact}>+ Agregar Persona de Contacto</button>
           </div>
           {form.contactPersons.map((cp, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-              <input value={cp.name} onChange={(e) => updateContact(i, { name: e.target.value })} placeholder="Nombre" style={{ ...inputStyle, flex: 2 }} />
-              <input value={cp.role} onChange={(e) => updateContact(i, { role: e.target.value })} placeholder="Cargo" style={{ ...inputStyle, flex: 1 }} />
-              <input value={cp.cell} onChange={(e) => updateContact(i, { cell: e.target.value })} placeholder="Cel." style={{ ...inputStyle, flex: 1 }} />
-              <input value={cp.email} onChange={(e) => updateContact(i, { email: e.target.value })} placeholder="Email" style={{ ...inputStyle, flex: 2 }} />
-              <button type="button" onClick={() => removeContact(i)} style={smallBtnStyle}>✕</button>
+              <input className="adm-input" value={cp.name} onChange={(e) => updateContact(i, { name: e.target.value })} placeholder="Nombre" style={{ flex: 2 }} />
+              <input className="adm-input" value={cp.role} onChange={(e) => updateContact(i, { role: e.target.value })} placeholder="Cargo" style={{ flex: 1 }} />
+              <input className="adm-input" value={cp.cell} onChange={(e) => updateContact(i, { cell: e.target.value })} placeholder="Cel." style={{ flex: 1 }} />
+              <input className="adm-input" value={cp.email} onChange={(e) => updateContact(i, { email: e.target.value })} placeholder="Email" style={{ flex: 2 }} />
+              <button type="button" className="adm-btn ghost sm" onClick={() => removeContact(i)}>✕</button>
             </div>
           ))}
         </div>
 
-        <div style={{ marginTop: 12 }}>
+        <div style={{ marginTop: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span className="mono">Campos custom</span>
-            <button type="button" onClick={addField} style={smallBtnStyle}>+ Agregar Nuevo campo</button>
+            <button type="button" className="adm-btn ghost sm" onClick={addField}>+ Agregar Nuevo campo</button>
           </div>
           {form.customFields.map((cf, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-              <input value={cf.label} onChange={(e) => updateField(i, { label: e.target.value })} placeholder="Etiqueta" style={{ ...inputStyle, flex: 1 }} />
-              <input value={cf.value} onChange={(e) => updateField(i, { value: e.target.value })} placeholder="Valor" style={{ ...inputStyle, flex: 1 }} />
-              <button type="button" onClick={() => removeField(i)} style={smallBtnStyle}>✕</button>
+              <input className="adm-input" value={cf.label} onChange={(e) => updateField(i, { label: e.target.value })} placeholder="Etiqueta" style={{ flex: 1 }} />
+              <input className="adm-input" value={cf.value} onChange={(e) => updateField(i, { value: e.target.value })} placeholder="Valor" style={{ flex: 1 }} />
+              <button type="button" className="adm-btn ghost sm" onClick={() => removeField(i)}>✕</button>
             </div>
           ))}
         </div>
 
         <SectionTitle>Ventas</SectionTitle>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <Field label="Categoría Ventas"><input value={form.salesCategory} onChange={(e) => set('salesCategory', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Descuento General %"><input type="number" value={form.salesDiscountPercent} onChange={(e) => set('salesDiscountPercent', e.target.value)} style={inputStyle} /></Field>
+        <div className="adm-grid-2">
+          <Field label="Categoría Ventas"><input className="adm-input" value={form.salesCategory} onChange={(e) => set('salesCategory', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Descuento General %"><input className="adm-input" type="number" value={form.salesDiscountPercent} onChange={(e) => set('salesDiscountPercent', e.target.value)} style={{ width: '100%' }} /></Field>
         </div>
         <Field label="Nota para el Cliente">
-          <textarea value={form.noteForClient} onChange={(e) => set('noteForClient', e.target.value)} rows={2} style={{ ...inputStyle, width: '100%', resize: 'vertical' }} />
+          <textarea className="adm-textarea" value={form.noteForClient} onChange={(e) => set('noteForClient', e.target.value)} rows={2} />
         </Field>
 
         <SectionTitle>Datos de Facturación</SectionTitle>
         <Field label="Razón social (Nombre de la Empresa o Nombre y Apellido)">
-          <input value={form.billingCompanyOrFullName} onChange={(e) => set('billingCompanyOrFullName', e.target.value)} placeholder={form.companyOrFullName} style={{ ...inputStyle, width: '100%' }} />
+          <input className="adm-input" value={form.billingCompanyOrFullName} onChange={(e) => set('billingCompanyOrFullName', e.target.value)} placeholder={form.companyOrFullName} style={{ width: '100%' }} />
         </Field>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 8 }}>
+        <div className="adm-grid-2" style={{ marginTop: 8 }}>
           <Field label="N° de Doc. (CUIT)">
             <div style={{ display: 'flex', gap: 6 }}>
-              <input value={form.taxId} onChange={(e) => { set('taxId', e.target.value); setCuitCheck('idle') }} placeholder="20-12345678-9" style={{ ...inputStyle, flex: 1 }} />
-              <button type="button" onClick={() => setCuitCheck(isValidCuit(form.taxId) ? 'valid' : 'invalid')} style={smallBtnStyle}>Verificar</button>
+              <input className="adm-input" value={form.taxId} onChange={(e) => { set('taxId', e.target.value); setCuitCheck('idle') }} placeholder="20-12345678-9" style={{ flex: 1 }} />
+              <button type="button" className="adm-btn ghost sm" onClick={() => setCuitCheck(isValidCuit(form.taxId) ? 'valid' : 'invalid')}>Verificar</button>
             </div>
-            {cuitCheck === 'valid' && <span style={{ fontSize: 11, color: '#065F46' }}>✓ CUIT válido</span>}
-            {cuitCheck === 'invalid' && <span style={{ fontSize: 11, color: '#991B1B' }}>✗ CUIT inválido</span>}
+            {cuitCheck === 'valid' && <span className="adm-badge ok" style={{ marginTop: 6 }}>✓ CUIT válido</span>}
+            {cuitCheck === 'invalid' && <span className="adm-badge danger" style={{ marginTop: 6 }}>✗ CUIT inválido</span>}
           </Field>
           <Field label="Condición de IVA">
-            <select value={form.ivaCondition} onChange={(e) => set('ivaCondition', e.target.value as IvaCondition)} style={inputStyle}>
+            <select className="adm-select" value={form.ivaCondition} onChange={(e) => set('ivaCondition', e.target.value as IvaCondition)} style={{ width: '100%' }}>
               {Object.entries(IVA_CONDITION_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </Field>
           <Field label="Comprobante por defecto">
-            <select value={form.defaultReceiptType} onChange={(e) => set('defaultReceiptType', e.target.value as DefaultReceiptType)} style={inputStyle}>
+            <select className="adm-select" value={form.defaultReceiptType} onChange={(e) => set('defaultReceiptType', e.target.value as DefaultReceiptType)} style={{ width: '100%' }}>
               {Object.entries(RECEIPT_TYPE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </Field>
-          <Field label="Teléfono"><input value={form.billingPhone} onChange={(e) => set('billingPhone', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Cel."><input value={form.billingCell} onChange={(e) => set('billingCell', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Domicilio fiscal"><input value={form.fiscalAddress} onChange={(e) => set('fiscalAddress', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Localidad"><input value={form.fiscalLocality} onChange={(e) => set('fiscalLocality', e.target.value)} style={inputStyle} /></Field>
-          <Field label="Provincia"><input value={form.fiscalProvince} onChange={(e) => set('fiscalProvince', e.target.value)} style={inputStyle} /></Field>
-          <Field label="C.P."><input value={form.fiscalPostalCode} onChange={(e) => set('fiscalPostalCode', e.target.value)} style={inputStyle} /></Field>
+          <Field label="Teléfono"><input className="adm-input" value={form.billingPhone} onChange={(e) => set('billingPhone', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Cel."><input className="adm-input" value={form.billingCell} onChange={(e) => set('billingCell', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Domicilio fiscal"><input className="adm-input" value={form.fiscalAddress} onChange={(e) => set('fiscalAddress', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Localidad"><input className="adm-input" value={form.fiscalLocality} onChange={(e) => set('fiscalLocality', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Provincia"><input className="adm-input" value={form.fiscalProvince} onChange={(e) => set('fiscalProvince', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="C.P."><input className="adm-input" value={form.fiscalPostalCode} onChange={(e) => set('fiscalPostalCode', e.target.value)} style={{ width: '100%' }} /></Field>
         </div>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-          <button className="btn" onClick={onSave} disabled={saving} style={{ flex: 1, justifyContent: 'center' }}>
+          <button className="adm-btn" onClick={onSave} disabled={saving} style={{ flex: 1 }}>
             {saving ? 'Guardando...' : 'Guardar'}
           </button>
-          <button className="btn ghost" onClick={onCancel} style={{ flex: 1, justifyContent: 'center' }}>Cancelar</button>
+          <button className="adm-btn ghost" onClick={onCancel} style={{ flex: 1 }}>Cancelar</button>
         </div>
       </div>
     </div>
@@ -405,7 +408,7 @@ function ClientFormModal({ form, isNew, saving, onChange, onCancel, onSave }: {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 style={{ fontSize: 13, fontFamily: 'ui-monospace, monospace', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-mute)', margin: '24px 0 12px', paddingTop: 16, borderTop: '1px solid var(--line)' }}>
+    <h3 className="mono" style={{ fontSize: 13, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-mute)', margin: '24px 0 12px', paddingTop: 16, borderTop: '1px solid var(--adm-border)' }}>
       {children}
     </h3>
   )
@@ -413,16 +416,9 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 4 }}>
-      <label style={{ display: 'block', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-mute)', marginBottom: 4 }}>{label}</label>
+    <div className="adm-field">
+      <label className="adm-field-label">{label}</label>
       {children}
     </div>
   )
-}
-
-const inputStyle: React.CSSProperties = { padding: '8px 10px', border: '1px solid var(--line)', fontSize: 13, fontFamily: 'var(--font-ui)', width: '100%' }
-const smallBtnStyle: React.CSSProperties = { padding: '4px 10px', border: '1px solid var(--line)', background: 'white', cursor: 'pointer', fontSize: 11 }
-const linkBtn: React.CSSProperties = {
-  background: 'none', border: 0, cursor: 'pointer', fontFamily: 'ui-monospace, monospace',
-  fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-mute)', padding: 0,
 }

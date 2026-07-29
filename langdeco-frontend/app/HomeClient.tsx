@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
-import { CartDrawer } from '@/components/layout/CartDrawer'
 import { Hero } from '@/components/sections/Hero'
 import { Favoritos } from '@/components/sections/Favoritos'
 import { Inspiracion } from '@/components/sections/Inspiracion'
@@ -12,7 +11,6 @@ import { Visita } from '@/components/sections/Visita'
 import { ScrollAnimator } from '@/components/ui/ScrollAnimator'
 import { Marquee } from '@/components/ui/Marquee'
 import { PromoBar } from '@/components/ui/PromoBar'
-import * as Icon from '@/components/ui/Icon'
 import type { Product } from '@/lib/types'
 import type { SiteContent } from '@/lib/site-content'
 
@@ -24,8 +22,6 @@ interface HomeClientProps {
 }
 
 export default function HomeClient({ products, featured, initialCategory, siteContent }: HomeClientProps) {
-  const [cartOpen, setCartOpen] = useState(false)
-  const [scrollY, setScrollY]   = useState(0)
   const fillRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -34,7 +30,6 @@ export default function HomeClient({ products, featured, initialCategory, siteCo
       if (ticking) return
       requestAnimationFrame(() => {
         const y = window.scrollY
-        setScrollY(y)
         if (fillRef.current) {
           const doc = document.documentElement
           const max = (doc.scrollHeight - window.innerHeight) || 1
@@ -70,7 +65,7 @@ export default function HomeClient({ products, featured, initialCategory, siteCo
             <div ref={fillRef} className="fill" />
           </div>
 
-          <Header onCartOpen={() => setCartOpen(true)} />
+          <Header />
 
           <Hero variant="editorial" />
 
@@ -79,36 +74,15 @@ export default function HomeClient({ products, featured, initialCategory, siteCo
           {/* Animated marquee ticker */}
           <Marquee />
 
-          <Inspiracion items={siteContent.inspiracion} />
+          <Inspiracion items={siteContent.inspiracion} products={products} />
 
           <Productos products={products} initialCategory={initialCategory} />
 
           <Visita />
-
-          <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
         </div>
 
         {/* Footer lives outside .device so its dark background is truly full-width */}
         <Footer />
-      </div>
-
-      {/* Floating action buttons — right side, fixed */}
-      <div className={`floating-stack${scrollY > 320 ? ' in' : ''}`}>
-        <button
-          className="scroll-top-btn"
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          aria-label="Volver al inicio"
-        >
-          <Icon.ArrowDown style={{ transform: 'rotate(180deg)' }} />
-        </button>
-        <button
-          className="wa-pill"
-          onClick={() => window.open('https://wa.me/34914321860', '_blank')}
-          aria-label="Hablar por WhatsApp"
-        >
-          <div className="dot"><Icon.Whatsapp /></div>
-          <span>Hablar por WhatsApp</span>
-        </button>
       </div>
     </>
   )
