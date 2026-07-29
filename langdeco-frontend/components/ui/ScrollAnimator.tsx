@@ -3,11 +3,14 @@
 import { useEffect } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { prefersReducedMotion } from '@/lib/gsap'
 
 gsap.registerPlugin(ScrollTrigger)
 
 export function ScrollAnimator() {
   useEffect(() => {
+    if (prefersReducedMotion()) return
+
     const ctx = gsap.context(() => {
 
       /* ── Clip-path image reveal ─────────────────────────────────────── */

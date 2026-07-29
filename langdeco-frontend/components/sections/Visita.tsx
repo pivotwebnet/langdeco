@@ -37,11 +37,11 @@ export function Visita() {
       <div className="visita-col-info">
         <RevealOnScroll delay={1}>
           <span className="kicker" style={{ display: 'block', marginBottom: 14 }}>Rafaela · Santa Fe</span>
-          <h2 className="display visita-h2">
-            El showroom<br />está siempre{' '}
-            <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>abierto</em>.
-          </h2>
         </RevealOnScroll>
+        <h2 className="display visita-h2" data-reveal="headline">
+          El showroom<br />está siempre{' '}
+          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>abierto</em>.
+        </h2>
 
         <RevealOnScroll delay={2}>
           <div className="visita-info-grid">

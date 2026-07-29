@@ -229,6 +229,53 @@
 .adm-badge.warn    { background: var(--adm-warning-bg); color: var(--adm-warning); }
 .adm-badge.neutral { background: var(--adm-surface-2);  color: var(--ink-mute); }
 
+/* ── Monthly revenue chart ───────────────────────────────────────────── */
+.adm-chart { padding: 22px 22px 16px; }
+.adm-chart-bars {
+  display: flex; align-items: flex-end; gap: 6px;
+  height: 160px;
+  border-bottom: 1px solid var(--adm-border);
+}
+.adm-chart-col {
+  position: relative; flex: 1; min-width: 0;
+  display: flex; flex-direction: column; align-items: center;
+  height: 100%;
+}
+.adm-chart-bar-track { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.adm-chart-bar {
+  width: 100%; min-height: 2px;
+  background: var(--ink);
+  border-radius: 4px 4px 0 0;
+  opacity: 0.72;
+  transition: opacity 0.15s;
+}
+.adm-chart-col:hover .adm-chart-bar { opacity: 1; }
+.adm-chart-label {
+  margin-top: 8px; height: 12px;
+  font-family: ui-monospace, monospace; font-size: 9px; letter-spacing: 0.05em;
+  color: var(--ink-mute); white-space: nowrap;
+}
+.adm-chart-tooltip {
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: var(--bg);
+  padding: 6px 10px; border-radius: var(--adm-radius);
+  white-space: nowrap; z-index: 5; pointer-events: none;
+  box-shadow: 0 6px 20px -8px rgba(0,0,0,0.35);
+}
+.adm-chart-tooltip-value { font-family: var(--font-ui); font-size: 12px; font-weight: 500; }
+.adm-chart-tooltip-sub { font-family: ui-monospace, monospace; font-size: 9px; opacity: 0.7; margin-top: 2px; }
+
+/* ── Stat delta (vs período anterior) ───────────────────────────────── */
+.adm-stat-delta {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 10px;
+  font-family: ui-monospace, monospace; font-size: 10px; letter-spacing: 0.04em;
+}
+.adm-stat-delta.up { color: var(--adm-success); }
+.adm-stat-delta.down { color: var(--adm-danger); }
+.adm-stat-delta.flat { color: var(--ink-mute); }
+.adm-stat-delta-label { color: var(--ink-mute); }
+
 /* ── Table ───────────────────────────────────────────────────────────── */
 .adm-table-wrap { overflow-x: auto; }
 .adm-table { width: 100%; border-collapse: collapse; min-width: 560px; }

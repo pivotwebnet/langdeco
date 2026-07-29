@@ -3,6 +3,7 @@
 import { useRef, cloneElement, isValidElement, type ReactElement, type Ref } from 'react'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
+import { prefersReducedMotion } from '@/lib/gsap'
 
 interface MagneticProps {
   children: ReactElement
@@ -18,7 +19,7 @@ export function Magnetic({ children, strength = 0.35 }: MagneticProps) {
 
   useGSAP(() => {
     const el = ref.current
-    if (!el) return
+    if (!el || prefersReducedMotion()) return
     const quickX = gsap.quickTo(el, 'x', { duration: 0.5, ease: 'power3.out' })
     const quickY = gsap.quickTo(el, 'y', { duration: 0.5, ease: 'power3.out' })
 

@@ -162,6 +162,12 @@ export interface LowStockProduct {
   stock: number
 }
 
+export interface MonthlyRevenue {
+  month: string // "yyyy-MM"
+  revenue: number
+  salesCount: number
+}
+
 export interface SalesSummary {
   revenue: number
   averageTicket: number
@@ -170,4 +176,7 @@ export interface SalesSummary {
   wholesaleRevenue: number
   ranking: ProductRanking[]
   lowStock: LowStockProduct[]
+  monthlyRevenue: MonthlyRevenue[]
+  previousPeriodRevenue: number | null
+  revenueChangePercent: number | null
 }

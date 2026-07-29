@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
+import { prefersReducedMotion } from '@/lib/gsap'
 
 interface MarqueeProps {
   items?: string[]
@@ -21,7 +22,7 @@ export function Marquee({ items = DEFAULT_ITEMS, speed = 22, dark = false }: Mar
 
   useGSAP(() => {
     const track = trackRef.current
-    if (!track) return
+    if (!track || prefersReducedMotion()) return
 
     const totalW = track.scrollWidth / 2
 

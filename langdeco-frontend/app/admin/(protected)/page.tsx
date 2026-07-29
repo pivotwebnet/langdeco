@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import type { SalesSummary } from '@/lib/backend-types'
+import MonthlyRevenueChart from '@/components/admin/MonthlyRevenueChart'
 
 async function api<T>(path: string): Promise<T> {
   const res = await fetch(`/api/admin/backend${path}`)
@@ -50,11 +51,24 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false))
   }, [preset, customFrom, customTo])
 
+  const revenueChange = summary?.revenueChangePercent ?? null
+  const deltaDirection = revenueChange === null ? 'flat' : revenueChange > 0 ? 'up' : revenueChange < 0 ? 'down' : 'flat'
+  const deltaArrow = deltaDirection === 'up' ? '▲' : deltaDirection === 'down' ? '▼' : '—'
+
   const stats = summary ? [
-    { label: 'Ingresos (cobrados)', value: `$ ${summary.revenue.toLocaleString('de-DE')}` },
-    { label: 'Ticket promedio', value: `$ ${Math.round(summary.averageTicket).toLocaleString('de-DE')}` },
-    { label: 'Ventas cobradas', value: summary.salesCount },
-    { label: 'Mayorista / Minorista', value: `$${(summary.wholesaleRevenue / 1000).toFixed(0)}k / $${(summary.retailRevenue / 1000).toFixed(0)}k` },
+    {
+      label: 'Ingresos (cobrados)',
+      value: `$ ${summary.revenue.toLocaleString('de-DE')}`,
+      delta: revenueChange !== null ? (
+        <span className={`adm-stat-delta ${deltaDirection}`}>
+          {deltaArrow} {Math.abs(revenueChange).toFixed(1)}%
+          <span className="adm-stat-delta-label">&nbsp;vs. período anterior</span>
+        </span>
+      ) : null,
+    },
+    { label: 'Ticket promedio', value: `$ ${Math.round(summary.averageTicket).toLocaleString('de-DE')}`, delta: null },
+    { label: 'Ventas cobradas', value: summary.salesCount, delta: null },
+    { label: 'Mayorista / Minorista', value: `$${(summary.wholesaleRevenue / 1000).toFixed(0)}k / $${(summary.retailRevenue / 1000).toFixed(0)}k`, delta: null },
   ] : []
 
   return (
@@ -119,8 +133,21 @@ export default function AdminDashboard() {
               <div key={s.label} className="adm-stat-card">
                 <div className="adm-stat-label">{s.label}</div>
                 <div className="adm-stat-value">{s.value}</div>
+                {s.delta}
               </div>
             ))}
+      </div>
+
+      {/* Evolución mensual */}
+      <div style={{ marginBottom: 24 }}>
+        <h2 className="adm-section-title">Evolución mensual</h2>
+        <div className="adm-card">
+          {loading ? (
+            <div className="adm-loading">Cargando…</div>
+          ) : (
+            <MonthlyRevenueChart data={summary?.monthlyRevenue ?? []} />
+          )}
+        </div>
       </div>
 
       <div className="adm-grid-2" style={{ display: 'grid', gap: 24 }}>

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { useCart } from '@/lib/cart'
@@ -73,8 +74,16 @@ export function ProductoDetalle({ product, related }: Props) {
           <div className="pd-gallery">
             <div className="pd-main-wrap">
               {showMainImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img key={allImages[imgIdx]} src={allImages[imgIdx]} alt={product.name} onError={() => setImgError(true)} />
+                <Image
+                  key={allImages[imgIdx]}
+                  src={allImages[imgIdx]}
+                  alt={product.name}
+                  fill
+                  unoptimized
+                  sizes="(min-width: 900px) 50vw, 100vw"
+                  priority={imgIdx === 0}
+                  onError={() => setImgError(true)}
+                />
               ) : (
                 <ImagePlaceholder size={36} />
               )}
@@ -88,8 +97,7 @@ export function ProductoDetalle({ product, related }: Props) {
                     onClick={() => { setImgIdx(i); setImgError(false) }}
                     aria-label={`Imagen ${i + 1}`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt="" />
+                    <Image src={url} alt="" width={56} height={56} unoptimized />
                   </button>
                 ))}
               </div>
@@ -167,8 +175,7 @@ export function ProductoDetalle({ product, related }: Props) {
                   <Link key={p.id} href={`/producto/${p.id}`} className="pd-related-card">
                     <div className="pd-related-img" style={{ position: 'relative' }}>
                       {p.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.imageUrl} alt={p.name} />
+                        <Image src={p.imageUrl} alt={p.name} fill unoptimized sizes="200px" />
                       ) : (
                         <ImagePlaceholder size={18} />
                       )}

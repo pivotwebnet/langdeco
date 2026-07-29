@@ -283,7 +283,34 @@ public class SalesController : ControllerBase
             .Select(p => new LowStockDto(p.Id, p.Name, p.Stock))
             .ToListAsync();
 
-        return Ok(new SalesSummaryDto(revenue, averageTicket, paidSales.Count, retailRevenue, wholesaleRevenue, ranking, lowStock));
+        var monthlyRevenue = paidSales
+            .GroupBy(s => new DateTime(s.CreatedAt.Year, s.CreatedAt.Month, 1))
+            .OrderBy(g => g.Key)
+            .Select(g => new MonthlyRevenueDto(g.Key.ToString("yyyy-MM"), g.Sum(s => s.Total), g.Count()))
+            .ToList();
+
+        decimal? previousPeriodRevenue = null;
+        decimal? revenueChangePercent = null;
+        if (from.HasValue)
+        {
+            var periodEnd = to ?? DateTime.UtcNow;
+            var periodLength = periodEnd - from.Value;
+            if (periodLength > TimeSpan.Zero)
+            {
+                var previousFrom = from.Value - periodLength;
+                previousPeriodRevenue = await _db.Sales
+                    .Where(s => s.Status == SaleStatus.Paid && s.CreatedAt >= previousFrom && s.CreatedAt < from.Value)
+                    .SumAsync(s => (decimal?)s.Total) ?? 0;
+
+                revenueChangePercent = previousPeriodRevenue > 0
+                    ? Math.Round((revenue - previousPeriodRevenue.Value) / previousPeriodRevenue.Value * 100, 1)
+                    : null;
+            }
+        }
+
+        return Ok(new SalesSummaryDto(
+            revenue, averageTicket, paidSales.Count, retailRevenue, wholesaleRevenue, ranking, lowStock,
+            monthlyRevenue, previousPeriodRevenue, revenueChangePercent));
     }
 
     /// <summary>

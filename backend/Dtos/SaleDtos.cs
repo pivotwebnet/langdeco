@@ -35,7 +35,11 @@ public record ProductRankingDto(string ProductId, string ProductName, int Quanti
 
 public record LowStockDto(string ProductId, string ProductName, int Stock);
 
+public record MonthlyRevenueDto(string Month, decimal Revenue, int SalesCount);
+
 public record SalesSummaryDto(
     decimal Revenue, decimal AverageTicket, int SalesCount,
     decimal RetailRevenue, decimal WholesaleRevenue,
-    List<ProductRankingDto> Ranking, List<LowStockDto> LowStock);
+    List<ProductRankingDto> Ranking, List<LowStockDto> LowStock,
+    List<MonthlyRevenueDto> MonthlyRevenue,
+    decimal? PreviousPeriodRevenue, decimal? RevenueChangePercent);
