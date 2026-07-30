@@ -14,19 +14,20 @@ interface HeaderProps {
 }
 
 const NAV_LINKS = [
-  { label: 'Catálogo', href: '/#catalogo' },
-  { label: 'Inspiración', href: '/#inspiracion' },
-  { label: 'La selección', href: '/#seleccion' },
-  { label: 'Visita', href: '/#visita' },
+  { label: 'Catálogo', href: '/catalogo' },
+  { label: 'Inspiración', href: '/inspiracion' },
+  { label: 'Nosotros', href: '/nosotros' },
+  { label: 'Contacto', href: '/contacto' },
   { label: 'Visualizador', href: '/visualizador' },
 ]
 
 const DRAWER_LINKS = [
-  { label: 'Catálogo', href: '/#catalogo' },
+  { label: 'Catálogo', href: '/catalogo' },
   { label: 'La Selección', href: '/#seleccion' },
-  { label: 'Inspiración', href: '/#inspiracion' },
+  { label: 'Inspiración', href: '/inspiracion' },
+  { label: 'Nosotros', href: '/nosotros' },
   { label: 'Visualizador de espacios', href: '/visualizador' },
-  { label: 'Visita el showroom', href: '/#visita' },
+  { label: 'Contacto / Showroom', href: '/contacto' },
 ]
 
 export function Header({ logoFont = 'Sail' }: HeaderProps) {
@@ -115,12 +116,12 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
         <Link
           href="/"
           style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-          aria-label="LasLongDeco — inicio"
+          aria-label="LasLangDeco — inicio"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/assets/logo.png"
-            alt="LasLongDeco"
+            alt="LasLangDeco"
             className="logo-img"
           />
         </Link>
@@ -364,7 +365,7 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
           }}>
             <Link href="/" onClick={closeAll} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/assets/logo.png" alt="LasLongDeco" style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
+              <img src="/assets/logo.png" alt="LasLangDeco" style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
             </Link>
             <button
               className="icon-btn"

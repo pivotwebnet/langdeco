@@ -1,4 +1,5 @@
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
+import { Consultas } from '@/components/sections/Consultas'
 import * as Icon from '@/components/ui/Icon'
 
 const SOCIALS = [
@@ -26,7 +27,7 @@ const INFO = [
   { label: 'Dirección', value: <>Sgto. Cabral 104<br />S2300 Rafaela · Santa Fe</> },
   { label: 'Horario', value: <>9:00—12:00<br />15:30—19:30</> },
   { label: 'Teléfono', value: '3492 28-7864' },
-  { label: 'Cita previa', value: 'asesoria@laslongdeco.es' },
+  { label: 'Cita previa', value: 'laslangdeco@gmail.com' },
 ]
 
 export function Visita() {
@@ -81,17 +82,10 @@ export function Visita() {
         </RevealOnScroll>
       </div>
 
-      {/* ── Columna: mapa ────────────────────────────────────────── */}
-      <RevealOnScroll delay={2} className="visita-col-map">
-        <iframe
-          title="Showroom · Sgto. Cabral 104, Rafaela"
-          src="https://maps.google.com/maps?q=-31.254139,-61.488861&output=embed&z=16"
-          style={{ border: 0, width: '100%', height: '100%', display: 'block', filter: 'grayscale(0.25) contrast(1.05)' }}
-          allowFullScreen
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-        />
-      </RevealOnScroll>
+      {/* ── Columna: formulario de consulta ─────────────────────── */}
+      <div className="visita-col-form">
+        <Consultas />
+      </div>
     </section>
   )
 }

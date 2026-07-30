@@ -5,9 +5,11 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Hero } from '@/components/sections/Hero'
 import { Favoritos } from '@/components/sections/Favoritos'
+import { CatalogoRapido } from '@/components/sections/CatalogoRapido'
 import { Inspiracion } from '@/components/sections/Inspiracion'
-import { Productos } from '@/components/sections/Productos'
+import { Visualizador } from '@/components/sections/Visualizador'
 import { Visita } from '@/components/sections/Visita'
+import { Explorar } from '@/components/sections/Explorar'
 import { ScrollAnimator } from '@/components/ui/ScrollAnimator'
 import { Marquee } from '@/components/ui/Marquee'
 import { PromoBar } from '@/components/ui/PromoBar'
@@ -17,11 +19,10 @@ import type { SiteContent } from '@/lib/site-content'
 interface HomeClientProps {
   products: Product[]
   featured: Product[]
-  initialCategory?: 'mayor' | 'tesoro'
   siteContent: SiteContent
 }
 
-export default function HomeClient({ products, featured, initialCategory, siteContent }: HomeClientProps) {
+export default function HomeClient({ products, featured, siteContent }: HomeClientProps) {
   const fillRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -67,18 +68,22 @@ export default function HomeClient({ products, featured, initialCategory, siteCo
 
           <Header />
 
-          <Hero variant="editorial" />
+          <Hero />
 
           <Favoritos showBadge items={featured} />
+
+          <CatalogoRapido products={products} />
 
           {/* Animated marquee ticker */}
           <Marquee />
 
           <Inspiracion items={siteContent.inspiracion} products={products} />
 
-          <Productos products={products} initialCategory={initialCategory} />
+          <Visualizador products={products} compact />
 
           <Visita />
+
+          <Explorar />
         </div>
 
         {/* Footer lives outside .device so its dark background is truly full-width */}

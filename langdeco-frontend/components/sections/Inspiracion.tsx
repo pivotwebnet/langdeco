@@ -108,7 +108,7 @@ export function Inspiracion({ items, products }: InspiracionProps) {
 
       <div style={{ padding: '40px 24px 0', textAlign: 'center' }}>
         <Magnetic>
-          <Link href="/#catalogo" className="btn" style={{ background: 'transparent', color: 'var(--bg)', borderColor: 'rgba(242,241,237,0.4)', textDecoration: 'none' }}>
+          <Link href="/catalogo" className="btn" style={{ background: 'transparent', color: 'var(--bg)', borderColor: 'rgba(242,241,237,0.4)', textDecoration: 'none' }}>
             Ver todo el catálogo <Icon.Arrow />
           </Link>
         </Magnetic>

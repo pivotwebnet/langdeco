@@ -31,7 +31,7 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, showB
   const addBtnRef = useRef<HTMLButtonElement>(null)
   // Aspect fijo por variante — todas las cards del mismo listado miden igual,
   // sin importar la proporción de la foto que haya cargado cada producto.
-  const aspect = variant === 'strip' ? '3/4' : '4/5'
+  const aspect = variant === 'strip' ? '3/4' : '1/1'
   const installment = p.priceNum > 0 ? formatPrice(p.priceNum / 3) : null
 
   useGSAP(() => {
@@ -48,7 +48,7 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, showB
     >
       <div
         className="prod-card-img"
-        style={{ position: 'relative', width: '100%', aspectRatio: aspect, background: '#ECEAE4', marginBottom: 14, overflow: 'hidden' }}
+        style={{ position: 'relative', width: '100%', aspectRatio: aspect, background: '#ECEAE4', marginBottom: 8, overflow: 'hidden' }}
       >
         {showImage ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -119,17 +119,17 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, showB
       </div>
 
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
-          <h3 style={{ fontFamily: 'var(--font-ui)', fontSize: 17, fontWeight: 500, margin: 0, letterSpacing: '-0.01em', lineHeight: 1.25 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6, marginBottom: 4 }}>
+          <h3 style={{ fontFamily: 'var(--font-ui)', fontSize: variant === 'strip' ? 17 : 13, fontWeight: 500, margin: 0, letterSpacing: '-0.01em', lineHeight: 1.25 }}>
             {p.name}
           </h3>
-          <span style={{ fontFamily: 'ui-monospace,"SF Mono",Menlo,monospace', fontSize: 13, letterSpacing: '0.04em', color: 'var(--ink)', fontWeight: 500, flexShrink: 0, marginTop: 2 }}>
+          <span style={{ fontFamily: 'ui-monospace,"SF Mono",Menlo,monospace', fontSize: variant === 'strip' ? 13 : 11, letterSpacing: '0.04em', color: 'var(--ink)', fontWeight: 500, flexShrink: 0, marginTop: 2 }}>
             {p.price}
           </span>
         </div>
-        <div className="mono" style={{ marginBottom: 3, fontSize: 10 }}>{p.material}</div>
+        <div className="mono" style={{ marginBottom: 3, fontSize: variant === 'strip' ? 10 : 9 }}>{p.material}</div>
         {installment && (
-          <div className="mono" style={{ fontSize: 9, color: 'var(--ink-mute)' }}>
+          <div className="mono" style={{ fontSize: 8, color: 'var(--ink-mute)' }}>
             3 cuotas de {installment}
           </div>
         )}

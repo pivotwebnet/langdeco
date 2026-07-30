@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import type { BackendBudget, BackendClient, BackendProduct, BudgetStatus, ClientType } from '@/lib/backend-types'
+import type { BackendBudget, BackendClient, BackendProduct, BackendSale, BudgetStatus, ClientType, PaymentMethod } from '@/lib/backend-types'
 import { ReceiptView } from '@/components/admin/ReceiptView'
 import { useEscapeKey } from '@/lib/useEscapeKey'
 
@@ -27,6 +27,8 @@ export default function PresupuestosAdmin() {
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [receiptBudget, setReceiptBudget] = useState<BackendBudget | null>(null)
+  const [receiptSale, setReceiptSale] = useState<BackendSale | null>(null)
+  const [convertingBudget, setConvertingBudget] = useState<BackendBudget | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -111,7 +113,7 @@ export default function PresupuestosAdmin() {
                     <button className="adm-link-btn" onClick={() => setReceiptBudget(b)}>Ver comprobante</button>
                     {b.status === 'Open' && (
                       <>
-                        <button className="adm-link-btn success" onClick={() => changeStatus(b.id, 'Converted')}>Convertir en venta</button>
+                        <button className="adm-link-btn success" onClick={() => setConvertingBudget(b)}>Convertir en venta</button>
                         <button className="adm-link-btn danger" onClick={() => changeStatus(b.id, 'Cancelled')}>Cancelar</button>
                       </>
                     )}
@@ -140,6 +142,74 @@ export default function PresupuestosAdmin() {
           onUpdated={(updated) => { setReceiptBudget(updated as BackendBudget); load() }}
         />
       )}
+
+      {receiptSale && (
+        <ReceiptView
+          kind="sale"
+          record={receiptSale}
+          products={products}
+          onClose={() => setReceiptSale(null)}
+          onUpdated={(updated) => setReceiptSale(updated as BackendSale)}
+        />
+      )}
+
+      {convertingBudget && (
+        <ConvertBudgetModal
+          budget={convertingBudget}
+          onClose={() => setConvertingBudget(null)}
+          onConverted={(sale) => { setConvertingBudget(null); load(); setReceiptSale(sale) }}
+        />
+      )}
+    </div>
+  )
+}
+
+const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = { Transfer: 'Transferencia', Cash: 'Efectivo', Other: 'Otro' }
+
+function ConvertBudgetModal({ budget, onClose, onConverted }: { budget: BackendBudget; onClose: () => void; onConverted: (sale: BackendSale) => void }) {
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Transfer')
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  useEscapeKey(onClose)
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setSaving(true)
+    try {
+      const sale = await api<BackendSale>(`/budgets/${budget.id}/convert`, {
+        method: 'POST',
+        body: JSON.stringify({ paymentMethod }),
+      })
+      onConverted(sale)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="adm-modal-backdrop">
+      <form onSubmit={onSubmit} className="adm-modal">
+        <h2 className="adm-modal-title">Convertir presupuesto #{budget.number} en venta</h2>
+
+        {error && <div className="adm-alert error">{error}</div>}
+
+        <Field label="Medio de pago">
+          <select className="adm-select" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} style={{ width: '100%' }}>
+            {(['Transfer', 'Cash', 'Other'] as const).map((m) => <option key={m} value={m}>{PAYMENT_METHOD_LABEL[m]}</option>)}
+          </select>
+        </Field>
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+          <button className="adm-btn" type="submit" disabled={saving} style={{ flex: 1 }}>
+            {saving ? 'Convirtiendo...' : 'Confirmar y descontar stock'}
+          </button>
+          <button className="adm-btn ghost" type="button" onClick={onClose} style={{ flex: 1 }}>Cancelar</button>
+        </div>
+      </form>
     </div>
   )
 }

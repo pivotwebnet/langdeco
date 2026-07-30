@@ -1,4 +1,3 @@
-export type HeroVariant = 'editorial' | 'cinematic' | 'showroom'
 export type Palette = 'bone' | 'cream' | 'stone'
 export type AnimIntensity = 'off' | 'subtle' | 'bold'
 
@@ -46,14 +45,4 @@ export interface AdminUser {
   id: string
   email: string
   role: 'admin' | 'editor'
-}
-
-export interface Inquiry {
-  id: string
-  clientName: string
-  email: string
-  message: string
-  productIds: string[]
-  createdAt: string
-  status: 'pending' | 'replied' | 'closed'
 }

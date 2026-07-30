@@ -63,8 +63,8 @@ Checklist ejecutable. Cada tarea referencia la sección de `plan.md` de donde sa
 
 - [ ] Toggle Retail/Wholesale por línea en el alta/edición de presupuesto — deshabilitado con tooltip si el producto no tiene `WholesalePrice`.
 - [ ] Selector de tipo de descuento (%/monto) que admite negativo (recargo) — decidir UX (un campo con signo vs. dos campos separados Descuento/Recargo, ver `plan.md` §6, nota de UI).
-- [ ] Botón "Convertir en venta" en el detalle, visible solo si `Status == Open`, abre modal para elegir `PaymentMethod` y confirma contra `POST /convert`.
-- [ ] Tras convertir, mostrar link/redirect a la `Sale` generada.
+- [x] Botón "Convertir en venta" en el listado, visible solo si `Status == Open`, abre modal para elegir `PaymentMethod` y confirma contra `POST /convert` (2026-07-29 — antes solo hacía `PATCH /status`, que ni descontaba stock ni creaba la `Sale` real; corregido en `app/admin/(protected)/presupuestos/page.tsx`).
+- [x] Tras convertir, muestra el comprobante de la `Sale` generada (`ReceiptView` con `kind="sale"`) en el mismo modal flow.
 
 ## Frontend — Ventas
 

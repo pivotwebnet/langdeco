@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { BackendCategory, BackendProduct } from '@/lib/backend-types'
 
 type ProductForm = {
@@ -300,14 +300,11 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
 
         <div style={{ marginTop: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span className="mono">Fotos (URL, hasta 6 — la primera es la portada)</span>
+            <span className="mono">Fotos (hasta 6 — la primera es la portada)</span>
             <button type="button" className="adm-btn ghost sm" onClick={addImage} disabled={form.images.length >= 6}>+ Agregar</button>
           </div>
           {form.images.map((url, i) => (
-            <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-              <input className="adm-input" value={url} onChange={(e) => updateImage(i, e.target.value)} placeholder="https://..." style={{ flex: 1 }} />
-              <button type="button" className="adm-btn ghost sm" onClick={() => removeImage(i)}>✕</button>
-            </div>
+            <ImageSlot key={i} url={url} onChange={(v) => updateImage(i, v)} onRemove={() => removeImage(i)} />
           ))}
         </div>
 
@@ -318,6 +315,53 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
           <button className="adm-btn ghost" onClick={onCancel} style={{ flex: 1 }}>Cancelar</button>
         </div>
       </div>
+    </div>
+  )
+}
+
+function ImageSlot({ url, onChange, onRemove }: { url: string; onChange: (url: string) => void; onRemove: () => void }) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const onPickFile = async (file: File) => {
+    setUploading(true)
+    setError(null)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/admin/products/upload', { method: 'POST', body: form })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
+      onChange(data.url)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+      <div style={{ width: 40, height: 40, flexShrink: 0, background: 'var(--adm-surface-2)', overflow: 'hidden' }}>
+        {url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        )}
+      </div>
+      <input className="adm-input" value={url} onChange={(e) => onChange(e.target.value)} placeholder="https://... o subí un archivo" style={{ flex: 1 }} />
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        style={{ display: 'none' }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onPickFile(f); e.target.value = '' }}
+      />
+      <button type="button" className="adm-btn ghost sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
+        {uploading ? 'Subiendo...' : 'Subir'}
+      </button>
+      <button type="button" className="adm-btn ghost sm" onClick={onRemove}>✕</button>
+      {error && <span style={{ color: 'var(--danger, #c0392b)', fontSize: 11 }}>{error}</span>}
     </div>
   )
 }

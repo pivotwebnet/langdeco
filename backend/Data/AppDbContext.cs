@@ -23,6 +23,7 @@ public class AppDbContext : DbContext
     public DbSet<Supplier> Suppliers => Set<Supplier>();
     public DbSet<SupplierContactPerson> SupplierContactPersons => Set<SupplierContactPerson>();
     public DbSet<SupplierCustomField> SupplierCustomFields => Set<SupplierCustomField>();
+    public DbSet<Inquiry> Inquiries => Set<Inquiry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -236,6 +237,14 @@ public class AppDbContext : DbContext
         {
             entity.Property(cf => cf.Label).IsRequired().HasMaxLength(120);
             entity.Property(cf => cf.Value).IsRequired().HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<Inquiry>(entity =>
+        {
+            entity.Property(i => i.ClientName).IsRequired().HasMaxLength(200);
+            entity.Property(i => i.Email).IsRequired().HasMaxLength(200);
+            entity.Property(i => i.Message).IsRequired().HasMaxLength(2000);
+            entity.Property(i => i.Status).HasConversion<string>().HasMaxLength(20);
         });
     }
 

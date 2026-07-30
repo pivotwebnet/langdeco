@@ -48,7 +48,7 @@ export function AdminSidebar() {
         <button className="adm-topbar-btn" onClick={() => setMobileOpen(true)} aria-label="Abrir menú">
           ☰
         </button>
-        <span className="script">LasLongDeco</span>
+        <span className="script">LasLangDeco</span>
       </div>
 
       <div className={`adm-sidebar-backdrop${mobileOpen ? ' show' : ''}`} onClick={() => setMobileOpen(false)} />
@@ -56,7 +56,7 @@ export function AdminSidebar() {
       <aside className={`adm-sidebar${collapsed ? ' collapsed' : ''}${mobileOpen ? ' mobile-open' : ''}`}>
         <div className="adm-sidebar-head">
           <div className="adm-sidebar-brand">
-            <div className="script">LasLongDeco</div>
+            <div className="script">LasLangDeco</div>
             <div className="tag">Admin</div>
           </div>
           <button

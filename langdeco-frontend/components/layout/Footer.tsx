@@ -1,17 +1,20 @@
+'use client'
+
 import type { CSSProperties, ReactNode } from 'react'
 import Link from 'next/link'
 
 const FOOTER_LINKS = {
   coleccion: [
-    { label: 'Catálogo',              href: '/#catalogo' },
+    { label: 'Catálogo',              href: '/catalogo' },
     { label: 'Nuestra Selección',     href: '/#seleccion' },
-    { label: 'Inspiración',           href: '/#inspiracion' },
-    { label: 'Piezas Mayores',        href: '/#catalogo' },
-    { label: 'Pequeños Tesoros',      href: '/#catalogo' },
+    { label: 'Inspiración',           href: '/inspiracion' },
+    { label: 'Piezas Mayores',        href: '/catalogo?cat=mayor' },
+    { label: 'Pequeños Tesoros',      href: '/catalogo?cat=tesoro' },
   ],
-  showroom: [
-    { label: 'Visita el showroom',       href: '/#visita' },
-    { label: 'Asesoría de interiorismo', href: '/#visita' },
+  empresa: [
+    { label: 'Nosotros',                 href: '/nosotros' },
+    { label: 'Visita el showroom',       href: '/contacto' },
+    { label: 'Asesoría de interiorismo', href: '/contacto' },
   ],
 }
 
@@ -53,12 +56,12 @@ export function Footer() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/assets/logo.png"
-              alt="LasLongDeco"
+              alt="LasLangDeco"
               style={{ height: 52, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.88 }}
             />
           </Link>
           <div className="mono" style={{ color: 'rgba(242,241,237,0.3)', marginBottom: 18 }}>
-            Casa &amp; curaduría · desde 1994
+            Casa &amp; curaduría · desde 2014
           </div>
           <p style={{
             fontFamily: 'var(--font-edit)',
@@ -85,13 +88,13 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Showroom */}
+        {/* Empresa */}
         <div className="footer-col">
           <div className="mono" style={{ color: 'rgba(242,241,237,0.28)', marginBottom: 18, fontSize: 9 }}>
-            Showroom
+            Empresa
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
-            {FOOTER_LINKS.showroom.map((l) => (
+            {FOOTER_LINKS.empresa.map((l) => (
               <FooterLink key={l.label} href={l.href}>{l.label}</FooterLink>
             ))}
           </div>
@@ -103,6 +106,15 @@ export function Footer() {
             Contacto
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+            <div className="footer-map">
+              <iframe
+                title="Showroom · Sgto. Cabral 104, Rafaela"
+                src="https://maps.google.com/maps?q=-31.254139,-61.488861&output=embed&z=15"
+                style={{ border: 0, width: '100%', height: '100%', display: 'block' }}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
             <div style={{ fontSize: 13, lineHeight: 1.55, color: 'rgba(242,241,237,0.58)' }}>
               Sgto. Cabral 104<br />S2300 Rafaela · Santa Fe
             </div>
@@ -117,12 +129,12 @@ export function Footer() {
               Hablar con nosotros
             </a>
             <a
-              href="mailto:asesoria@laslongdeco.es"
+              href="mailto:laslangdeco@gmail.com"
               style={linkStyle}
               onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(242,241,237,0.95)' }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(242,241,237,0.58)' }}
             >
-              asesoria@laslongdeco.es
+              laslangdeco@gmail.com
             </a>
             <div style={{ marginTop: 6, fontSize: 12, color: 'rgba(242,241,237,0.36)', lineHeight: 1.55 }}>
               9:00 – 12:00<br />15:30 – 19:30
@@ -139,7 +151,7 @@ export function Footer() {
           alignItems: 'center', flexWrap: 'wrap', gap: 10,
         }}>
           <span className="mono" style={{ color: 'rgba(242,241,237,0.28)', fontSize: 9 }}>
-            © 2026 · LasLongDeco SL
+            © 2026 · LasLangDeco
           </span>
           <div style={{ display: 'flex', gap: 20 }}>
             {['Privacidad', 'Cookies', 'Aviso legal'].map((label) => (

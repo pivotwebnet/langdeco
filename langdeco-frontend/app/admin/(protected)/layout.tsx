@@ -6,7 +6,7 @@ import { setupRequired } from '@/lib/admin-credentials'
 import { isValidSessionToken, SESSION_COOKIE } from '@/lib/admin-session'
 
 export const metadata: Metadata = {
-  title: 'Admin — LasLongDeco',
+  title: 'Admin — LasLangDeco',
 }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

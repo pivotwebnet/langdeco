@@ -41,7 +41,7 @@ export default function SetupPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--adm-bg)', fontFamily: 'var(--font-ui)' }}>
       <form onSubmit={onSubmit} className="adm-card" style={{ padding: '40px 36px', width: 360 }}>
-        <div style={{ fontFamily: 'var(--font-script)', fontSize: 26, marginBottom: 4 }}>LasLongDeco</div>
+        <div style={{ fontFamily: 'var(--font-script)', fontSize: 26, marginBottom: 4 }}>LasLangDeco</div>
         <h1 style={{ fontSize: 18, fontWeight: 500, margin: '0 0 8px' }}>Configuración inicial</h1>
         <p style={{ fontSize: 13, color: 'var(--ink-soft)', margin: '0 0 24px' }}>
           Definí la contraseña del panel de administración.

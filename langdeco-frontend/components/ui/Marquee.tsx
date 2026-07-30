@@ -1,12 +1,12 @@
 'use client'
 
-import { useRef } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 
 interface MarqueeProps {
   items?: string[]
-  speed?: number
+  speed?: number // pixels per second
   dark?: boolean
 }
 
@@ -16,27 +16,56 @@ const DEFAULT_ITEMS = [
   'Piezas Atemporales',
 ]
 
-export function Marquee({ items = DEFAULT_ITEMS, speed = 22, dark = false }: MarqueeProps) {
+export function Marquee({ items = DEFAULT_ITEMS, speed = 40, dark = false }: MarqueeProps) {
   const trackRef = useRef<HTMLDivElement>(null)
+  const [repeatCount, setRepeatCount] = useState(4)
+
+  /* With only 1-2 copies of a short item list, one copy can be narrower than
+     the viewport (wide monitors, few items) — the visible half then runs out
+     mid-screen before the loop resets, reading as "stuck halfway". Keep
+     growing the copy count until a single copy alone already spans the full
+     viewport, so the animation always has enough content to travel the
+     whole width with room to spare. */
+  useLayoutEffect(() => {
+    const track = trackRef.current
+    if (!track) return
+
+    const singleCopyWidth = track.scrollWidth / 2
+    if (singleCopyWidth > 0 && singleCopyWidth < window.innerWidth) {
+      setRepeatCount((c) => c + 2)
+    }
+  }, [repeatCount, items])
+
+  useLayoutEffect(() => {
+    const onResize = () => setRepeatCount((c) => Math.max(c, 4))
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   useGSAP(() => {
     const track = trackRef.current
     if (!track) return
 
-    const totalW = track.scrollWidth / 2
+    /* xPercent -50 (not a pixel width from scrollWidth) so the loop stays
+       exact regardless of font-load timing — the two halves are identical,
+       so -50% always lines up seamlessly instead of jumping partway. Duration
+       derives from the measured width so speed (px/s) stays constant no
+       matter how many copies repeatCount ended up needing. */
+    const halfWidth = track.scrollWidth / 2
+    const duration = halfWidth / speed
 
     gsap.fromTo(
       track,
-      { x: 0 },
-      { x: -totalW, duration: speed, ease: 'none', repeat: -1 }
+      { xPercent: 0 },
+      { xPercent: -50, duration, ease: 'none', repeat: -1 }
     )
-  }, { scope: trackRef })
+  }, { scope: trackRef, dependencies: [repeatCount, speed] })
 
-  /* duplicate items for seamless loop */
-  const doubled = [...items, ...items]
+  const singleSet = Array.from({ length: repeatCount }, () => items).flat()
+  const doubled = [...singleSet, ...singleSet]
 
   const bg    = dark ? 'var(--ink)' : 'var(--bg-deep)'
-  const color = dark ? 'rgba(242,241,237,0.55)' : 'var(--ink-mute)'
+  const color = dark ? 'rgba(242,241,237,0.55)' : 'var(--ink)'
   const dot   = dark ? 'rgba(242,241,237,0.2)' : 'rgba(10,10,10,0.15)'
   const border = dark
     ? 'rgba(242,241,237,0.1)'

@@ -62,7 +62,7 @@ export default function AdminDashboard() {
       <div className="adm-page-head">
         <div>
           <h1 className="adm-title">Panel de control</h1>
-          <p className="adm-eyebrow">LasLongDeco · Casa &amp; Curaduría</p>
+          <p className="adm-eyebrow">LasLangDeco · Casa &amp; Curaduría</p>
         </div>
       </div>
 

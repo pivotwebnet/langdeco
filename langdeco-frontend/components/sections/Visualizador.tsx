@@ -1,14 +1,12 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import Link from 'next/link'
-import { Header } from '@/components/layout/Header'
-import { Footer } from '@/components/layout/Footer'
 import * as Icon from '@/components/ui/Icon'
 import type { Product } from '@/lib/types'
 
 interface Props {
   products: Product[]
+  compact?: boolean
 }
 
 interface PlacedItem {
@@ -24,7 +22,7 @@ interface PlacedItem {
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n))
 
-export function VisualizadorClient({ products }: Props) {
+export function Visualizador({ products, compact = false }: Props) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoSize, setPhotoSize] = useState<{ w: number; h: number } | null>(null)
   const [items, setItems] = useState<PlacedItem[]>([])
@@ -207,7 +205,7 @@ export function VisualizadorClient({ products }: Props) {
       const url = canvas.toDataURL('image/png')
       const a = document.createElement('a')
       a.href = url
-      a.download = 'mi-espacio-laslongdeco.png'
+      a.download = 'mi-espacio-laslangdeco.png'
       a.click()
     } catch {
       alert('No se pudo generar la descarga de esta combinación de imágenes.')
@@ -215,150 +213,129 @@ export function VisualizadorClient({ products }: Props) {
   }
 
   return (
-    <>
-      <Header />
+    <section data-dt="visualizador-embed" data-size={compact ? 'compact' : undefined} style={{ position: 'relative', padding: '32px 24px 72px' }}>
+      <div style={{ marginBottom: 20 }}>
+        <div className="kicker" style={{ marginBottom: 10 }}>Probalo en tu casa</div>
+        <h2 className="display" style={{ fontSize: compact ? 'clamp(24px, 4.5vw, 34px)' : 'clamp(28px, 5vw, 40px)', margin: '0 0 10px' }}>
+          Visualizador de{' '}
+          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>espacios</em>
+        </h2>
+        <p style={{ maxWidth: 560, fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.6 }}>
+          Subí una foto de tu ambiente y arrastrá piezas del catálogo encima para imaginar cómo quedan
+          antes de comprar. Podés moverlas, cambiarlas de tamaño y descargar el resultado.
+        </p>
+      </div>
 
-      <main style={{ paddingTop: 'var(--header-h)', minHeight: '100vh', background: 'var(--bg)' }}>
-        <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)' }}>
-          <Link
-            href="/"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              color: 'var(--ink-mute)', textDecoration: 'none',
-              fontFamily: 'ui-monospace, monospace', fontSize: 9,
-              letterSpacing: '0.16em', textTransform: 'uppercase',
-            }}
-          >
-            <Icon.Arrow style={{ transform: 'rotate(180deg)', width: 14, height: 14 }} />
-            Inicio
-          </Link>
-        </div>
-
-        <div style={{ padding: '32px 24px 12px' }}>
-          <div className="kicker" style={{ marginBottom: 10 }}>Probalo en tu casa</div>
-          <h1 className="display" style={{ fontSize: 'clamp(28px, 5vw, 48px)', margin: '0 0 10px' }}>
-            Visualizador de{' '}
-            <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>espacios</em>
-          </h1>
-          <p style={{ maxWidth: 560, fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.6 }}>
-            Subí una foto de tu ambiente y arrastrá piezas del catálogo encima para imaginar cómo quedan
-            antes de comprar. Podés moverlas, cambiarlas de tamaño y descargar el resultado.
-          </p>
-        </div>
-
-        <div className="viz-layout">
-          {/* ── Canvas ─────────────────────────────────────────── */}
-          <div className="viz-canvas-col">
-            {!photoUrl ? (
+      <div className="viz-layout">
+        {/* ── Canvas ─────────────────────────────────────────── */}
+        <div className="viz-canvas-col">
+          {!photoUrl ? (
+            <div
+              className={`viz-dropzone${dragOver ? ' over' : ''}`}
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault()
+                setDragOver(false)
+                if (e.dataTransfer.files?.length) handlePhotoFile(e.dataTransfer.files[0])
+              }}
+              onClick={() => fileInputRef.current?.click()}
+              role="button"
+              tabIndex={0}
+            >
+              <Icon.Plus style={{ width: 22, height: 22 }} />
+              <div style={{ marginTop: 12, fontSize: 14, fontWeight: 500 }}>Subí una foto de tu espacio</div>
+              <div className="mono" style={{ marginTop: 6, fontSize: 9 }}>Arrastrá una imagen o hacé clic para elegir un archivo</div>
+            </div>
+          ) : (
+            <>
               <div
-                className={`viz-dropzone${dragOver ? ' over' : ''}`}
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+                ref={wrapperRef}
+                className="viz-canvas"
+                onDragOver={handleCanvasDragOver}
                 onDragLeave={() => setDragOver(false)}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  setDragOver(false)
-                  if (e.dataTransfer.files?.length) handlePhotoFile(e.dataTransfer.files[0])
-                }}
-                onClick={() => fileInputRef.current?.click()}
-                role="button"
-                tabIndex={0}
+                onDrop={handleCanvasDrop}
+                onPointerDown={() => setSelectedUid(null)}
               >
-                <Icon.Plus style={{ width: 22, height: 22 }} />
-                <div style={{ marginTop: 12, fontSize: 14, fontWeight: 500 }}>Subí una foto de tu espacio</div>
-                <div className="mono" style={{ marginTop: 6, fontSize: 9 }}>Arrastrá una imagen o hacé clic para elegir un archivo</div>
-              </div>
-            ) : (
-              <>
-                <div
-                  ref={wrapperRef}
-                  className="viz-canvas"
-                  onDragOver={handleCanvasDragOver}
-                  onDragLeave={() => setDragOver(false)}
-                  onDrop={handleCanvasDrop}
-                  onPointerDown={() => setSelectedUid(null)}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={photoUrl} alt="Tu espacio" className="viz-photo" draggable={false} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photoUrl} alt="Tu espacio" className="viz-photo" draggable={false} />
 
-                  {dragOver && <div className="viz-canvas-hint">Soltá aquí</div>}
+                {dragOver && <div className="viz-canvas-hint">Soltá aquí</div>}
 
-                  {items.map((item) => (
-                    <div
-                      key={item.uid}
-                      className={`viz-item${selectedUid === item.uid ? ' selected' : ''}`}
-                      style={{ left: `${item.x}%`, top: `${item.y}%`, width: `${item.width}%`, zIndex: item.z }}
-                      onPointerDown={(e) => handleItemPointerDown(e, item.uid)}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={item.imageUrl} alt={item.name} draggable={false} />
-                      {selectedUid === item.uid && (
-                        <>
-                          <button
-                            className="viz-item-remove"
-                            aria-label={`Quitar ${item.name}`}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onClick={() => removeItem(item.uid)}
-                          >
-                            <Icon.Close style={{ width: 11, height: 11 }} />
-                          </button>
-                          <div
-                            className="viz-item-resize"
-                            onPointerDown={(e) => handleResizePointerDown(e, item.uid)}
-                          />
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="viz-canvas-actions">
-                  <button className="btn ghost" onClick={resetPhoto}>
-                    <Icon.Trash /> Cambiar foto
-                  </button>
-                  <button className="btn" onClick={handleDownload} disabled={items.length === 0}>
-                    Descargar imagen
-                  </button>
-                </div>
-              </>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={(e) => handlePhotoFile(e.target.files?.[0])}
-            />
-          </div>
-
-          {/* ── Catálogo lateral ───────────────────────────────── */}
-          <aside className="viz-sidebar">
-            <div className="mono" style={{ marginBottom: 12, fontSize: 9, letterSpacing: '0.18em' }}>
-              Arrastrá un mueble a la foto
-            </div>
-            <div className="viz-sidebar-grid">
-              {withImage.map((p) => (
-                <button
-                  key={p.id}
-                  className="viz-thumb"
-                  draggable
-                  onDragStart={(e) => handleThumbDragStart(e, p)}
-                  onClick={() => addItem(p)}
-                  disabled={!photoUrl}
-                  title={photoUrl ? `Arrastrar o tocar para colocar «${p.name}»` : 'Subí una foto primero'}
-                >
-                  <div className="viz-thumb-img">
+                {items.map((item) => (
+                  <div
+                    key={item.uid}
+                    className={`viz-item${selectedUid === item.uid ? ' selected' : ''}`}
+                    style={{ left: `${item.x}%`, top: `${item.y}%`, width: `${item.width}%`, zIndex: item.z }}
+                    onPointerDown={(e) => handleItemPointerDown(e, item.uid)}
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={p.imageUrl} alt={p.name} draggable={false} />
+                    <img src={item.imageUrl} alt={item.name} draggable={false} />
+                    {selectedUid === item.uid && (
+                      <>
+                        <button
+                          className="viz-item-remove"
+                          aria-label={`Quitar ${item.name}`}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={() => removeItem(item.uid)}
+                        >
+                          <Icon.Close style={{ width: 11, height: 11 }} />
+                        </button>
+                        <div
+                          className="viz-item-resize"
+                          onPointerDown={(e) => handleResizePointerDown(e, item.uid)}
+                        />
+                      </>
+                    )}
                   </div>
-                  <span className="viz-thumb-name">{p.name}</span>
-                </button>
-              ))}
-            </div>
-          </aside>
-        </div>
-      </main>
+                ))}
+              </div>
 
-      <Footer />
-    </>
+              <div className="viz-canvas-actions">
+                <button className="btn ghost" onClick={resetPhoto}>
+                  <Icon.Trash /> Cambiar foto
+                </button>
+                <button className="btn" onClick={handleDownload} disabled={items.length === 0}>
+                  Descargar imagen
+                </button>
+              </div>
+            </>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => handlePhotoFile(e.target.files?.[0])}
+          />
+        </div>
+
+        {/* ── Catálogo lateral ───────────────────────────────── */}
+        <aside className="viz-sidebar">
+          <div className="mono" style={{ marginBottom: 12, fontSize: 9, letterSpacing: '0.18em' }}>
+            Arrastrá un mueble a la foto
+          </div>
+          <div className="viz-sidebar-grid">
+            {withImage.map((p) => (
+              <button
+                key={p.id}
+                className="viz-thumb"
+                draggable
+                onDragStart={(e) => handleThumbDragStart(e, p)}
+                onClick={() => addItem(p)}
+                disabled={!photoUrl}
+                title={photoUrl ? `Arrastrar o tocar para colocar «${p.name}»` : 'Subí una foto primero'}
+              >
+                <div className="viz-thumb-img">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.imageUrl} alt={p.name} draggable={false} />
+                </div>
+                <span className="viz-thumb-name">{p.name}</span>
+              </button>
+            ))}
+          </div>
+        </aside>
+      </div>
+    </section>
   )
 }

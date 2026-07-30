@@ -171,3 +171,14 @@ export interface SalesSummary {
   ranking: ProductRanking[]
   lowStock: LowStockProduct[]
 }
+
+export type InquiryStatus = 'Pending' | 'Replied' | 'Closed'
+
+export interface BackendInquiry {
+  id: number
+  clientName: string
+  email: string
+  message: string
+  status: InquiryStatus
+  createdAt: string
+}

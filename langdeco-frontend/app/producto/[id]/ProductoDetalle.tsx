@@ -52,7 +52,7 @@ export function ProductoDetalle({ product, related }: Props) {
         {/* ── Back bar ─────────────────────────────────────── */}
         <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)' }}>
           <Link
-            href="/#catalogo"
+            href="/catalogo"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               color: 'var(--ink-mute)', textDecoration: 'none',

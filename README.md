@@ -20,8 +20,8 @@ El backend .NET expone la API y vive pensado para quedar en red interna (no expu
 
 ### Modelo de datos
 
-- **Category** / **Product**: catálogo, con `Product` soft-delete (`Active`), specs (ficha técnica) y hasta 6 fotos por producto.
-- **Sale** (venta) y **Budget** (presupuesto): comprobantes con numeración correlativa propia por tipo (`Number`, arranca en 1), datos de cliente embebidos (`CustomerInfo`: nombre/contacto/CUIT/domicilio — es la copia impresa en el comprobante, no cambia si el cliente se edita después), bonificación %, IVA %, y vínculo opcional `ClientId` a un cliente de la Base de Datos. `Sale` además tiene `Status` (`Pending`/`Paid`/`Cancelled`) y descuenta stock; `Budget` no toca stock y tiene `ValidUntil` (fecha de vencimiento) y `Status` (`Open`/`Converted`/`Expired`/`Cancelled`).
+- **Category** / **Product**: catálogo, con `Product` soft-delete (`Active`), `WholesalePrice` opcional (debe ser menor al `Price` de lista), specs (ficha técnica) y hasta 6 fotos por producto.
+- **Sale** (venta) y **Budget** (presupuesto): comprobantes con numeración correlativa propia por tipo (`Number`, arranca en 1), datos de cliente embebidos (`CustomerInfo`: nombre/contacto/CUIT/domicilio — es la copia impresa en el comprobante, no cambia si el cliente se edita después), bonificación (`DiscountType: Percent|Fixed`, admite negativo = recargo), IVA %, y vínculo opcional `ClientId` a un cliente de la Base de Datos. Cada línea (`SaleItem`/`BudgetItem`) tiene su propio `PriceType` (`Retail`/`Wholesale`) que resuelve contra `Price`/`WholesalePrice` del producto. `Sale` además tiene `Status` (`Pending`/`Paid`/`Cancelled`) y descuenta stock; `Budget` no toca stock y tiene `ValidUntil` (fecha de vencimiento) y `Status` (`Open`/`Converted`/`Expired`/`Cancelled`) — un `Budget` `Open` se puede convertir en `Sale` real (`POST /api/budgets/{id}/convert`, ver sección **Precio mayorista y conversión Presupuesto → Venta**), quedando `Sale.BudgetId`/`Budget.ConvertedSaleId` cruzados.
 - **Client** (cliente) y **Supplier** (proveedor): maestros completos con datos de contacto, domicilio, "Personas de Contacto" y "Campos custom" (listas), categoría y descuento general, y datos de facturación (razón social, CUIT, condición de IVA, comprobante por defecto, domicilio fiscal).
 - **DocumentCounter**: contador correlativo por tipo de comprobante (`Sale`/`Budget`), incrementado de forma atómica.
 - **CompanySettings**: nombre/teléfono/logo de la empresa, usado en el encabezado de los PDF.
@@ -63,7 +63,7 @@ Públicos (sin clave):
 Admin (requieren header `X-Admin-Key`):
 - Productos/Categorías: CRUD completo + `activate`/`deactivate`.
 - `POST /api/sales`, `GET /api/sales`, `GET /api/sales/{id}`, `PUT /api/sales/{id}`, `PATCH /api/sales/{id}/status`, `GET /api/sales/{id}/pdf`, `GET /api/sales/summary`.
-- `POST /api/budgets`, `GET /api/budgets`, `GET /api/budgets/{id}`, `PUT /api/budgets/{id}`, `PATCH /api/budgets/{id}/status`, `GET /api/budgets/{id}/pdf`.
+- `POST /api/budgets`, `GET /api/budgets`, `GET /api/budgets/{id}`, `PUT /api/budgets/{id}`, `PATCH /api/budgets/{id}/status`, `POST /api/budgets/{id}/convert`, `GET /api/budgets/{id}/pdf`.
 - `POST /api/clients`, `GET /api/clients`, `GET /api/clients/{id}`, `PUT /api/clients/{id}`, `DELETE /api/clients/{id}`, `POST /api/clients/{id}/activate`, `GET /api/clients/export`, `POST /api/clients/import`.
 - Mismo set para `/api/suppliers`.
 
@@ -113,19 +113,46 @@ Vive enteramente en el frontend, es solo por contraseña (sin usuario):
 - `lib/admin-session.ts` — cookie de sesión firmada (HMAC-SHA256), expira a los 7 días.
 - Primer ingreso a `/admin` sin contraseña configurada → redirige a `/admin/setup` para definirla. Login limita a 5 intentos fallidos por IP cada 15 minutos.
 
+### Precio mayorista y conversión Presupuesto → Venta
+
+`Product.WholesalePrice` (opcional, debe ser menor al precio de lista) y `PriceType` (`Retail`/`Wholesale`) por línea de `Sale`/`Budget` permiten facturar algunas líneas a precio mayorista dentro del mismo comprobante. `PricingService.ResolveUnitPrice` resuelve el precio según `PriceType` y devuelve 400 si se pide `Wholesale` sobre un producto sin `WholesalePrice`. El descuento/bonificación (`DiscountType: Percent|Fixed`) admite valores negativos para representar un **recargo** en vez de un descuento.
+
+La conversión real de un Presupuesto en Venta es `POST /api/budgets/{id}/convert` (`BudgetConvertDto { PaymentMethod }`): valida que el presupuesto siga `Open` (venciéndolo primero si corresponde), descuenta stock por ítem con rollback si falta alguno, crea la `Sale` con numeración propia y `BudgetId`, y marca el `Budget` como `Converted` con `ConvertedSaleId`/`ConvertedAt`. Si esa `Sale` generada se cancela después, `BudgetLifecycleService.ReopenIfConvertedAsync` reabre el `Budget` a `Open` (salvo que ya haya vencido, en cuyo caso queda `Expired`).
+
+**Nota:** por ahora el toggle Retail/Wholesale por línea y el selector de tipo de descuento (%/monto con recargo) **no están en la UI del panel** — `NewBudgetModal`/`NewSaleModal` solo arman ítems `Retail` con descuento en %. `lib/backend-types.ts` tampoco refleja todavía `wholesalePrice`, `priceType`, `discountType`, `discountFixedAmount`, `convertedSaleId`/`convertedAt`. El backend soporta todo esto de punta a punta (ver spec en `specs/presupuestos-precio-mayorista/`), falta construir esa parte del frontend.
+
 ### Panel de administración (`app/admin/(protected)/`)
+
+El panel fue rediseñado (CSS propio en `app/admin/admin.css`, cargado desde `app/admin/layout.tsx`, separado de `globals.css` del sitio público).
 
 | Ruta | Qué hace |
 |---|---|
-| `/admin` | Dashboard: ingresos, ticket promedio, ranking de productos, reposición de stock. |
+| `/admin` | Dashboard: ingresos, ticket promedio, ranking de productos, reposición de stock, filtro de fecha (3/6/12 meses o rango libre vía `?from=&to=` en `GET /api/sales/summary`, filtra por `Sale.CreatedAt`). |
 | `/admin/productos` | ABM de productos (specs, fotos por URL, filtro por categoría). |
 | `/admin/categorias` | ABM de categorías. |
 | `/admin/ventas` | Listado + alta de ventas manuales; al crear una se abre el comprobante (ver/editar/imprimir/exportar PDF). |
-| `/admin/presupuestos` | Igual que Ventas pero sin tocar stock, con fecha de vencimiento. |
+| `/admin/presupuestos` | Igual que Ventas pero sin tocar stock, con fecha de vencimiento. "Convertir en venta" abre un modal para elegir medio de pago y llama a `POST /convert` (descuenta stock de verdad y abre el comprobante de la `Sale` generada). |
 | `/admin/base-datos/clientes` | ABM de Clientes (todos los campos de contacto y facturación, Personas de Contacto, Campos custom), import/export Excel. |
 | `/admin/base-datos/proveedores` | Igual que Clientes, con sección "Compras" en vez de "Ventas". |
 | `/admin/clientes` | "Consultas" — bandeja de leads de contacto (WhatsApp/email), módulo aparte, con datos de muestra. |
+| `/admin/contenido` | Contenido editable del sitio público: "Inspiración" (ex-Lookbook), barra de promociones scrolleable, imágenes propias. Storage en `DATA_DIR/site-content.json` + `DATA_DIR/uploads` (ver sección **Storage de contenido e imágenes**). |
 | `/admin/configuracion` | Cambio de contraseña del panel. |
+
+### Visualizador de espacios (`app/visualizador/`)
+
+Feature del sitio público (no del admin, aunque nació en la misma racha de trabajo): el visitante sube una foto de su espacio y prueba superponer los muebles del catálogo antes de comprar (`VisualizadorClient.tsx`). Enlazado desde `Header.tsx`.
+
+### Storage de contenido e imágenes
+
+El contenido editable del sitio (`site-content.json`) y las imágenes subidas (banner, contenido, fotos de producto) se guardan en disco bajo `DATA_DIR` (`lib/storage.ts`, `lib/media.ts`), servidas por `GET /api/media/[file]`. Es una decisión explícita del usuario mientras no haya credenciales de Cloudflare R2 — el punto de entrada para migrar es `saveUploadedImage()` en `lib/media.ts`; nada más del código depende de dónde vive el archivo físico.
+
+### Frontend público — rediseño con GSAP y carrito global
+
+- Animaciones con GSAP (`gsap`, `@gsap/react`): texto del hero letra por letra con scroll reveal, subrayado por palabra al hover, etc. Los elementos "3D" flotantes del hero/favoritos/inspiración (placeholders 2D con parallax) se sacaron del diseño actual.
+- Carrito, botón de WhatsApp y botón de "subir" (scroll to top) persisten en toda la web vía contexto global (`lib/cart.tsx`, `CartDrawerHost.tsx`, `FloatingDock.tsx`), no solo en la home.
+- `components/ui/ProductCard.tsx` (variantes `grid`/`strip`) es el único componente de tarjeta de producto — reemplaza duplicados que existían antes en `Productos.tsx` y `Favoritos.tsx`. Incluye botón de WhatsApp por producto y tamaño uniforme.
+- `components/ui/ImagePlaceholder.tsx` es el estado de "sin imagen" (ya no hay fotos de stock de Unsplash hardcodeadas en ningún lado — ni en el seed del backend ni en `lib/data.ts`); un producto sin fotos reales muestra este placeholder.
+- El catálogo público solo tiene 2 categorías (`mayor` = Piezas Mayores, `tesoro` = Pequeños Tesoros) — no hay categorías por tipo de mueble.
 
 **Comprobante de Venta/Presupuesto** (`components/admin/ReceiptView.tsx`): réplica visual del PDF con dos modos — vista de solo lectura y edición inline (cliente + ítems + bonificación/IVA). Acciones:
 - **Imprimir** — abre el PDF en una pestaña nueva y dispara el diálogo de impresión del navegador.
@@ -153,6 +180,8 @@ npm run dev     # necesita el backend corriendo en API_URL
 - El export de Excel solo incluye la primera Persona de Contacto por fila; los Campos custom no se exportan (sí se pueden seguir editando desde el panel).
 - La sección "Consultas" (`/admin/clientes`) sigue con datos de muestra, sin conectar a un backend real — es un módulo aparte de la Base de Datos de Clientes.
 - Subida de fotos de producto: hoy son URLs escritas a mano, no hay upload de archivos desde la PC.
+- El precio mayorista/`PriceType` por línea está completo en el backend pero **no tiene UI en el panel** todavía (ver sección **Precio mayorista y conversión Presupuesto → Venta**) — falta el bloque de Frontend de `specs/presupuestos-precio-mayorista/tasks.md`.
+- El "Visualizador de espacios" (`/visualizador`) es una prueba de superposición de muebles sobre una foto subida por el visitante, sin guardado ni backend propio más allá de leer el catálogo.
 
 ## Seguridad — checklist para producción
 
