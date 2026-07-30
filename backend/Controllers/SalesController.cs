@@ -188,8 +188,8 @@ public class SalesController : ControllerBase
 
         if (status is not null) query = query.Where(s => s.Status == status);
         if (clientType is not null) query = query.Where(s => s.ClientType == clientType);
-        if (from is not null) query = query.Where(s => s.CreatedAt >= from);
-        if (to is not null) query = query.Where(s => s.CreatedAt <= to);
+        if (from is not null) query = query.Where(s => s.CreatedAt >= DateTime.SpecifyKind(from.Value, DateTimeKind.Utc));
+        if (to is not null) query = query.Where(s => s.CreatedAt <= DateTime.SpecifyKind(to.Value, DateTimeKind.Utc));
 
         var sales = await query.OrderByDescending(s => s.CreatedAt).ToListAsync();
         return Ok(sales.Select(ToDto));
@@ -253,6 +253,9 @@ public class SalesController : ControllerBase
     [HttpGet("summary")]
     public async Task<ActionResult<SalesSummaryDto>> Summary([FromQuery] DateTime? from, [FromQuery] DateTime? to)
     {
+        from = from.HasValue ? DateTime.SpecifyKind(from.Value, DateTimeKind.Utc) : null;
+        to = to.HasValue ? DateTime.SpecifyKind(to.Value, DateTimeKind.Utc) : null;
+
         var query = _db.Sales
             .Include(s => s.Items)
             .Where(s => s.Status == SaleStatus.Paid)

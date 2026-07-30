@@ -10,9 +10,11 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
 import * as Icon from '@/components/ui/Icon'
+import { formatPrice } from '@/lib/data'
 import type { Product } from '@/lib/types'
 
 const WHATSAPP_NUMBER = '5493492287864'
+const URGENT = '#A8432A'
 
 interface Props {
   product: Product
@@ -28,6 +30,11 @@ export function ProductoDetalle({ product, related }: Props) {
 
   const allImages = [product.imageUrl, ...(product.extraImages ?? [])].filter(Boolean) as string[]
   const showMainImage = !!allImages[imgIdx] && !imgError
+  const hasDiscount = !!product.originalPriceNum && product.originalPriceNum > product.priceNum
+  const discountPercent = hasDiscount ? Math.round((1 - product.priceNum / product.originalPriceNum!) * 100) : null
+  const isOutOfStock = product.stock !== undefined && product.stock <= 0
+  const isLowStock = product.stock !== undefined && product.stock > 0 && product.stock <= 3
+  const showInstallment = product.priceNum > 0 && !isOutOfStock
 
   useGSAP(() => {
     if (!added || !ctaRef.current) return
@@ -35,6 +42,7 @@ export function ProductoDetalle({ product, related }: Props) {
   }, { dependencies: [added] })
 
   const onAdd = () => {
+    if (isOutOfStock) return
     add(product)
     setAdded(true)
     setTimeout(() => setAdded(false), 1400)
@@ -106,16 +114,55 @@ export function ProductoDetalle({ product, related }: Props) {
 
           {/* Info */}
           <div className="pd-info">
-            {product.tag && (
-              <div className="mono" style={{ marginBottom: 12, fontSize: 9, letterSpacing: '0.2em' }}>
-                {product.tag}
+            {(product.tag || isLowStock || isOutOfStock) && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                {product.tag && (
+                  <span className="mono" style={{ fontSize: 9, letterSpacing: '0.2em' }}>{product.tag}</span>
+                )}
+                {isOutOfStock ? (
+                  <span className="mono" style={{ padding: '5px 10px', background: 'var(--ink)', color: 'var(--bg)', fontSize: 9, letterSpacing: '0.16em', borderRadius: 5 }}>
+                    Sin stock
+                  </span>
+                ) : isLowStock && (
+                  <span className="mono" style={{ padding: '5px 10px', background: URGENT, color: '#fff', fontSize: 9, fontWeight: 600, letterSpacing: '0.12em', borderRadius: 5 }}>
+                    ¡Últimas {product.stock}!
+                  </span>
+                )}
               </div>
             )}
 
             <h1 className="pd-name">{product.name}</h1>
-            <div className="pd-price">{product.price}</div>
 
-            <div className="mono" style={{ marginBottom: 4, marginTop: 16 }}>{product.material}</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: showInstallment ? 10 : 20 }}>
+              <span className="pd-price" style={{ color: hasDiscount ? 'var(--leaf)' : 'var(--ink)' }}>{product.price}</span>
+              {hasDiscount && (
+                <>
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: 16, color: 'var(--ink-mute)', textDecoration: 'line-through' }}>
+                    {formatPrice(product.originalPriceNum!)}
+                  </span>
+                  <span className="mono" style={{ padding: '4px 9px', background: 'var(--leaf)', color: '#fff', fontSize: 10, letterSpacing: '0.06em', borderRadius: 5 }}>
+                    -{discountPercent}%
+                  </span>
+                </>
+              )}
+            </div>
+
+            {showInstallment && (
+              <span className="mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '7px 13px', background: 'var(--leaf)', color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', borderRadius: 999, marginBottom: 20 }}>
+                ✓ 3 cuotas sin interés
+              </span>
+            )}
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
+              <span className="mono" style={{ padding: '7px 12px', background: 'var(--umber)', color: '#F5EFE0', fontSize: 10, letterSpacing: '0.08em', borderRadius: 5 }}>
+                {product.material}
+              </span>
+              {product.roomTags?.map((tag) => (
+                <span key={tag} className="mono" style={{ padding: '7px 12px', background: 'rgba(242,241,237,0.7)', border: '1px solid var(--line)', color: 'var(--ink-soft)', fontSize: 10, letterSpacing: '0.08em', borderRadius: 5 }}>
+                  {tag}
+                </span>
+              ))}
+            </div>
 
             {/* Ficha técnica */}
             {product.specs && product.specs.length > 0 && (
@@ -133,16 +180,19 @@ export function ProductoDetalle({ product, related }: Props) {
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, marginTop: product.specs?.length ? 0 : 24 }}>
               <button
                 ref={ctaRef}
                 className={`btn pd-cta${added ? ' added' : ''}`}
                 onClick={onAdd}
-                style={{ flex: 1 }}
+                disabled={isOutOfStock}
+                style={{ flex: 1, opacity: isOutOfStock ? 0.4 : 1, cursor: isOutOfStock ? 'not-allowed' : 'pointer' }}
               >
-                {added
-                  ? <><span>✓</span>&nbsp;Añadido a la selección</>
-                  : <><Icon.Plus />&nbsp;Añadir a la selección</>}
+                {isOutOfStock
+                  ? 'Sin stock'
+                  : added
+                    ? <><span>✓</span>&nbsp;Añadido a la selección</>
+                    : <><Icon.Plus />&nbsp;Añadir a la selección</>}
               </button>
               <a
                 href={whatsappHref}
@@ -182,11 +232,11 @@ export function ProductoDetalle({ product, related }: Props) {
                     </div>
                     <div style={{
                       fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 500,
-                      margin: '10px 0 4px', color: 'var(--ink)',
+                      margin: '10px 0 4px', color: 'rgba(242,241,237,0.95)',
                     }}>
                       {p.name}
                     </div>
-                    <div className="mono" style={{ fontSize: 10, color: 'var(--ink-mute)' }}>{p.price}</div>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 600, color: 'rgba(242,241,237,0.6)' }}>{p.price}</div>
                   </Link>
                 ))}
               </div>

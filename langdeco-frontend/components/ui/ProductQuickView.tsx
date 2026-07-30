@@ -10,6 +10,7 @@ import * as Icon from '@/components/ui/Icon'
 import type { Product } from '@/lib/types'
 
 const WHATSAPP_NUMBER = '5493492287864'
+const URGENT = '#A8432A'
 
 interface ProductQuickViewProps {
   product: Product | null
@@ -33,12 +34,17 @@ export function ProductQuickView({ product, onClose, onAdd }: ProductQuickViewPr
   if (!product) return null
 
   const added = addedId === product.id
-  const installment = product.priceNum > 0 ? formatPrice(product.priceNum / 3) : null
+  const hasDiscount = !!product.originalPriceNum && product.originalPriceNum > product.priceNum
+  const discountPercent = hasDiscount ? Math.round((1 - product.priceNum / product.originalPriceNum!) * 100) : null
+  const isOutOfStock = product.stock !== undefined && product.stock <= 0
+  const isLowStock = product.stock !== undefined && product.stock > 0 && product.stock <= 3
+  const showInstallment = product.priceNum > 0 && !isOutOfStock
   const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
     `Hola, me interesa consultar por "${product.name}" (${product.price}). ¿Me pasás más información?`
   )}`
 
   const handleAdd = () => {
+    if (isOutOfStock) return
     onAdd(product)
     setAddedId(product.id)
   }
@@ -63,8 +69,9 @@ export function ProductQuickView({ product, onClose, onAdd }: ProductQuickViewPr
         style={{
           position: 'relative',
           width: '100%', maxWidth: 720,
-          maxHeight: '86vh', overflowY: 'auto',
-          background: 'var(--bg)',
+          maxHeight: '86vh', overflow: 'hidden', overflowY: 'auto',
+          background: '#EDE6D2',
+          borderRadius: 16,
           boxShadow: '0 40px 100px -20px rgba(0,0,0,0.4)',
         }}
       >
@@ -97,25 +104,59 @@ export function ProductQuickView({ product, onClose, onAdd }: ProductQuickViewPr
         </div>
 
         <div style={{ padding: '28px 28px 32px' }}>
-          {product.tag && (
-            <div className="mono" style={{ marginBottom: 10, fontSize: 9, letterSpacing: '0.2em' }}>{product.tag}</div>
-          )}
-          <h3 style={{ fontFamily: 'var(--font-ui)', fontSize: 24, fontWeight: 500, margin: '0 0 6px', letterSpacing: '-0.01em' }}>
-            {product.name}
-          </h3>
-          <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 16, marginBottom: 4 }}>{product.price}</div>
-          {installment && (
-            <div className="mono" style={{ fontSize: 9, color: 'var(--ink-mute)', marginBottom: 14 }}>
-              3 cuotas de {installment}
+          {(product.tag || isLowStock || isOutOfStock) && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+              {product.tag && (
+                <span className="mono" style={{ fontSize: 9, letterSpacing: '0.2em' }}>{product.tag}</span>
+              )}
+              {isOutOfStock ? (
+                <span className="mono" style={{ padding: '5px 10px', background: 'var(--ink)', color: 'var(--bg)', fontSize: 9, letterSpacing: '0.16em', borderRadius: 5 }}>
+                  Sin stock
+                </span>
+              ) : isLowStock && (
+                <span className="mono" style={{ padding: '5px 10px', background: URGENT, color: '#fff', fontSize: 9, fontWeight: 600, letterSpacing: '0.12em', borderRadius: 5 }}>
+                  ¡Últimas {product.stock}!
+                </span>
+              )}
             </div>
           )}
-          <div className="mono" style={{ marginBottom: 16 }}>{product.material}</div>
 
-          {product.note && (
-            <p className="edit" style={{ fontSize: 15, lineHeight: 1.5, margin: '0 0 18px', color: 'var(--ink-soft)' }}>
-              {product.note}
-            </p>
+          <h3 style={{ fontFamily: 'var(--font-ui)', fontSize: 24, fontWeight: 600, margin: '0 0 6px', letterSpacing: '-0.01em' }}>
+            {product.name}
+          </h3>
+
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: showInstallment ? 10 : 16 }}>
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: 21, fontWeight: 600, letterSpacing: '-0.01em', color: hasDiscount ? 'var(--leaf)' : 'var(--ink)' }}>
+              {product.price}
+            </span>
+            {hasDiscount && (
+              <>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: 14, color: 'var(--ink-mute)', textDecoration: 'line-through' }}>
+                  {formatPrice(product.originalPriceNum!)}
+                </span>
+                <span className="mono" style={{ padding: '4px 9px', background: 'var(--leaf)', color: '#fff', fontSize: 10, letterSpacing: '0.06em', borderRadius: 5 }}>
+                  -{discountPercent}%
+                </span>
+              </>
+            )}
+          </div>
+
+          {showInstallment && (
+            <span className="mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 12px', background: 'var(--leaf)', color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', borderRadius: 999, marginBottom: 16 }}>
+              ✓ 3 cuotas sin interés
+            </span>
           )}
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+            <span className="mono" style={{ padding: '6px 11px', background: 'var(--umber)', color: '#F5EFE0', fontSize: 10, letterSpacing: '0.08em', borderRadius: 5 }}>
+              {product.material}
+            </span>
+            {product.roomTags?.map((tag) => (
+              <span key={tag} className="mono" style={{ padding: '6px 11px', background: 'rgba(242,241,237,0.7)', border: '1px solid var(--line)', color: 'var(--ink-soft)', fontSize: 10, letterSpacing: '0.08em', borderRadius: 5 }}>
+                {tag}
+              </span>
+            ))}
+          </div>
 
           {product.specs && product.specs.length > 0 && (
             <div style={{ marginBottom: 20 }}>
@@ -130,8 +171,13 @@ export function ProductQuickView({ product, onClose, onAdd }: ProductQuickViewPr
           )}
 
           <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-            <button className={`btn${added ? ' added' : ''}`} onClick={handleAdd} style={{ flex: 1, justifyContent: 'center' }}>
-              {added ? <>✓&nbsp;Añadido</> : <><Icon.Plus />&nbsp;Añadir a la selección</>}
+            <button
+              className={`btn${added ? ' added' : ''}`}
+              onClick={handleAdd}
+              disabled={isOutOfStock}
+              style={{ flex: 1, justifyContent: 'center', opacity: isOutOfStock ? 0.4 : 1, cursor: isOutOfStock ? 'not-allowed' : 'pointer' }}
+            >
+              {isOutOfStock ? 'Sin stock' : added ? <>✓&nbsp;Añadido</> : <><Icon.Plus />&nbsp;Añadir a la selección</>}
             </button>
             <a
               href={whatsappHref}
