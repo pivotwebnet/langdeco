@@ -107,6 +107,15 @@ export function ImageOff(props: IconProps) {
   )
 }
 
+export function Eye(props: IconProps) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
+      <path d="M1 9s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z"/>
+      <circle cx="9" cy="9" r="2.3"/>
+    </svg>
+  )
+}
+
 export function Trash(props: IconProps) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>

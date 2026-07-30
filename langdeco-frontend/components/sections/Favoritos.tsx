@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
 import { ProductCard } from '@/components/ui/ProductCard'
+import { ProductQuickView } from '@/components/ui/ProductQuickView'
 import type { Product } from '@/lib/types'
 
 interface FavoritosProps {
@@ -15,6 +16,7 @@ interface FavoritosProps {
 export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProps) {
   const [active, setActive] = useState(0)
   const [added, setAdded] = useState<string | null>(null)
+  const [quickView, setQuickView] = useState<Product | null>(null)
   const { add } = useCart()
   const router = useRouter()
 
@@ -25,24 +27,15 @@ export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProp
   }
 
   return (
-    <section id="seleccion" data-dt="seleccion" style={{ position: 'relative', padding: '80px 0 64px', overflow: 'hidden' }}>
+    <section id="seleccion" data-dt="seleccion" style={{ position: 'relative', padding: '80px 0 64px', overflow: 'hidden', background: 'var(--bg-deep)' }}>
       <div className="sel-header" style={{ padding: '0 24px', marginBottom: 28 }}>
-        <RevealOnScroll>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
-            <span className="kicker" />
-            <span className="mono">{SELECCION.length} piezas</span>
-          </div>
-        </RevealOnScroll>
-
-        <RevealOnScroll delay={1}>
-          <h2 className="display sel-h2" style={{ fontSize: 34, margin: '0 0 4px' }}>
-            Nuestros <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>Favoritos</em>
-          </h2>
-        </RevealOnScroll>
+        <h2 className="display sel-h2" data-reveal="headline" style={{ fontSize: 34, margin: '16px 0 4px' }}>
+          Nuestros <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>Favoritos</em>
+        </h2>
 
         <RevealOnScroll delay={2}>
           <p className="edit" style={{ margin: '14px 0 0', color: 'var(--ink-soft)', maxWidth: 320, fontSize: 20 }}>
-            Cuatro piezas que entraron al showroom este otoño. Cada una con su pequeña historia.
+            Piezas que entraron al showroom hace poco. Cada una con su pequeña historia.
           </p>
         </RevealOnScroll>
       </div>
@@ -73,6 +66,7 @@ export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProp
               added={added}
               showBadge={showBadge && i === 0}
               onSelect={(prod) => router.push(`/producto/${prod.id}`)}
+              onQuickView={setQuickView}
             />
           </RevealOnScroll>
         ))}
@@ -85,6 +79,8 @@ export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProp
           <span key={p.id} style={{ width: i === active ? 18 : 6, height: 2, background: i === active ? 'var(--ink)' : 'var(--line)', transition: 'width 0.3s, background 0.3s' }} />
         ))}
       </div>
+
+      <ProductQuickView product={quickView} onClose={() => setQuickView(null)} onAdd={onAdd} />
     </section>
   )
 }

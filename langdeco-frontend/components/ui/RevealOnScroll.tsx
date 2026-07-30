@@ -4,6 +4,7 @@ import React, { useRef, type ReactNode, type CSSProperties } from 'react'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { prefersReducedMotion } from '@/lib/gsap'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -19,7 +20,7 @@ export function RevealOnScroll({ children, delay = 0, style, className = '', as:
   const ref = useRef<HTMLDivElement>(null)
 
   useGSAP(() => {
-    if (!ref.current) return
+    if (!ref.current || prefersReducedMotion()) return
     gsap.fromTo(
       ref.current,
       { opacity: 0, y: 28 },

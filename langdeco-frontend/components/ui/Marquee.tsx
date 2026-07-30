@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
+import { prefersReducedMotion } from '@/lib/gsap'
 
 interface MarqueeProps {
   items?: string[]
@@ -44,7 +45,7 @@ export function Marquee({ items = DEFAULT_ITEMS, speed = 40, dark = false }: Mar
 
   useGSAP(() => {
     const track = trackRef.current
-    if (!track) return
+    if (!track || prefersReducedMotion()) return
 
     /* xPercent -50 (not a pixel width from scrollWidth) so the loop stays
        exact regardless of font-load timing — the two halves are identical,

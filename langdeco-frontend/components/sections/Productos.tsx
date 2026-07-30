@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
 import { ProductCard } from '@/components/ui/ProductCard'
+import { ProductQuickView } from '@/components/ui/ProductQuickView'
 import * as Icon from '@/components/ui/Icon'
 import type { Product } from '@/lib/types'
 
@@ -29,6 +30,7 @@ export function Productos({ products, initialCategory }: ProductosProps) {
   const [tab, setTab] = useState<'mayores' | 'tesoros'>(initialCategory === 'tesoro' ? 'tesoros' : 'mayores')
   const [added, setAdded] = useState<string | null>(null)
   const [page, setPage] = useState(0)
+  const [quickView, setQuickView] = useState<Product | null>(null)
   const { add } = useCart()
   const router = useRouter()
 
@@ -51,18 +53,9 @@ export function Productos({ products, initialCategory }: ProductosProps) {
 
         {/* ── Header ───────────────────────────────────────────── */}
         <div className="prod-header" style={{ padding: '0 24px', marginBottom: 32 }}>
-          <RevealOnScroll>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
-              <span className="kicker" />
-              <span className="mono">{items.length} piezas</span>
-            </div>
-          </RevealOnScroll>
-
-          <RevealOnScroll delay={1}>
-            <h2 className="display prod-h2" style={{ fontSize: 34, margin: '0 0 14px' }}>
-              Para <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>casi</em><br />todo lo demás.
-            </h2>
-          </RevealOnScroll>
+          <h2 className="display prod-h2" data-reveal="headline" style={{ fontSize: 34, margin: '16px 0 14px' }}>
+            Para <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>casi</em><br />todo lo demás.
+          </h2>
 
           <RevealOnScroll delay={2}>
             <p className="edit" style={{ margin: '0 0 28px', color: 'var(--ink-soft)', maxWidth: 380, fontSize: 20 }}>
@@ -109,7 +102,14 @@ export function Productos({ products, initialCategory }: ProductosProps) {
           >
             {pageItems.map((p, i) => (
               <RevealOnScroll key={`${p.id}-${page}`} delay={Math.min(i, 3)}>
-                <ProductCard p={p} variant="grid" onAdd={onAdd} added={added} onSelect={(prod) => router.push(`/producto/${prod.id}`)} />
+                <ProductCard
+                  p={p}
+                  variant="grid"
+                  onAdd={onAdd}
+                  added={added}
+                  onSelect={(prod) => router.push(`/producto/${prod.id}`)}
+                  onQuickView={setQuickView}
+                />
               </RevealOnScroll>
             ))}
           </div>
@@ -134,6 +134,8 @@ export function Productos({ products, initialCategory }: ProductosProps) {
             ))}
           </div>
         )}
+
+        <ProductQuickView product={quickView} onClose={() => setQuickView(null)} onAdd={onAdd} />
     </section>
   )
 }

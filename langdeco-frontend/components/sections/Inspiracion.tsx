@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
 import { Magnetic } from '@/components/ui/Magnetic'
 import * as Icon from '@/components/ui/Icon'
@@ -17,12 +18,10 @@ export function Inspiracion({ items, products }: InspiracionProps) {
   return (
     <section data-dt="lookbook" id="inspiracion" style={{ position: 'relative', padding: '72px 0', background: 'var(--ink)', color: 'var(--bg)', overflow: 'hidden' }}>
       <div className="look-header" style={{ padding: '0 24px', marginBottom: 32 }}>
-        <RevealOnScroll delay={1}>
-          <h2 className="display look-h2" style={{ fontSize: 38, margin: 0, color: 'var(--bg)' }}>
-            Tres casas,<br />
-            <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>tres reposos</em>.
-          </h2>
-        </RevealOnScroll>
+        <h2 className="display look-h2" data-reveal="headline" style={{ fontSize: 38, margin: 0, color: 'var(--bg)' }}>
+          Tres casas,<br />
+          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>tres reposos</em>.
+        </h2>
         <RevealOnScroll delay={2}>
           <p className="edit" style={{ margin: '16px 0 0', color: 'rgba(242,241,237,0.7)', maxWidth: 380, fontSize: 18 }}>
             Te ayudamos a imaginar el potencial que tiene tu espacio.
@@ -51,8 +50,14 @@ export function Inspiracion({ items, products }: InspiracionProps) {
                   overflow: 'hidden',
                 }}>
                   {l.imageUrl && (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img data-reveal="clip" src={l.imageUrl} alt={l.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }} />
+                    <Image
+                      data-reveal="clip"
+                      src={l.imageUrl}
+                      alt={l.name}
+                      fill
+                      sizes="(min-width: 900px) 33vw, 100vw"
+                      style={{ objectFit: 'cover', objectPosition: 'center' }}
+                    />
                   )}
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.45) 100%)' }} />
                   <span style={{

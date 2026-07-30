@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { useCart } from '@/lib/cart'
 import * as Icon from '@/components/ui/Icon'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
@@ -148,12 +149,14 @@ function CartItemImage({ src, alt }: { src?: string; alt: string }) {
   return (
     <div style={{ position: 'relative', width: 72, height: 88, background: '#ECEAE4', flexShrink: 0, borderRadius: 4, overflow: 'hidden' }}>
       {showImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={src}
+        <Image
+          src={src!}
           alt={alt}
+          fill
+          unoptimized
+          sizes="72px"
           onError={() => setError(true)}
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
         />
       ) : (
         <ImagePlaceholder size={18} />

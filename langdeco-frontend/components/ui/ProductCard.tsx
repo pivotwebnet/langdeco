@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import Image from 'next/image'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import * as Icon from '@/components/ui/Icon'
@@ -21,10 +22,11 @@ interface ProductCardProps {
   added: string | null
   onAdd: (p: Product) => void
   onSelect?: (p: Product) => void
+  onQuickView?: (p: Product) => void
   showBadge?: boolean
 }
 
-export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, showBadge }: ProductCardProps) {
+export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQuickView, showBadge }: ProductCardProps) {
   const [imgError, setImgError] = useState(false)
   const isAdded = added === p.id
   const showImage = !!p.imageUrl && !imgError
@@ -51,12 +53,17 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, showB
         style={{ position: 'relative', width: '100%', aspectRatio: aspect, background: '#ECEAE4', marginBottom: 8, overflow: 'hidden' }}
       >
         {showImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={p.imageUrl}
+          // Foto cargada por la administradora como URL libre (sin upload propio todavía —
+          // ver Pendiente en DOCUMENTACION.md): puede ser cualquier dominio, así que se sirve
+          // `unoptimized` en vez de pasar por el pipeline de optimización de next/image.
+          <Image
+            src={p.imageUrl!}
             alt={p.name}
+            fill
+            unoptimized
+            sizes="(min-width: 900px) 33vw, 50vw"
             onError={() => setImgError(true)}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', transition: 'transform 0.5s ease' }}
+            style={{ objectFit: 'cover', objectPosition: 'center', transition: 'transform 0.5s ease' }}
           />
         ) : (
           <ImagePlaceholder />
@@ -77,6 +84,25 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, showB
           <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 3, padding: '6px 10px', background: 'var(--ink)', color: 'var(--bg)', fontSize: 9, letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 500 }}>
             ★ Favorito
           </div>
+        )}
+
+        {onQuickView && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onQuickView(p) }}
+            aria-label={`Vista rápida de ${p.name}`}
+            style={{
+              position: 'absolute', top: 10, right: 10, zIndex: 4,
+              width: 32, height: 32, borderRadius: 999,
+              background: 'rgba(242,241,237,0.92)', color: 'var(--ink)',
+              border: 0, cursor: 'pointer', display: 'grid', placeItems: 'center',
+              boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)',
+              transition: 'background 0.2s, transform 0.2s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--ink)'; e.currentTarget.style.color = 'var(--bg)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(242,241,237,0.92)'; e.currentTarget.style.color = 'var(--ink)' }}
+          >
+            <Icon.Eye />
+          </button>
         )}
 
         <a

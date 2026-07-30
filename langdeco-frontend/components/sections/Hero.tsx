@@ -1,12 +1,14 @@
 'use client'
 
 import { useRef } from 'react'
+import Image from 'next/image'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
 import { SplitChars } from '@/components/ui/SplitChars'
 import * as Icon from '@/components/ui/Icon'
+import { prefersReducedMotion } from '@/lib/gsap'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -15,7 +17,7 @@ export function Hero() {
   const titleRef    = useRef<HTMLHeadingElement>(null)
 
   useGSAP(() => {
-    if (!heroImgRef.current) return
+    if (!heroImgRef.current || prefersReducedMotion()) return
     gsap.to(heroImgRef.current, {
       y: 60,
       scale: 1.08,
@@ -33,6 +35,11 @@ export function Hero() {
     if (!titleRef.current) return
     const chars = titleRef.current.querySelectorAll<HTMLElement>('.split-char')
     const masks = titleRef.current.querySelectorAll<HTMLElement>('.split-mask')
+
+    if (prefersReducedMotion()) {
+      masks.forEach((m) => { m.style.overflow = 'visible' })
+      return
+    }
 
     // Entrada: letra por letra al cargar/scrollear a la vista. Al terminar,
     // liberamos la máscara overflow:hidden — si no, ascendentes como la "d" quedan recortados.
@@ -88,8 +95,14 @@ export function Hero() {
         <RevealOnScroll delay={2}>
           <div className="hero-image" style={{ position: 'relative', width: '100%', aspectRatio: '3/4', overflow: 'hidden', marginBottom: 20 }}>
             <div ref={heroImgRef} style={{ position: 'absolute', inset: 0 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=85" alt="Salón curado por LasLangDeco" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
+              <Image
+                src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=85"
+                alt="Salón curado por LasLangDeco"
+                fill
+                sizes="(min-width: 900px) 50vw, 100vw"
+                priority
+                style={{ objectFit: 'cover', objectPosition: 'center' }}
+              />
             </div>
           </div>
         </RevealOnScroll>

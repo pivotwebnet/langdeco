@@ -1,16 +1,25 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { useCart, useCartUI } from '@/lib/cart'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Magnetic } from '@/components/ui/Magnetic'
 import * as Icon from '@/components/ui/Icon'
+import type { Product } from '@/lib/types'
 
 interface HeaderProps {
   logoFont?: string
+}
+
+const SEARCH_RESULTS_LIMIT = 6
+
+function normalize(s: string): string {
+  return s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 }
 
 const NAV_LINKS = [
@@ -33,14 +42,44 @@ const DRAWER_LINKS = [
 export function Header({ logoFont = 'Sail' }: HeaderProps) {
   const { count } = useCart()
   const { open: onCartOpen } = useCartUI()
+  const router = useRouter()
   const [menuOpen, setMenuOpen]     = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [scrolled, setScrolled]     = useState(false)
   const [query, setQuery]           = useState('')
+  const [catalog, setCatalog]       = useState<Product[] | null>(null)
+  const [catalogError, setCatalogError] = useState(false)
   const inputRef                    = useRef<HTMLInputElement>(null)
   const cartCountRef                = useRef<HTMLSpanElement>(null)
   const cartBadgeRef                = useRef<HTMLSpanElement>(null)
   const prevCount                   = useRef(count)
+
+  /* ── trae el catálogo recién al abrir el buscador la primera vez ─ */
+  useEffect(() => {
+    if (!searchOpen || catalog !== null) return
+    fetch('/api/products')
+      .then((res) => { if (!res.ok) throw new Error(); return res.json() })
+      .then((data: Product[]) => setCatalog(data))
+      .catch(() => setCatalogError(true))
+  }, [searchOpen, catalog])
+
+  const results = useMemo(() => {
+    const q = normalize(query.trim())
+    if (!q || !catalog) return []
+    return catalog
+      .filter((p) =>
+        normalize(p.name).includes(q) ||
+        normalize(p.material).includes(q) ||
+        (p.tag && normalize(p.tag).includes(q)) ||
+        (p.note && normalize(p.note).includes(q))
+      )
+      .slice(0, SEARCH_RESULTS_LIMIT)
+  }, [query, catalog])
+
+  const goToProduct = (id: string) => {
+    setSearchOpen(false)
+    router.push(`/producto/${id}`)
+  }
 
   /* ── bump + flash del contador cuando se agrega algo al carrito ─ */
   useGSAP(() => {
@@ -118,11 +157,13 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
           style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
           aria-label="LasLangDeco — inicio"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src="/assets/logo.png"
             alt="LasLangDeco"
             className="logo-img"
+            width={150}
+            height={150}
+            priority
           />
         </Link>
 
@@ -249,6 +290,7 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && results.length > 0) goToProduct(results[0].id) }}
               placeholder="sofá, alfombra, cerámica…"
               aria-label="Término de búsqueda"
               style={{
@@ -318,6 +360,50 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
               ))}
             </div>
           )}
+
+          {/* Live results */}
+          {query.length > 0 && (
+            <div style={{ marginTop: 32, maxHeight: '46vh', overflowY: 'auto' }}>
+              {!catalog && !catalogError && (
+                <div className="mono" style={{ textAlign: 'center', color: 'var(--ink-mute)', fontSize: 11 }}>
+                  Buscando…
+                </div>
+              )}
+              {catalogError && (
+                <div className="mono" style={{ textAlign: 'center', color: 'var(--ink-mute)', fontSize: 11 }}>
+                  No pudimos cargar el catálogo. Probá de nuevo en un momento.
+                </div>
+              )}
+              {catalog && results.length === 0 && (
+                <div className="mono" style={{ textAlign: 'center', color: 'var(--ink-mute)', fontSize: 11 }}>
+                  Sin resultados para &ldquo;{query}&rdquo;. Probá con otra palabra o consultanos por WhatsApp.
+                </div>
+              )}
+              {results.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => goToProduct(p.id)}
+                  aria-label={`Ver ${p.name}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 14, width: '100%',
+                    padding: '10px 6px', background: 'none', border: 0, cursor: 'pointer',
+                    borderBottom: '1px solid var(--line)', textAlign: 'left',
+                  }}
+                >
+                  <div style={{ position: 'relative', width: 44, height: 54, flexShrink: 0, background: '#ECEAE4', overflow: 'hidden', borderRadius: 3 }}>
+                    {p.imageUrl && (
+                      <Image src={p.imageUrl} alt="" fill unoptimized sizes="44px" style={{ objectFit: 'cover' }} />
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: 14, color: 'var(--ink)' }}>{p.name}</div>
+                    <div className="mono" style={{ fontSize: 9, color: 'var(--ink-mute)', marginTop: 2 }}>{p.material}</div>
+                  </div>
+                  <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12, color: 'var(--ink)', flexShrink: 0 }}>{p.price}</div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -364,8 +450,7 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
             flexShrink: 0,
           }}>
             <Link href="/" onClick={closeAll} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/assets/logo.png" alt="LasLangDeco" style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
+              <Image src="/assets/logo.png" alt="LasLangDeco" width={150} height={150} style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
             </Link>
             <button
               className="icon-btn"
