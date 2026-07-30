@@ -12,8 +12,11 @@ export interface Product {
   tag?: string
   material: string
   origin?: string
+  roomTags?: string[]
   price: string
   priceNum: number
+  originalPriceNum?: number
+  stock?: number
   aspect?: string
   category: string
   note?: string

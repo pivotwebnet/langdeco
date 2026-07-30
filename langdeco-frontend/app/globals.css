@@ -295,17 +295,6 @@ body {
 }
 .prod-card:hover .prod-card-gradient { opacity: 1; }
 
-.prod-card-price-label {
-  position: absolute; bottom: 14px; left: 14px; z-index: 3;
-  color: rgba(242,241,237,0.95);
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 17px; font-weight: 500; letter-spacing: 0.04em;
-  transform: translateY(10px); opacity: 0;
-  transition: opacity 0.38s 0.06s, transform 0.38s 0.06s cubic-bezier(.2,.8,.2,1);
-  pointer-events: none;
-}
-.prod-card:hover .prod-card-price-label { opacity: 1; transform: translateY(0); }
-
 /* ── Product navigation ─────────────────────────────────────────────── */
 .prod-nav { position: relative; padding: 0 52px; }
 .prod-arrow {

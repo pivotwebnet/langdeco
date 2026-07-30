@@ -17,6 +17,7 @@ export interface BackendProduct {
   tag: string | null
   material: string
   origin: string | null
+  roomTags: string[]
   price: number
   originalPrice: number | null
   stock: number

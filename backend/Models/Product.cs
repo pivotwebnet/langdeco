@@ -10,6 +10,7 @@ public class Product
     public string? Tag { get; set; }
     public string Material { get; set; } = string.Empty;
     public string? Origin { get; set; }
+    public List<string> RoomTags { get; set; } = new();
 
     public decimal Price { get; set; }
     public decimal? OriginalPrice { get; set; }

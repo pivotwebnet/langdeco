@@ -10,6 +10,7 @@ type ProductForm = {
   tag: string
   material: string
   origin: string
+  roomTags: string[]
   price: string
   originalPrice: string
   stock: string
@@ -21,10 +22,12 @@ type ProductForm = {
 }
 
 const EMPTY_FORM: ProductForm = {
-  id: '', name: '', categoryId: '', tag: '', material: '', origin: '',
+  id: '', name: '', categoryId: '', tag: '', material: '', origin: '', roomTags: [],
   price: '', originalPrice: '', stock: '0', note: '', aspect: '', featured: false,
   specs: [], images: [],
 }
+
+const ROOM_TAG_OPTIONS = ['Living', 'Comedor', 'Dormitorio', 'Cocina', 'Baño', 'Exterior', 'Oficina', 'Entrada']
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api/admin/backend${path}`, {
@@ -77,7 +80,7 @@ export default function ProductosAdmin() {
 
   const openEdit = (p: BackendProduct) => setForm({
     id: p.id, name: p.name, categoryId: p.categoryId, tag: p.tag || '', material: p.material,
-    origin: p.origin || '', price: String(p.price), originalPrice: p.originalPrice ? String(p.originalPrice) : '',
+    origin: p.origin || '', roomTags: [...p.roomTags], price: String(p.price), originalPrice: p.originalPrice ? String(p.originalPrice) : '',
     stock: String(p.stock), note: p.note || '', aspect: p.aspect || '', featured: p.featured,
     specs: p.specs.map((s) => ({ ...s })), images: [...p.images],
   })
@@ -91,7 +94,7 @@ export default function ProductosAdmin() {
     try {
       const payload = {
         id: form.id, name: form.name, categoryId: form.categoryId, tag: form.tag || null,
-        material: form.material, origin: form.origin || null,
+        material: form.material, origin: form.origin || null, roomTags: form.roomTags,
         price: Number(form.price), originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
         stock: Number(form.stock), note: form.note || null, aspect: form.aspect || null,
         featured: form.featured, specs: form.specs, images: form.images,
@@ -280,6 +283,10 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
           </Field>
         </div>
 
+        <Field label="¿Para qué ambiente se recomienda? (opcional)">
+          <RoomTagsInput value={form.roomTags} onChange={(v) => set('roomTags', v)} />
+        </Field>
+
         <Field label="Nota curatorial (opcional)">
           <textarea className="adm-textarea" value={form.note} onChange={(e) => set('note', e.target.value)} rows={2} />
         </Field>
@@ -362,6 +369,67 @@ function ImageSlot({ url, onChange, onRemove }: { url: string; onChange: (url: s
       </button>
       <button type="button" className="adm-btn ghost sm" onClick={onRemove}>✕</button>
       {error && <span style={{ color: 'var(--danger, #c0392b)', fontSize: 11 }}>{error}</span>}
+    </div>
+  )
+}
+
+function RoomTagsInput({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const [custom, setCustom] = useState('')
+
+  const toggle = (tag: string) => {
+    onChange(value.includes(tag) ? value.filter((t) => t !== tag) : [...value, tag])
+  }
+
+  const addCustom = () => {
+    const tag = custom.trim()
+    if (!tag || value.some((t) => t.toLowerCase() === tag.toLowerCase())) return
+    onChange([...value, tag])
+    setCustom('')
+  }
+
+  const customTags = value.filter((t) => !ROOM_TAG_OPTIONS.includes(t))
+
+  return (
+    <div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+        {ROOM_TAG_OPTIONS.map((tag) => {
+          const active = value.includes(tag)
+          return (
+            <button
+              key={tag}
+              type="button"
+              className="adm-btn ghost sm"
+              onClick={() => toggle(tag)}
+              style={active ? { background: 'var(--ink)', color: 'var(--adm-bg)' } : undefined}
+            >
+              {active ? '✓ ' : '+ '}{tag}
+            </button>
+          )
+        })}
+      </div>
+
+      {customTags.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+          {customTags.map((tag) => (
+            <span key={tag} className="adm-btn ghost sm" style={{ background: 'var(--ink)', color: 'var(--adm-bg)' }}>
+              {tag}
+              <button type="button" onClick={() => toggle(tag)} style={{ marginLeft: 6, background: 'none', border: 0, color: 'inherit', cursor: 'pointer' }}>✕</button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          className="adm-input"
+          value={custom}
+          onChange={(e) => setCustom(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustom() } }}
+          placeholder="Otro ambiente (para esta pieza)"
+          style={{ flex: 1 }}
+        />
+        <button type="button" className="adm-btn ghost sm" onClick={addCustom}>+ Agregar</button>
+      </div>
     </div>
   )
 }

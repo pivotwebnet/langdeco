@@ -40,6 +40,7 @@ public class AppDbContext : DbContext
             entity.Property(p => p.Id).HasMaxLength(80);
             entity.Property(p => p.Name).IsRequired().HasMaxLength(200);
             entity.Property(p => p.Material).IsRequired().HasMaxLength(200);
+            entity.Property(p => p.RoomTags).HasDefaultValueSql("ARRAY[]::text[]");
             entity.Property(p => p.Price).HasPrecision(12, 2);
             entity.Property(p => p.OriginalPrice).HasPrecision(12, 2);
             entity.Property(p => p.WholesalePrice).HasPrecision(12, 2);

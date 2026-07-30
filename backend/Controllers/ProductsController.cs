@@ -73,6 +73,7 @@ public class ProductsController : ControllerBase
             Tag = input.Tag,
             Material = input.Material,
             Origin = input.Origin,
+            RoomTags = NormalizeRoomTags(input.RoomTags),
             Price = input.Price,
             OriginalPrice = input.OriginalPrice,
             WholesalePrice = input.WholesalePrice,
@@ -109,6 +110,7 @@ public class ProductsController : ControllerBase
         product.Tag = input.Tag;
         product.Material = input.Material;
         product.Origin = input.Origin;
+        product.RoomTags = NormalizeRoomTags(input.RoomTags);
         product.Price = input.Price;
         product.OriginalPrice = input.OriginalPrice;
         product.WholesalePrice = input.WholesalePrice;
@@ -188,8 +190,18 @@ public class ProductsController : ControllerBase
         if (input.Images.Any(string.IsNullOrWhiteSpace))
             return "No puede haber fotos vacías";
 
+        if ((input.RoomTags?.Count ?? 0) > 6)
+            return "Máximo 6 ambientes por producto";
+
         return null;
     }
+
+    private static List<string> NormalizeRoomTags(List<string>? tags) =>
+        (tags ?? new())
+            .Select(t => t.Trim())
+            .Where(t => t.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
     private static void ApplySpecsAndImages(Product product, ProductUpsertDto input)
     {
@@ -214,7 +226,7 @@ public class ProductsController : ControllerBase
 
     private static ProductDto ToDto(Product p) => new(
         p.Id, p.Name, p.CategoryId, p.Category?.Name ?? p.CategoryId, p.Tag,
-        p.Material, p.Origin, p.Price, p.OriginalPrice, p.WholesalePrice, p.Stock,
+        p.Material, p.Origin, p.RoomTags, p.Price, p.OriginalPrice, p.WholesalePrice, p.Stock,
         p.Note, p.Aspect, p.Active, p.Featured,
         p.Specs.OrderBy(s => s.Order).Select(s => new ProductSpecDto(s.Label, s.Value)).ToList(),
         p.Images.OrderBy(i => i.Order).Select(i => i.Url).ToList());
