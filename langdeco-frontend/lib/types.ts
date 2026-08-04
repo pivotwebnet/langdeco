@@ -33,6 +33,7 @@ export interface LookbookEntry {
   desc: string
   pieces: string[]
   imageUrl?: string
+  isPatio?: boolean
 }
 
 export interface SeleccionItem extends Product {

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useCart } from '@/lib/cart'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
+import { Underline } from '@/components/ui/Underline'
 import { ProductCard } from '@/components/ui/ProductCard'
 import * as Icon from '@/components/ui/Icon'
 import type { Product } from '@/lib/types'
@@ -40,7 +41,7 @@ export function CatalogoRapido({ products }: CatalogoRapidoProps) {
         </RevealOnScroll>
         <RevealOnScroll delay={1}>
           <h2 className="display" style={{ fontSize: 32, margin: '0 0 20px' }}>
-            Para consultar <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>rápido</em>.
+            Para consultar <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline>rápido</Underline></em>.
           </h2>
         </RevealOnScroll>
         <RevealOnScroll delay={2}>

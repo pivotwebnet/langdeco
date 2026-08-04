@@ -4,7 +4,7 @@ import type { LookbookEntry } from './types'
 
 export interface SiteContent {
   promoBar: string
-  inspiracion: [LookbookEntry, LookbookEntry, LookbookEntry]
+  inspiracion: [LookbookEntry, LookbookEntry, LookbookEntry, LookbookEntry]
 }
 
 const FILE_NAME = 'site-content.json'
@@ -30,13 +30,20 @@ const DEFAULT_CONTENT: SiteContent = {
       pieces: ['Mesa Olmo', 'Silla Hara', 'Lámpara Pergamino'],
       imageUrl: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=800&q=85',
     },
+    {
+      id: 'patio-quieto', n: '04', name: 'Patio quieto', place: 'Exterior · Terraza',
+      desc: 'Piedra al sol, verde disperso, una silla que espera.',
+      pieces: [],
+      imageUrl: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=85',
+      isPatio: true,
+    },
   ],
 }
 
 function isValidContent(value: unknown): value is SiteContent {
   if (!value || typeof value !== 'object') return false
   const v = value as Record<string, unknown>
-  return typeof v.promoBar === 'string' && Array.isArray(v.inspiracion) && v.inspiracion.length === 3
+  return typeof v.promoBar === 'string' && Array.isArray(v.inspiracion) && v.inspiracion.length === 4
 }
 
 export async function getSiteContent(): Promise<SiteContent> {

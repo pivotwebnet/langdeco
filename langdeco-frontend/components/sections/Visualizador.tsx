@@ -1,7 +1,10 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import Link from 'next/link'
 import * as Icon from '@/components/ui/Icon'
+import { Underline } from '@/components/ui/Underline'
+import { useCart } from '@/lib/cart'
 import type { Product } from '@/lib/types'
 
 interface Props {
@@ -23,11 +26,19 @@ interface PlacedItem {
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n))
 
 export function Visualizador({ products, compact = false }: Props) {
+  const cart = useCart()
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoSize, setPhotoSize] = useState<{ w: number; h: number } | null>(null)
   const [items, setItems] = useState<PlacedItem[]>([])
   const [selectedUid, setSelectedUid] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState(false)
+  const [addedId, setAddedId] = useState<string | null>(null)
+
+  function addToCart(product: Product) {
+    cart.add(product)
+    setAddedId(product.id)
+    setTimeout(() => setAddedId((v) => (v === product.id ? null : v)), 1200)
+  }
 
   const wrapperRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -215,15 +226,17 @@ export function Visualizador({ products, compact = false }: Props) {
   return (
     <section data-dt="visualizador-embed" data-size={compact ? 'compact' : undefined} style={{ position: 'relative', padding: '32px 24px 72px' }}>
       <div style={{ marginBottom: 20 }}>
-        <div className="kicker" style={{ marginBottom: 10 }}>Probalo en tu casa</div>
-        <h2 className="display" style={{ fontSize: compact ? 'clamp(24px, 4.5vw, 34px)' : 'clamp(28px, 5vw, 40px)', margin: '0 0 10px' }}>
+        <div className="kicker" data-reveal="up" style={{ marginBottom: 10 }}>Probalo en tu casa</div>
+        <h2 className="display" data-reveal="headline" style={{ fontSize: compact ? 'clamp(24px, 4.5vw, 34px)' : 'clamp(28px, 5vw, 40px)', margin: '0 0 10px' }}>
           Visualizador de{' '}
-          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>espacios</em>
+          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline>espacios</Underline></em>
         </h2>
-        <p style={{ maxWidth: 560, fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.6 }}>
-          Subí una foto de tu ambiente y arrastrá piezas del catálogo encima para imaginar cómo quedan
-          antes de comprar. Podés moverlas, cambiarlas de tamaño y descargar el resultado.
-        </p>
+        <div className="subtitle-connector" data-reveal="up" data-delay="0.15">
+          <p style={{ margin: 0, maxWidth: 560, fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.6 }}>
+            Subí una foto de tu ambiente y arrastrá piezas del catálogo encima para imaginar cómo quedan
+            antes de comprar. Podés moverlas, cambiarlas de tamaño y descargar el resultado.
+          </p>
+        </div>
       </div>
 
       <div className="viz-layout">
@@ -317,21 +330,43 @@ export function Visualizador({ products, compact = false }: Props) {
           </div>
           <div className="viz-sidebar-grid">
             {withImage.map((p) => (
-              <button
-                key={p.id}
-                className="viz-thumb"
-                draggable
-                onDragStart={(e) => handleThumbDragStart(e, p)}
-                onClick={() => addItem(p)}
-                disabled={!photoUrl}
-                title={photoUrl ? `Arrastrar o tocar para colocar «${p.name}»` : 'Subí una foto primero'}
-              >
-                <div className="viz-thumb-img">
+              <div key={p.id} className="viz-thumb">
+                <div
+                  className="viz-thumb-img"
+                  draggable={!!photoUrl}
+                  onDragStart={(e) => handleThumbDragStart(e, p)}
+                  onClick={() => photoUrl && addItem(p)}
+                  role="button"
+                  tabIndex={photoUrl ? 0 : -1}
+                  aria-disabled={!photoUrl}
+                  title={photoUrl ? `Arrastrar o tocar para colocar «${p.name}»` : 'Subí una foto primero'}
+                  style={!photoUrl ? { cursor: 'default', opacity: 0.5 } : undefined}
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.imageUrl} alt={p.name} draggable={false} />
+                  <div className="viz-thumb-actions">
+                    <button
+                      type="button"
+                      className="viz-thumb-action"
+                      onClick={(e) => { e.stopPropagation(); addToCart(p) }}
+                      aria-label={`Agregar ${p.name} al carrito`}
+                      title="Agregar al carrito"
+                    >
+                      {addedId === p.id ? '✓' : <Icon.Cart style={{ width: 13, height: 13 }} />}
+                    </button>
+                    <Link
+                      href={`/producto/${p.id}`}
+                      className="viz-thumb-action"
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`Ver detalle de ${p.name}`}
+                      title="Ver detalle"
+                    >
+                      <Icon.Eye style={{ width: 13, height: 13 }} />
+                    </Link>
+                  </div>
                 </div>
                 <span className="viz-thumb-name">{p.name}</span>
-              </button>
+              </div>
             ))}
           </div>
         </aside>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
+import { Underline } from '@/components/ui/Underline'
 
 export function Consultas() {
   const [clientName, setClientName] = useState('')
@@ -40,12 +41,14 @@ export function Consultas() {
       <RevealOnScroll>
         <span className="kicker" style={{ display: 'block', marginBottom: 14 }}>¿Tenés una consulta?</span>
         <h2 className="display" style={{ fontSize: 32, margin: '0 0 12px' }}>
-          Escribinos, <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>te respondemos</em>.
+          Escribinos, <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline>te respondemos</Underline></em>.
         </h2>
-        <p className="edit" style={{ fontSize: 16, lineHeight: 1.5, color: 'var(--ink-soft)', margin: '0 0 32px', maxWidth: 460 }}>
+      </RevealOnScroll>
+      <div className="subtitle-connector" data-reveal="up" data-delay="0.15" style={{ marginBottom: 32 }}>
+        <p className="edit" style={{ fontSize: 16, lineHeight: 1.5, color: 'var(--ink-soft)', margin: 0, maxWidth: 460 }}>
           Contanos qué estás buscando y te contestamos por mail.
         </p>
-      </RevealOnScroll>
+      </div>
 
       {sent ? (
         <RevealOnScroll>

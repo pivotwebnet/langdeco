@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
 import { Magnetic } from '@/components/ui/Magnetic'
 import * as Icon from '@/components/ui/Icon'
+import { Underline } from '@/components/ui/Underline'
 import type { LookbookEntry, Product } from '@/lib/types'
 
 interface InspiracionProps {
@@ -18,20 +19,23 @@ export function Inspiracion({ items, products }: InspiracionProps) {
   return (
     <section data-dt="lookbook" id="inspiracion" style={{ position: 'relative', padding: '72px 0', background: 'var(--ink)', color: 'var(--bg)', overflow: 'hidden' }}>
       <div className="look-header" style={{ padding: '0 24px', marginBottom: 32 }}>
-        <h2 className="display look-h2" data-reveal="headline" style={{ fontSize: 38, margin: 0, color: 'var(--bg)' }}>
-          Tres casas,<br />
-          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>tres reposos</em>.
+        <h2 className="display look-h2" data-reveal="headline" style={{ fontSize: 44, margin: 0, color: 'var(--bg)' }}>
+          Cada hogar,<br />
+          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline>con su estilo</Underline></em>.
         </h2>
-        <RevealOnScroll delay={2}>
-          <p className="edit" style={{ margin: '16px 0 0', color: 'rgba(242,241,237,0.7)', maxWidth: 380, fontSize: 18 }}>
+        <div className="subtitle-connector" data-reveal="up" data-delay="0.15">
+          <p className="edit" style={{ margin: 0, color: 'rgba(242,241,237,0.7)', maxWidth: 380, fontSize: 18 }}>
             Te ayudamos a imaginar el potencial que tiene tu espacio.
           </p>
-        </RevealOnScroll>
+        </div>
       </div>
 
-      <div className="look-items" style={{ display: 'flex', flexDirection: 'column', gap: 56, padding: '0 24px' }}>
+      <div
+        className="look-items"
+        style={{ display: 'flex', flexDirection: 'row', gap: 20, padding: '0 24px 12px', overflowX: 'auto', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' as const }}
+      >
         {items.map((l, i) => (
-          <RevealOnScroll key={l.id} delay={Math.min(i, 3)}>
+          <RevealOnScroll key={l.id} delay={Math.min(i, 3)} className="look-item-wrap" style={{ flex: '0 0 82%', scrollSnapAlign: 'start', position: 'relative' }}>
             <article className="look-item" style={{ position: 'relative' }}>
 
               {/* ── Image with border-light wrapper ────────────── */}
@@ -42,22 +46,27 @@ export function Inspiracion({ items, products }: InspiracionProps) {
                   position: 'relative',
                 }}
               >
-                <div style={{
+                <div className="look-img-box" style={{
                   position: 'relative',
                   width: '100%',
                   aspectRatio: '4/5',
                   background: '#1a1a18',
                   overflow: 'hidden',
                 }}>
-                  {l.imageUrl && (
+                  {l.imageUrl ? (
                     <Image
                       data-reveal="clip"
+                      className="look-img"
                       src={l.imageUrl}
                       alt={l.name}
                       fill
-                      sizes="(min-width: 900px) 33vw, 100vw"
-                      style={{ objectFit: 'cover', objectPosition: 'center' }}
+                      sizes="(min-width: 900px) 33vw, 82vw"
+                      style={{ objectFit: 'cover', objectPosition: 'center', transition: 'transform 0.6s ease' }}
                     />
+                  ) : (
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(242,241,237,0.25)' }}>
+                      <Icon.ImageOff />
+                    </div>
                   )}
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.45) 100%)' }} />
                   <span style={{
@@ -80,7 +89,14 @@ export function Inspiracion({ items, products }: InspiracionProps) {
                 <h3 style={{ fontFamily: 'var(--font-ui)', fontSize: 22, fontWeight: 400, margin: 0, letterSpacing: '-0.01em' }}>
                   <em style={{ fontFamily: 'var(--font-edit)', fontStyle: 'italic', fontWeight: 400 }}>{l.name}</em>
                 </h3>
-                <div className="mono" style={{ color: 'rgba(242,241,237,0.5)' }}>{l.place}</div>
+                <div className="mono" style={{ color: 'rgba(242,241,237,0.5)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {l.place}
+                  {l.isPatio && (
+                    <span style={{ fontSize: 10, padding: '2px 8px', border: '1px solid rgba(242,241,237,0.3)', borderRadius: 999, letterSpacing: '0.06em', color: 'rgba(242,241,237,0.7)' }}>
+                      Exterior
+                    </span>
+                  )}
+                </div>
                 <p className="edit" style={{ fontSize: 16, lineHeight: 1.4, margin: '4px 0 12px', color: 'rgba(242,241,237,0.8)' }}>
                   {l.desc}
                 </p>
@@ -90,7 +106,11 @@ export function Inspiracion({ items, products }: InspiracionProps) {
                     .filter((prod): prod is Product => !!prod)
                   if (linkedPieces.length === 0) return null
                   return (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    <div>
+                      <div className="mono" style={{ fontSize: 10, color: 'rgba(242,241,237,0.4)', marginBottom: 6 }}>
+                        Piezas de este ambiente
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {linkedPieces.map((prod) => (
                         <Link
                           key={prod.id}
@@ -102,6 +122,7 @@ export function Inspiracion({ items, products }: InspiracionProps) {
                           {prod.name}
                         </Link>
                       ))}
+                      </div>
                     </div>
                   )
                 })()}

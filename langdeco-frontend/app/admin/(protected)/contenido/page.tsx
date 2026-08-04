@@ -86,7 +86,7 @@ export default function ContenidoAdmin() {
       <div className="adm-page-head">
         <div>
           <h1 className="adm-title">Contenido del sitio</h1>
-          <p className="adm-eyebrow">Barra de promociones y las 3 imágenes de Inspiración de la home.</p>
+          <p className="adm-eyebrow">Barra de promociones y los 4 estilos de Inspiración de la home (el cuarto es el patio).</p>
         </div>
       </div>
 
@@ -161,6 +161,12 @@ function InspiracionCard({ index, item, uploading, onChange, onUpload }: {
       <div className="adm-grid-2" style={{ flex: 1, gap: 10 }}>
         <Field label="Nombre"><input className="adm-input" value={item.name} onChange={(e) => onChange({ name: e.target.value })} style={{ width: '100%' }} /></Field>
         <Field label="Lugar"><input className="adm-input" value={item.place} onChange={(e) => onChange({ place: e.target.value })} style={{ width: '100%' }} /></Field>
+        <div style={{ gridColumn: '1 / -1' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+            <input type="checkbox" checked={!!item.isPatio} onChange={(e) => onChange({ isPatio: e.target.checked })} />
+            Es un patio / exterior (no habitación)
+          </label>
+        </div>
         <div style={{ gridColumn: '1 / -1' }}>
           <Field label="Descripción">
             <textarea className="adm-textarea" value={item.desc} onChange={(e) => onChange({ desc: e.target.value })} rows={2} />

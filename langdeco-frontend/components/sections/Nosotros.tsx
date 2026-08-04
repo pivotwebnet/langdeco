@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
+import { Underline } from '@/components/ui/Underline'
 import * as Icon from '@/components/ui/Icon'
 
 const PILARES = [
@@ -24,12 +25,12 @@ export function Nosotros() {
         <span className="kicker" style={{ display: 'block', marginBottom: 14 }}>Nosotros · desde 2014</span>
         <h1 className="display" style={{ fontSize: 44, margin: '0 0 24px', maxWidth: 640 }}>
           Una casa no se decora.<br />
-          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>Se compone.</em>
+          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline>Se compone.</Underline></em>
         </h1>
       </RevealOnScroll>
 
-      <RevealOnScroll delay={1}>
-        <p className="edit" style={{ fontSize: 19, lineHeight: 1.5, maxWidth: 560, color: 'var(--ink-soft)', margin: '0 0 48px' }}>
+      <RevealOnScroll delay={1} className="subtitle-connector" style={{ marginBottom: 48 }}>
+        <p className="edit" style={{ fontSize: 19, lineHeight: 1.5, maxWidth: 560, color: 'var(--ink-soft)', margin: 0 }}>
           Desde 2014 elegimos, a mano, mobiliario y objetos para hogares que no tienen apuro. En Rafaela, Santa Fe,
           armamos un showroom con piezas que acompañan una casa durante años, no una temporada.
         </p>

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
+import { Underline } from '@/components/ui/Underline'
 import { ProductCard } from '@/components/ui/ProductCard'
 import { ProductQuickView } from '@/components/ui/ProductQuickView'
 import type { Product } from '@/lib/types'
@@ -30,14 +31,14 @@ export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProp
     <section id="seleccion" data-dt="seleccion" style={{ position: 'relative', padding: '80px 0 64px', overflow: 'hidden', background: 'var(--bg-deep)' }}>
       <div className="sel-header" style={{ padding: '0 24px', marginBottom: 28 }}>
         <h2 className="display sel-h2" data-reveal="headline" style={{ fontSize: 34, margin: '16px 0 4px' }}>
-          Nuestros <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>Favoritos</em>
+          Nuestros <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline>Favoritos</Underline></em>
         </h2>
 
-        <RevealOnScroll delay={2}>
-          <p className="edit" style={{ margin: '14px 0 0', color: 'var(--ink-soft)', maxWidth: 320, fontSize: 20 }}>
+        <div className="subtitle-connector" data-reveal="up" data-delay="0.15">
+          <p className="edit" style={{ margin: 0, color: 'var(--ink-soft)', maxWidth: 320, fontSize: 20 }}>
             Piezas que entraron al showroom hace poco. Cada una con su pequeña historia.
           </p>
-        </RevealOnScroll>
+        </div>
       </div>
 
       {/* Horizontal scroll strip */}

@@ -19,7 +19,7 @@ export async function PUT(request: NextRequest) {
     !body ||
     typeof body.promoBar !== 'string' ||
     !Array.isArray(body.inspiracion) ||
-    body.inspiracion.length !== 3 ||
+    body.inspiracion.length !== 4 ||
     body.inspiracion.some((item) => !item || typeof item.name !== 'string')
   ) {
     return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 })

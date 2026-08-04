@@ -359,7 +359,46 @@ body {
   inherits: false;
 }
 
+/* ── Subtitle connector: bridges title and description text ──────────── */
+.subtitle-connector {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 14px;
+}
+.subtitle-connector::before {
+  content: '';
+  flex: none;
+  width: 22px;
+  height: 1px;
+  margin-top: 0.85em;
+  background: currentColor;
+  opacity: 0.4;
+}
+
+/* ── Animated underline for section title accents ────────────────────── */
+.underline-draw { position: relative; display: inline-block; }
+.underline-draw::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: 0.02em;
+  height: 2px;
+  background: currentColor;
+  opacity: 0.6;
+  transition: right 0.9s cubic-bezier(0.65, 0, 0.35, 1) 0.15s;
+}
+.underline-draw.in-view::after { right: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .underline-draw::after { right: 0; transition: none; }
+}
+
 .look-frame { position: relative; }
+.look-frame:hover .look-img, .look-frame:focus-within .look-img { transform: scale(1.05); }
+
+.look-items { scrollbar-width: none; }
+.look-items::-webkit-scrollbar { display: none; }
 
 .look-frame::after {
   content: '';
@@ -1072,8 +1111,16 @@ body {
 
   [data-dt="lookbook"] { padding: 120px 64px !important; }
   [data-dt="lookbook"] .look-h2 { font-size: 88px !important; }
-  [data-dt="lookbook"] .look-items { flex-direction: row !important; gap: 32px !important; align-items: flex-start; }
-  [data-dt="lookbook"] .look-item { flex: 1; }
+  [data-dt="lookbook"] .look-items {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 28px !important;
+    overflow: visible !important;
+    scroll-snap-type: none !important;
+    padding: 0 !important;
+    align-items: start;
+  }
+  [data-dt="lookbook"] .look-item-wrap { flex: none !important; scroll-snap-align: none !important; }
 
   [data-dt="productos"] { padding: 120px 64px 96px !important; }
   [data-dt="productos"] .prod-header { padding: 0 !important; margin-bottom: 56px !important; }
@@ -1189,6 +1236,9 @@ body {
   transform: translateX(-50%) translateY(0);
 }
 @media (max-width: 899px) {
+  /* no hay hover en touch, dejamos las acciones del visualizador siempre visibles */
+  .viz-thumb-actions { opacity: 1; transform: none; }
+
   /* no hay hover en touch, no mostramos tooltip flotando sobre el dedo */
   .tooltip-bubble { display: none; }
 }
@@ -1227,7 +1277,7 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  aspect-ratio: 4/3;
+  aspect-ratio: 16/9;
   border: 1.5px dashed var(--line);
   background: var(--bg-deep);
   color: var(--ink-soft);
@@ -1326,11 +1376,39 @@ body {
 .viz-thumb:active { cursor: grabbing; }
 .viz-thumb:disabled { cursor: default; opacity: 0.5; }
 .viz-thumb-img {
+  position: relative;
   aspect-ratio: 4/5;
   background: var(--bg-deep);
   overflow: hidden;
 }
 .viz-thumb-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.viz-thumb-actions {
+  position: absolute;
+  top: 6px; right: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  opacity: 0;
+  transform: translateX(4px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.viz-thumb-img:hover .viz-thumb-actions,
+.viz-thumb-img:focus-within .viz-thumb-actions { opacity: 1; transform: translateX(0); }
+.viz-thumb-action {
+  width: 24px; height: 24px;
+  display: grid; place-items: center;
+  background: var(--bg);
+  color: var(--ink);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  transition: background 0.15s, color 0.15s;
+}
+.viz-thumb-action:hover { background: var(--ink); color: var(--bg); }
 .viz-thumb-name {
   font-size: 10px;
   line-height: 1.3;
@@ -1344,8 +1422,8 @@ body {
     padding: 12px 64px 96px;
     gap: 48px;
   }
-  .viz-canvas-col { flex: 1 1 62%; position: sticky; top: calc(var(--header-h) + 16px); }
-  .viz-sidebar { flex: 1 1 38%; max-width: 420px; }
+  .viz-canvas-col { flex: 1 1 68%; position: sticky; top: calc(var(--header-h) + 16px); }
+  .viz-sidebar { flex: 1 1 32%; max-width: 380px; }
   .viz-sidebar-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
 }
 

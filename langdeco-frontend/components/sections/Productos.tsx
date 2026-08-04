@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
+import { Underline } from '@/components/ui/Underline'
 import { ProductCard } from '@/components/ui/ProductCard'
 import { ProductQuickView } from '@/components/ui/ProductQuickView'
 import * as Icon from '@/components/ui/Icon'
@@ -54,16 +55,16 @@ export function Productos({ products, initialCategory }: ProductosProps) {
         {/* ── Header ───────────────────────────────────────────── */}
         <div className="prod-header" style={{ padding: '0 24px', marginBottom: 32 }}>
           <h2 className="display prod-h2" data-reveal="headline" style={{ fontSize: 34, margin: '16px 0 14px' }}>
-            Para <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>casi</em><br />todo lo demás.
+            Para <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline>casi</Underline></em><br />todo lo demás.
           </h2>
 
-          <RevealOnScroll delay={2}>
-            <p className="edit" style={{ margin: '0 0 28px', color: 'var(--ink-soft)', maxWidth: 380, fontSize: 20 }}>
+          <div className="subtitle-connector" data-reveal="up" data-delay="0.15" style={{ marginBottom: 28 }}>
+            <p className="edit" style={{ margin: 0, color: 'var(--ink-soft)', maxWidth: 380, fontSize: 20 }}>
               Dos casas dentro de la casa. Las piezas grandes que{' '}
               <strong style={{ fontWeight: 500, fontStyle: 'normal' }}>cambian un cuarto</strong>; y los pequeños tesoros que lo{' '}
               <strong style={{ fontWeight: 500, fontStyle: 'normal' }}>terminan</strong>.
             </p>
-          </RevealOnScroll>
+          </div>
 
           <RevealOnScroll delay={2}>
             <div role="tablist" style={{ display: 'inline-flex', alignItems: 'stretch', border: '1px solid var(--ink)' }}>
