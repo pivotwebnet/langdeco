@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { useCart, useCartUI } from '@/lib/cart'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Magnetic } from '@/components/ui/Magnetic'
@@ -10,6 +11,7 @@ export function FloatingCartButton() {
   const { count } = useCart()
   const { open } = useCartUI()
   const [scrollY, setScrollY] = useState(0)
+  const pathname = usePathname()
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY)
@@ -17,6 +19,10 @@ export function FloatingCartButton() {
     onScroll()
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  // En la ficha de producto el carrito del header ya queda siempre a la vista
+  // (a la misma altura que este botón) — mostrar los dos juntos es redundante.
+  if (pathname?.startsWith('/producto/')) return null
 
   return (
     <div className={`floating-cart${scrollY > 200 ? ' in' : ''}`}>

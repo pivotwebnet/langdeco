@@ -82,8 +82,32 @@ export function ScrollAnimator() {
         )
       })
 
-      /* ── Large display headlines: word-by-word ──────────────────────── */
+      /* ── Large display headlines ──────────────────────────────────────
+         Si el título usa <SplitChars> (mismo tratamiento que el H1 del
+         Hero), animamos palabra por palabra al entrar en viewport. Si no,
+         caemos al fade+skew genérico. */
       document.querySelectorAll<HTMLElement>('[data-reveal="headline"]').forEach((el) => {
+        const words = el.querySelectorAll<HTMLElement>('.split-word')
+        const masks = el.querySelectorAll<HTMLElement>('.split-mask')
+        masks.forEach((m) => { m.style.overflow = 'visible' })
+
+        if (words.length > 0) {
+          gsap.fromTo(words,
+            { yPercent: 130, opacity: 0, filter: 'blur(6px)' },
+            {
+              yPercent: 0, opacity: 1, filter: 'blur(0px)',
+              duration: 0.9,
+              stagger: 0.09,
+              ease: 'expo.out',
+              scrollTrigger: {
+                trigger: el,
+                start: 'top 85%',
+              },
+            }
+          )
+          return
+        }
+
         gsap.fromTo(el,
           { opacity: 0, y: 48, skewY: 1.5 },
           {

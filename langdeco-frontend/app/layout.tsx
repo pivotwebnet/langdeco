@@ -3,6 +3,7 @@ import { CartProvider, CartUIProvider } from '@/lib/cart'
 import { FloatingDock } from '@/components/layout/FloatingDock'
 import { FloatingCartButton } from '@/components/layout/FloatingCartButton'
 import { CartDrawerHost } from '@/components/layout/CartDrawerHost'
+import { SmoothScroll } from '@/components/ui/SmoothScroll'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <CartProvider>
           <CartUIProvider>
+            <SmoothScroll />
             {children}
             <CartDrawerHost />
             <FloatingCartButton />

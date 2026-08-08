@@ -144,13 +144,6 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
           <Icon.Menu />
         </button>
 
-        {/* Desktop: nav left */}
-        <nav className="nav-left dt-only" aria-label="Navegación principal">
-          {NAV_LINKS.slice(0, 2).map((l) => (
-            <Link key={l.href} href={l.href} className="nav-link">{l.label}</Link>
-          ))}
-        </nav>
-
         {/* Logo — always visible */}
         <Link
           href="/"
@@ -167,11 +160,15 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
           />
         </Link>
 
-        {/* Desktop: nav right */}
-        <nav className="nav-right dt-only" aria-label="Navegación secundaria">
-          {NAV_LINKS.slice(2).map((l) => (
+        {/* Desktop: nav — todos los links en una sola fila centrada, separados a distancia pareja */}
+        <nav className="nav-links dt-only" aria-label="Navegación principal">
+          {NAV_LINKS.map((l) => (
             <Link key={l.href} href={l.href} className="nav-link">{l.label}</Link>
           ))}
+        </nav>
+
+        {/* Desktop: search + cart */}
+        <div className="nav-icons dt-only">
           <Tooltip label="Buscar" side="bottom">
             <Magnetic>
               <button
@@ -191,7 +188,7 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
               </button>
             </Magnetic>
           </Tooltip>
-        </nav>
+        </div>
 
         {/* Mobile: search + cart group */}
         <div

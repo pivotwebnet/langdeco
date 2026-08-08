@@ -33,21 +33,23 @@ export function Hero() {
 
   useGSAP(() => {
     if (!titleRef.current) return
-    const chars = titleRef.current.querySelectorAll<HTMLElement>('.split-char')
+    const words = titleRef.current.querySelectorAll<HTMLElement>('.split-word')
     const masks = titleRef.current.querySelectorAll<HTMLElement>('.split-mask')
+    // Cada línea ya tiene su propio overflow:hidden (ver JSX) — eso hace de
+    // máscara para las palabras. No necesitamos además la máscara por letra.
+    masks.forEach((m) => { m.style.overflow = 'visible' })
 
-    if (prefersReducedMotion()) {
-      masks.forEach((m) => { m.style.overflow = 'visible' })
-      return
-    }
-
-    // Entrada: letra por letra al cargar/scrollear a la vista. Al terminar,
-    // liberamos la máscara overflow:hidden — si no, ascendentes como la "d" quedan recortados.
-    gsap.fromTo(chars,
-      { yPercent: 108, opacity: 0 },
+    // A propósito NO chequeamos prefersReducedMotion acá: el título principal
+    // tiene que animar siempre al entrar, sea cual sea la config del visitante.
+    gsap.fromTo(titleRef.current,
+      { scale: 1.015 },
+      { scale: 1, duration: 0.9, ease: 'power2.out' }
+    )
+    gsap.fromTo(words,
+      { yPercent: 45, opacity: 0, filter: 'blur(6px)' },
       {
-        yPercent: 0, opacity: 1, duration: 0.9, ease: 'expo.out', stagger: 0.018, delay: 0.25,
-        onComplete: () => masks.forEach((m) => { m.style.overflow = 'visible' }),
+        yPercent: 0, opacity: 1, filter: 'blur(0px)',
+        duration: 0.6, ease: 'power2.out', stagger: 0.035, delay: 0.15,
       }
     )
   }, { scope: titleRef })
@@ -93,7 +95,7 @@ export function Hero() {
         </div>
 
         <RevealOnScroll delay={2}>
-          <div className="hero-image" style={{ position: 'relative', width: '100%', aspectRatio: '3/4', overflow: 'hidden', marginBottom: 20 }}>
+          <div className="hero-image" style={{ position: 'relative', width: '100%', aspectRatio: '3/4', overflow: 'hidden', marginBottom: 20, borderRadius: 18 }}>
             <div ref={heroImgRef} style={{ position: 'absolute', inset: 0 }}>
               <Image
                 src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=85"

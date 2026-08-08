@@ -20,6 +20,7 @@ export interface BackendProduct {
   roomTags: string[]
   price: number
   originalPrice: number | null
+  wholesalePrice: number | null
   stock: number
   note: string | null
   aspect: string | null

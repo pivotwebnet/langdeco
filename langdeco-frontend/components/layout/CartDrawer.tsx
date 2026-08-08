@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useCart } from '@/lib/cart'
+import { Tooltip } from '@/components/ui/Tooltip'
 import * as Icon from '@/components/ui/Icon'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
 import { formatPrice } from '@/lib/data'
@@ -39,14 +40,22 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
       {/* Drawer */}
       <div
         style={{
-          position: 'fixed', top: 0, right: 0, bottom: 0,
-          width: 'min(420px, 100vw)',
+          position: 'fixed',
+          top: 'calc(var(--header-h) + var(--promo-h) + 16px)',
+          right: 16,
+          width: 'min(420px, calc(100vw - 32px))',
+          maxHeight: 'calc(100vh - var(--header-h) - var(--promo-h) - 32px)',
           background: 'var(--bg)',
+          borderRadius: 20,
           zIndex: 201,
           display: 'flex', flexDirection: 'column',
-          transform: open ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 0.45s cubic-bezier(.2,.7,.2,1)',
-          boxShadow: '-20px 0 60px -20px rgba(0,0,0,0.3)',
+          overflow: 'hidden',
+          transformOrigin: 'top right',
+          transform: open ? 'translateY(0) scale(1)' : 'translateY(-12px) scale(0.96)',
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? 'auto' : 'none',
+          transition: 'transform 0.35s cubic-bezier(.2,.7,.2,1), opacity 0.25s ease',
+          boxShadow: '0 24px 70px -18px rgba(0,0,0,0.35)',
         }}
       >
         {/* Header */}
@@ -55,9 +64,11 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
             <span className="mono">Selección</span>
             {count > 0 && <span className="mono" style={{ marginLeft: 8 }}>{count} {count === 1 ? 'pieza' : 'piezas'}</span>}
           </div>
-          <button className="icon-btn" onClick={onClose} aria-label="Cerrar carrito">
-            <Icon.Close />
-          </button>
+          <Tooltip label="Cerrar">
+            <button className="icon-btn" onClick={onClose} aria-label="Cerrar carrito">
+              <Icon.Close />
+            </button>
+          </Tooltip>
         </div>
 
         {/* Items */}
@@ -78,28 +89,36 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: 15, fontWeight: 500 }}>{item.name}</span>
-                    <button onClick={() => remove(item.id)} style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--ink-mute)', padding: 0 }}>
-                      <Icon.Trash />
-                    </button>
+                    <Tooltip label="Quitar">
+                      <button onClick={() => remove(item.id)} aria-label={`Quitar ${item.name}`} style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--ink-mute)', padding: 0 }}>
+                        <Icon.Trash />
+                      </button>
+                    </Tooltip>
                   </div>
                   <div className="mono" style={{ marginBottom: 12 }}>{item.material}</div>
 
                   {/* Qty + price row */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid var(--line)' }}>
-                      <button
-                        onClick={() => setQty(item.id, item.qty - 1)}
-                        style={{ width: 32, height: 32, background: 'none', border: 0, cursor: 'pointer', display: 'grid', placeItems: 'center' }}
-                      >
-                        <Icon.Minus />
-                      </button>
+                      <Tooltip label="Restar">
+                        <button
+                          onClick={() => setQty(item.id, item.qty - 1)}
+                          aria-label={`Restar ${item.name}`}
+                          style={{ width: 32, height: 32, background: 'none', border: 0, cursor: 'pointer', display: 'grid', placeItems: 'center' }}
+                        >
+                          <Icon.Minus />
+                        </button>
+                      </Tooltip>
                       <span style={{ width: 28, textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: 14 }}>{item.qty}</span>
-                      <button
-                        onClick={() => setQty(item.id, item.qty + 1)}
-                        style={{ width: 32, height: 32, background: 'none', border: 0, cursor: 'pointer', display: 'grid', placeItems: 'center' }}
-                      >
-                        <Icon.Plus />
-                      </button>
+                      <Tooltip label="Sumar">
+                        <button
+                          onClick={() => setQty(item.id, item.qty + 1)}
+                          aria-label={`Sumar ${item.name}`}
+                          style={{ width: 32, height: 32, background: 'none', border: 0, cursor: 'pointer', display: 'grid', placeItems: 'center' }}
+                        >
+                          <Icon.Plus />
+                        </button>
+                      </Tooltip>
                     </div>
                     <span className="mono" style={{ fontSize: 12 }}>{formatPrice(item.priceNum * item.qty)}</span>
                   </div>

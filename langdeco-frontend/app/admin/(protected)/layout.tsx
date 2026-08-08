@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { AdminSidebar } from '@/components/admin/AdminSidebar'
+import { AdminToastProvider } from '@/components/admin/AdminToast'
 import { setupRequired } from '@/lib/admin-credentials'
 import { isValidSessionToken, SESSION_COOKIE } from '@/lib/admin-session'
 
@@ -21,11 +22,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="adm-shell">
-      <AdminSidebar />
-      <main className="adm-main">
-        {children}
-      </main>
-    </div>
+    <AdminToastProvider>
+      <div className="adm-shell">
+        <AdminSidebar />
+        <main className="adm-main">
+          {children}
+        </main>
+      </div>
+    </AdminToastProvider>
   )
 }

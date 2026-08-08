@@ -6,6 +6,7 @@ import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
 import { Magnetic } from '@/components/ui/Magnetic'
 import * as Icon from '@/components/ui/Icon'
 import { Underline } from '@/components/ui/Underline'
+import { SplitChars } from '@/components/ui/SplitChars'
 import type { LookbookEntry, Product } from '@/lib/types'
 
 interface InspiracionProps {
@@ -20,8 +21,8 @@ export function Inspiracion({ items, products }: InspiracionProps) {
     <section data-dt="lookbook" id="inspiracion" style={{ position: 'relative', padding: '72px 0', background: 'var(--ink)', color: 'var(--bg)', overflow: 'hidden' }}>
       <div className="look-header" style={{ padding: '0 24px', marginBottom: 32 }}>
         <h2 className="display look-h2" data-reveal="headline" style={{ fontSize: 44, margin: 0, color: 'var(--bg)' }}>
-          Cada hogar,<br />
-          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline>con su estilo</Underline></em>.
+          <SplitChars text="Cada hogar," /><br />
+          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline><SplitChars text="con su estilo" /></Underline></em>.
         </h2>
         <div className="subtitle-connector" data-reveal="up" data-delay="0.15">
           <p className="edit" style={{ margin: 0, color: 'rgba(242,241,237,0.7)', maxWidth: 380, fontSize: 18 }}>

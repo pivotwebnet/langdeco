@@ -2,8 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAdminToast } from '@/components/admin/AdminToast'
 
 export default function ConfiguracionAdmin() {
+  const toast = useAdminToast()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -31,10 +33,13 @@ export default function ConfiguracionAdmin() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || 'No se pudo cambiar la contraseña')
+        const msg = data.error || 'No se pudo cambiar la contraseña'
+        setError(msg)
+        toast.error(msg)
         return
       }
       setSuccess(true)
+      toast.success('Contraseña actualizada.')
       setCurrentPassword('')
       setNewPassword('')
       setConfirm('')

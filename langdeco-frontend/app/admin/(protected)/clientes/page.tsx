@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import type { BackendInquiry, InquiryStatus } from '@/lib/backend-types'
+import { useAdminToast } from '@/components/admin/AdminToast'
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api/admin/backend${path}`, {
@@ -17,6 +18,7 @@ const STATUS_LABEL: Record<InquiryStatus, string> = { Pending: 'Pendiente', Repl
 const STATUS_BADGE: Record<InquiryStatus, string> = { Pending: 'warn', Replied: 'ok', Closed: 'neutral' }
 
 export default function ClientesAdmin() {
+  const toast = useAdminToast()
   const [inquiries, setInquiries] = useState<BackendInquiry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -42,9 +44,12 @@ export default function ClientesAdmin() {
     setError(null)
     try {
       await api(`/inquiries/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) })
+      toast.success(`Consulta marcada como ${STATUS_LABEL[status].toLowerCase()}.`)
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     }
   }
 

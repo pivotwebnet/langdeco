@@ -1,8 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import type { BackendBudget, BackendProduct, BackendSale, BackendCustomer } from '@/lib/backend-types'
+import type { BackendBudget, BackendProduct, BackendSale, BackendCustomer, ClientType } from '@/lib/backend-types'
 import { useEscapeKey } from '@/lib/useEscapeKey'
+import { useAdminToast } from '@/components/admin/AdminToast'
+
+/** Precio unitario según el tipo de cliente — mayorista si el producto tiene precio mayorista cargado, si no cae a minorista. */
+function resolvePrice(product: BackendProduct | null | undefined, clientType: ClientType): number {
+  if (!product) return 0
+  if (clientType === 'Wholesale' && product.wholesalePrice != null) return product.wholesalePrice
+  return product.price
+}
 
 type ReceiptKind = 'sale' | 'budget'
 type ReceiptRecord = BackendSale | BackendBudget
@@ -34,6 +42,7 @@ interface ReceiptViewProps {
 }
 
 export function ReceiptView({ kind, record, products, onClose, onUpdated }: ReceiptViewProps) {
+  const toast = useAdminToast()
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -42,6 +51,7 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
   const title = kind === 'sale' ? 'VENTA' : 'PRESUPUESTO'
   const validUntil = kind === 'budget' ? (record as BackendBudget).validUntil : null
   const isEditable = kind === 'sale' ? record.status === 'Pending' : record.status === 'Open'
+  const clientType = record.clientType
 
   const [customer, setCustomer] = useState<BackendCustomer>(record.customer)
   const [discountPercent, setDiscountPercent] = useState(record.discountPercent)
@@ -53,14 +63,20 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
 
   const previewSubtotal = items.reduce((sum, it) => {
     const product = products.find((p) => p.id === it.productId)
-    return sum + (product?.price || 0) * it.quantity
+    return sum + resolvePrice(product, clientType) * it.quantity
   }, 0)
   const previewDiscount = Math.round(previewSubtotal * discountPercent) / 100
   const previewNet = previewSubtotal - previewDiscount
   const previewTax = Math.round(previewNet * taxRatePercent) / 100
   const previewTotal = previewNet + previewTax
 
-  const addItem = () => setItems([...items, { productId: products[0]?.id || '', quantity: 1 }])
+  const missingWholesale = clientType === 'Wholesale'
+    ? items
+        .map((it) => products.find((p) => p.id === it.productId))
+        .filter((p): p is BackendProduct => !!p && p.wholesalePrice == null)
+    : []
+
+  const addItem = () => { if (products.length > 0) setItems([...items, { productId: products[0].id, quantity: 1 }]) }
   const updateItem = (i: number, patch: Partial<{ productId: string; quantity: number }>) => {
     const next = [...items]
     next[i] = { ...next[i], ...patch }
@@ -78,15 +94,18 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
       const body: Record<string, unknown> = {
         customer: { name: customer.name, contact: customer.contact || null, taxId: customer.taxId || null, address: customer.address || null },
         discountPercent, taxRatePercent,
-        items: items.map((it) => ({ productId: it.productId, quantity: it.quantity })),
+        items: items.map((it) => ({ productId: it.productId, quantity: it.quantity, priceType: clientType })),
       }
       if (kind === 'budget') body.validUntil = validUntilInput ? new Date(validUntilInput).toISOString() : null
 
       const updated = await api<ReceiptRecord>(`${basePath}/${record.id}`, { method: 'PUT', body: JSON.stringify(body) })
+      toast.success(`${title === 'VENTA' ? 'Venta' : 'Presupuesto'} #${updated.number} actualizado.`)
       onUpdated(updated)
       setEditing(false)
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     } finally {
       setSaving(false)
     }
@@ -125,7 +144,7 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
               </>
             ) : (
               <>
-                <button style={{ ...actionBtn, background: 'var(--ink)', color: 'var(--bg)' }} onClick={save} disabled={saving}>
+                <button style={{ ...actionBtn, background: 'var(--ink)', color: 'var(--bg)' }} onClick={save} disabled={saving || missingWholesale.length > 0}>
                   {saving ? 'Guardando...' : 'Guardar'}
                 </button>
                 <button style={actionBtn} onClick={cancelEdit}>Cancelar</button>
@@ -198,7 +217,7 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
               {(editing ? items : record.items).map((it, i) => {
                 const product = editing ? products.find((p) => p.id === it.productId) : null
                 const name = editing ? (product?.name || '') : record.items[i]?.productName ?? ''
-                const unitPrice = editing ? (product?.price || 0) : record.items[i]?.unitPrice ?? 0
+                const unitPrice = editing ? resolvePrice(product, clientType) : record.items[i]?.unitPrice ?? 0
                 const qty = it.quantity
                 return (
                   <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
@@ -223,7 +242,13 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
           </table>
 
           {editing && (
-            <button type="button" onClick={addItem} style={{ ...smallBtn, marginTop: 8 }}>+ Agregar producto</button>
+            <button type="button" onClick={addItem} disabled={products.length === 0} style={{ ...smallBtn, marginTop: 8 }}>+ Agregar producto</button>
+          )}
+
+          {editing && missingWholesale.length > 0 && (
+            <div style={{ background: '#FEE2E2', color: '#991B1B', padding: '10px 14px', fontSize: 12, marginTop: 8 }}>
+              Sin precio mayorista cargado: {missingWholesale.map((p) => p.name).join(', ')}. No se puede guardar hasta cargarles precio mayorista en Productos.
+            </div>
           )}
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>

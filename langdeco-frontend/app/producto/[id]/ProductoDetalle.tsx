@@ -9,6 +9,7 @@ import { useCart } from '@/lib/cart'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
+import { Tooltip } from '@/components/ui/Tooltip'
 import * as Icon from '@/components/ui/Icon'
 import { formatPrice } from '@/lib/data'
 import type { Product } from '@/lib/types'
@@ -64,7 +65,7 @@ export function ProductoDetalle({ product, related }: Props) {
             href="/catalogo"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              color: 'var(--ink-mute)', textDecoration: 'none',
+              color: 'var(--ink-soft)', textDecoration: 'none',
               fontFamily: 'ui-monospace, monospace', fontSize: 9,
               letterSpacing: '0.16em', textTransform: 'uppercase',
               transition: 'color 0.2s',
@@ -117,7 +118,7 @@ export function ProductoDetalle({ product, related }: Props) {
             {(product.tag || isLowStock || isOutOfStock) && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
                 {product.tag && (
-                  <span className="mono" style={{ fontSize: 9, letterSpacing: '0.2em' }}>{product.tag}</span>
+                  <span className="mono" style={{ fontSize: 9, letterSpacing: '0.2em', color: 'var(--ink-soft)' }}>{product.tag}</span>
                 )}
                 {isOutOfStock ? (
                   <span className="mono" style={{ padding: '5px 10px', background: 'var(--ink)', color: 'var(--bg)', fontSize: 9, letterSpacing: '0.16em', borderRadius: 5 }}>
@@ -168,12 +169,12 @@ export function ProductoDetalle({ product, related }: Props) {
             {product.specs && product.specs.length > 0 && (
               <div className="pd-specs">
                 <div style={{ height: 1, background: 'var(--line)', margin: '28px 0 20px' }} />
-                <div className="mono" style={{ marginBottom: 16, fontSize: 9, letterSpacing: '0.22em' }}>
+                <div className="mono" style={{ marginBottom: 16, fontSize: 9, letterSpacing: '0.22em', color: 'var(--ink-soft)' }}>
                   Ficha Técnica
                 </div>
                 {product.specs.map(spec => (
                   <div key={spec.label} className="pd-spec-row">
-                    <span className="mono" style={{ color: 'var(--ink-mute)' }}>{spec.label}</span>
+                    <span className="mono" style={{ color: 'var(--ink-soft)' }}>{spec.label}</span>
                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: 13 }}>{spec.value}</span>
                   </div>
                 ))}
@@ -194,18 +195,20 @@ export function ProductoDetalle({ product, related }: Props) {
                     ? <><span>✓</span>&nbsp;Añadido a la selección</>
                     : <><Icon.Plus />&nbsp;Añadir a la selección</>}
               </button>
-              <a
-                href={whatsappHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pd-wa-cta"
-                aria-label={`Consultar por ${product.name} en WhatsApp`}
-              >
-                <Icon.Whatsapp />
-              </a>
+              <Tooltip label="Consulta rápida">
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pd-wa-cta"
+                  aria-label={`Consultar por ${product.name} en WhatsApp`}
+                >
+                  <Icon.Whatsapp />
+                </a>
+              </Tooltip>
             </div>
 
-            <div className="mono" style={{ marginTop: 16, fontSize: 9, color: 'var(--ink-mute)', lineHeight: 1.7 }}>
+            <div className="mono" style={{ marginTop: 16, fontSize: 9, color: 'var(--ink-soft)', lineHeight: 1.7 }}>
               Consultas por WhatsApp · Envíos a todo el país<br />
               Pago en cuotas · Coordinar entrega
             </div>

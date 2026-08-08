@@ -1,5 +1,6 @@
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
 import { Underline } from '@/components/ui/Underline'
+import { SplitChars } from '@/components/ui/SplitChars'
 import { Consultas } from '@/components/sections/Consultas'
 import * as Icon from '@/components/ui/Icon'
 
@@ -41,8 +42,9 @@ export function Visita() {
           <span className="kicker" style={{ display: 'block', marginBottom: 14 }}>Rafaela · Santa Fe</span>
         </RevealOnScroll>
         <h2 className="display visita-h2" data-reveal="headline">
-          El showroom<br />está siempre{' '}
-          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline>abierto</Underline></em>.
+          <SplitChars text="El showroom" /><br />
+          <SplitChars text="está siempre" />{' '}
+          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline><SplitChars text="abierto" /></Underline></em>.
         </h2>
 
         <RevealOnScroll delay={2}>

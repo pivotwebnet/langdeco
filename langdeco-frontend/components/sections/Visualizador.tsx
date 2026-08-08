@@ -4,6 +4,8 @@ import { useRef, useState } from 'react'
 import Link from 'next/link'
 import * as Icon from '@/components/ui/Icon'
 import { Underline } from '@/components/ui/Underline'
+import { SplitChars } from '@/components/ui/SplitChars'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { useCart } from '@/lib/cart'
 import type { Product } from '@/lib/types'
 
@@ -228,8 +230,8 @@ export function Visualizador({ products, compact = false }: Props) {
       <div style={{ marginBottom: 20 }}>
         <div className="kicker" data-reveal="up" style={{ marginBottom: 10 }}>Probalo en tu casa</div>
         <h2 className="display" data-reveal="headline" style={{ fontSize: compact ? 'clamp(24px, 4.5vw, 34px)' : 'clamp(28px, 5vw, 40px)', margin: '0 0 10px' }}>
-          Visualizador de{' '}
-          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline>espacios</Underline></em>
+          <SplitChars text="Visualizador de" />{' '}
+          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline><SplitChars text="espacios" /></Underline></em>
         </h2>
         <div className="subtitle-connector" data-reveal="up" data-delay="0.15">
           <p style={{ margin: 0, maxWidth: 560, fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.6 }}>
@@ -286,14 +288,16 @@ export function Visualizador({ products, compact = false }: Props) {
                     <img src={item.imageUrl} alt={item.name} draggable={false} />
                     {selectedUid === item.uid && (
                       <>
-                        <button
-                          className="viz-item-remove"
-                          aria-label={`Quitar ${item.name}`}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onClick={() => removeItem(item.uid)}
-                        >
-                          <Icon.Close style={{ width: 11, height: 11 }} />
-                        </button>
+                        <Tooltip label="Quitar">
+                          <button
+                            className="viz-item-remove"
+                            aria-label={`Quitar ${item.name}`}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={() => removeItem(item.uid)}
+                          >
+                            <Icon.Close style={{ width: 11, height: 11 }} />
+                          </button>
+                        </Tooltip>
                         <div
                           className="viz-item-resize"
                           onPointerDown={(e) => handleResizePointerDown(e, item.uid)}
@@ -345,24 +349,26 @@ export function Visualizador({ products, compact = false }: Props) {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.imageUrl} alt={p.name} draggable={false} />
                   <div className="viz-thumb-actions">
-                    <button
-                      type="button"
-                      className="viz-thumb-action"
-                      onClick={(e) => { e.stopPropagation(); addToCart(p) }}
-                      aria-label={`Agregar ${p.name} al carrito`}
-                      title="Agregar al carrito"
-                    >
-                      {addedId === p.id ? '✓' : <Icon.Cart style={{ width: 13, height: 13 }} />}
-                    </button>
-                    <Link
-                      href={`/producto/${p.id}`}
-                      className="viz-thumb-action"
-                      onClick={(e) => e.stopPropagation()}
-                      aria-label={`Ver detalle de ${p.name}`}
-                      title="Ver detalle"
-                    >
-                      <Icon.Eye style={{ width: 13, height: 13 }} />
-                    </Link>
+                    <Tooltip label="Agregar al carrito">
+                      <button
+                        type="button"
+                        className="viz-thumb-action"
+                        onClick={(e) => { e.stopPropagation(); addToCart(p) }}
+                        aria-label={`Agregar ${p.name} al carrito`}
+                      >
+                        {addedId === p.id ? '✓' : <Icon.Cart style={{ width: 13, height: 13 }} />}
+                      </button>
+                    </Tooltip>
+                    <Tooltip label="Ver detalle">
+                      <Link
+                        href={`/producto/${p.id}`}
+                        className="viz-thumb-action"
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Ver detalle de ${p.name}`}
+                      >
+                        <Icon.Eye style={{ width: 13, height: 13 }} />
+                      </Link>
+                    </Tooltip>
                   </div>
                 </div>
                 <span className="viz-thumb-name">{p.name}</span>

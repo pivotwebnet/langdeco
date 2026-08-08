@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { SiteContent } from '@/lib/site-content'
+import { useAdminToast } from '@/components/admin/AdminToast'
 
 type InspiracionForm = SiteContent['inspiracion'][number]
 
@@ -13,6 +14,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function ContenidoAdmin() {
+  const toast = useAdminToast()
   const [content, setContent] = useState<SiteContent | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -56,7 +58,9 @@ export default function ContenidoAdmin() {
       if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
       setItem(index, { imageUrl: data.url })
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     } finally {
       setUploadingIndex(null)
     }
@@ -70,9 +74,12 @@ export default function ContenidoAdmin() {
     try {
       await api('/api/admin/site-content', { method: 'PUT', body: JSON.stringify(content) })
       setSaved(true)
+      toast.success('Contenido guardado.')
       setTimeout(() => setSaved(false), 2000)
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     } finally {
       setSaving(false)
     }

@@ -5,6 +5,7 @@ import type { BackendClient, DefaultReceiptType, IvaCondition } from '@/lib/back
 import { isValidCuit } from '@/lib/cuit'
 import { IVA_CONDITION_LABEL, RECEIPT_TYPE_LABEL } from '@/lib/party-labels'
 import { useEscapeKey } from '@/lib/useEscapeKey'
+import { useAdminToast } from '@/components/admin/AdminToast'
 
 type ContactPersonForm = { name: string; role: string; cell: string; phone: string; email: string }
 type CustomFieldForm = { label: string; value: string }
@@ -62,6 +63,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function ClientesAdmin() {
+  const toast = useAdminToast()
   const [clients, setClients] = useState<BackendClient[]>([])
   const [search, setSearch] = useState('')
   const [showInactive, setShowInactive] = useState(false)
@@ -130,14 +132,18 @@ export default function ClientesAdmin() {
 
       if (form.id) {
         await api(`/clients/${form.id}`, { method: 'PUT', body: JSON.stringify(payload) })
+        toast.success('Cliente actualizado.')
       } else {
         await api(`/clients`, { method: 'POST', body: JSON.stringify(payload) })
+        toast.success('Cliente creado.')
       }
 
       setForm(null)
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     } finally {
       setSaving(false)
     }
@@ -147,18 +153,24 @@ export default function ClientesAdmin() {
     if (!confirm(`¿Eliminar/desactivar "${c.companyOrFullName}"?`)) return
     try {
       await api(`/clients/${c.id}`, { method: 'DELETE' })
+      toast.success('Cliente eliminado o desactivado.')
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     }
   }
 
   const onActivate = async (c: BackendClient) => {
     try {
       await api(`/clients/${c.id}/activate`, { method: 'POST' })
+      toast.success('Cliente reactivado.')
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     }
   }
 
@@ -173,10 +185,14 @@ export default function ClientesAdmin() {
       const res = await fetch('/api/admin/backend/clients/import', { method: 'POST', body: formData })
       const data = await res.json().catch(() => null)
       if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
-      setImportMsg(`Importación completa: ${data.created} creados, ${data.updated} actualizados${data.errors?.length ? `, ${data.errors.length} con error` : ''}.`)
+      const msg = `Importación completa: ${data.created} creados, ${data.updated} actualizados${data.errors?.length ? `, ${data.errors.length} con error` : ''}.`
+      setImportMsg(msg)
+      toast.success(msg)
       await load()
     } catch (err) {
-      setError((err as Error).message)
+      const msg = (err as Error).message
+      setError(msg)
+      toast.error(msg)
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = ''
     }

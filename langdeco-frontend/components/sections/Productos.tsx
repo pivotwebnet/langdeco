@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
 import { Underline } from '@/components/ui/Underline'
+import { SplitChars } from '@/components/ui/SplitChars'
 import { ProductCard } from '@/components/ui/ProductCard'
 import { ProductQuickView } from '@/components/ui/ProductQuickView'
 import * as Icon from '@/components/ui/Icon'
@@ -55,7 +56,9 @@ export function Productos({ products, initialCategory }: ProductosProps) {
         {/* ── Header ───────────────────────────────────────────── */}
         <div className="prod-header" style={{ padding: '0 24px', marginBottom: 32 }}>
           <h2 className="display prod-h2" data-reveal="headline" style={{ fontSize: 34, margin: '16px 0 14px' }}>
-            Para <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline>casi</Underline></em><br />todo lo demás.
+            <SplitChars text="Para" />{' '}
+            <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline><SplitChars text="casi" /></Underline></em><br />
+            <SplitChars text="todo lo demás." />
           </h2>
 
           <div className="subtitle-connector" data-reveal="up" data-delay="0.15" style={{ marginBottom: 28 }}>

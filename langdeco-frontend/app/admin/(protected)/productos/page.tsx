@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { BackendCategory, BackendProduct } from '@/lib/backend-types'
+import { useAdminToast } from '@/components/admin/AdminToast'
 
 type ProductForm = {
   id: string
@@ -13,6 +14,7 @@ type ProductForm = {
   roomTags: string[]
   price: string
   originalPrice: string
+  wholesalePrice: string
   stock: string
   note: string
   aspect: string
@@ -23,7 +25,7 @@ type ProductForm = {
 
 const EMPTY_FORM: ProductForm = {
   id: '', name: '', categoryId: '', tag: '', material: '', origin: '', roomTags: [],
-  price: '', originalPrice: '', stock: '0', note: '', aspect: '', featured: false,
+  price: '', originalPrice: '', wholesalePrice: '', stock: '0', note: '', aspect: '', featured: false,
   specs: [], images: [],
 }
 
@@ -40,6 +42,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function ProductosAdmin() {
+  const toast = useAdminToast()
   const [products, setProducts] = useState<BackendProduct[]>([])
   const [categories, setCategories] = useState<BackendCategory[]>([])
   const [filter, setFilter] = useState<string>('all')
@@ -48,6 +51,11 @@ export default function ProductosAdmin() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState<ProductForm | null>(null)
+  // Se fija una sola vez al abrir el modal (create vs edit) — si se derivara en
+  // cada render comparando form.id contra la lista de productos, tipear un id
+  // nuevo que coincide por casualidad con uno existente convertiría el alta en
+  // una edición silenciosa de ese producto.
+  const [isNewForm, setIsNewForm] = useState(true)
   const [saving, setSaving] = useState(false)
 
   const load = useCallback(async () => {
@@ -76,16 +84,21 @@ export default function ProductosAdmin() {
     return true
   })
 
-  const openCreate = () => setForm({ ...EMPTY_FORM, categoryId: categories[0]?.id || '' })
+  const openCreate = () => {
+    setIsNewForm(true)
+    setForm({ ...EMPTY_FORM, categoryId: categories[0]?.id || '' })
+  }
 
-  const openEdit = (p: BackendProduct) => setForm({
-    id: p.id, name: p.name, categoryId: p.categoryId, tag: p.tag || '', material: p.material,
-    origin: p.origin || '', roomTags: [...p.roomTags], price: String(p.price), originalPrice: p.originalPrice ? String(p.originalPrice) : '',
-    stock: String(p.stock), note: p.note || '', aspect: p.aspect || '', featured: p.featured,
-    specs: p.specs.map((s) => ({ ...s })), images: [...p.images],
-  })
-
-  const isEditing = (id: string) => products.some((p) => p.id === id)
+  const openEdit = (p: BackendProduct) => {
+    setIsNewForm(false)
+    setForm({
+      id: p.id, name: p.name, categoryId: p.categoryId, tag: p.tag || '', material: p.material,
+      origin: p.origin || '', roomTags: [...p.roomTags], price: String(p.price), originalPrice: p.originalPrice ? String(p.originalPrice) : '',
+      wholesalePrice: p.wholesalePrice ? String(p.wholesalePrice) : '',
+      stock: String(p.stock), note: p.note || '', aspect: p.aspect || '', featured: p.featured,
+      specs: p.specs.map((s) => ({ ...s })), images: [...p.images],
+    })
+  }
 
   const onSave = async () => {
     if (!form) return
@@ -96,20 +109,25 @@ export default function ProductosAdmin() {
         id: form.id, name: form.name, categoryId: form.categoryId, tag: form.tag || null,
         material: form.material, origin: form.origin || null, roomTags: form.roomTags,
         price: Number(form.price), originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
+        wholesalePrice: form.wholesalePrice ? Number(form.wholesalePrice) : null,
         stock: Number(form.stock), note: form.note || null, aspect: form.aspect || null,
         featured: form.featured, specs: form.specs, images: form.images,
       }
 
-      if (isEditing(form.id)) {
-        await api(`/products/${form.id}`, { method: 'PUT', body: JSON.stringify(payload) })
-      } else {
+      if (isNewForm) {
         await api(`/products`, { method: 'POST', body: JSON.stringify(payload) })
+        toast.success('Pieza creada.')
+      } else {
+        await api(`/products/${form.id}`, { method: 'PUT', body: JSON.stringify(payload) })
+        toast.success('Pieza actualizada.')
       }
 
       setForm(null)
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     } finally {
       setSaving(false)
     }
@@ -119,18 +137,24 @@ export default function ProductosAdmin() {
     if (!confirm(`¿Eliminar/desactivar "${p.name}"?`)) return
     try {
       await api(`/products/${p.id}`, { method: 'DELETE' })
+      toast.success('Pieza eliminada o desactivada.')
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     }
   }
 
   const onActivate = async (p: BackendProduct) => {
     try {
       await api(`/products/${p.id}/activate`, { method: 'POST' })
+      toast.success('Pieza reactivada.')
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     }
   }
 
@@ -211,7 +235,7 @@ export default function ProductosAdmin() {
         <ProductFormModal
           form={form}
           categories={categories}
-          isNew={!isEditing(form.id)}
+          isNew={isNewForm}
           saving={saving}
           onChange={setForm}
           onCancel={() => setForm(null)}
@@ -248,6 +272,13 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
     set('images', images)
   }
   const removeImage = (i: number) => set('images', form.images.filter((_, idx) => idx !== i))
+  const moveImage = (i: number, dir: -1 | 1) => {
+    const target = i + dir
+    if (target < 0 || target >= form.images.length) return
+    const images = [...form.images]
+    ;[images[i], images[target]] = [images[target], images[i]]
+    set('images', images)
+  }
 
   return (
     <div className="adm-modal-backdrop">
@@ -274,6 +305,7 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
           <Field label="Origen (opcional)"><input className="adm-input" value={form.origin} onChange={(e) => set('origin', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Precio"><input className="adm-input" type="number" value={form.price} onChange={(e) => set('price', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Precio tachado (opcional)"><input className="adm-input" type="number" value={form.originalPrice} onChange={(e) => set('originalPrice', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Precio mayorista (opcional)"><input className="adm-input" type="number" value={form.wholesalePrice} onChange={(e) => set('wholesalePrice', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Stock"><input className="adm-input" type="number" value={form.stock} onChange={(e) => set('stock', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Destacado">
             <label className="adm-checkbox-row" style={{ marginTop: 8 }}>
@@ -311,7 +343,17 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
             <button type="button" className="adm-btn ghost sm" onClick={addImage} disabled={form.images.length >= 6}>+ Agregar</button>
           </div>
           {form.images.map((url, i) => (
-            <ImageSlot key={i} url={url} onChange={(v) => updateImage(i, v)} onRemove={() => removeImage(i)} />
+            <ImageSlot
+              key={i}
+              url={url}
+              isCover={i === 0}
+              canMoveUp={i > 0}
+              canMoveDown={i < form.images.length - 1}
+              onChange={(v) => updateImage(i, v)}
+              onRemove={() => removeImage(i)}
+              onMoveUp={() => moveImage(i, -1)}
+              onMoveDown={() => moveImage(i, 1)}
+            />
           ))}
         </div>
 
@@ -326,7 +368,17 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
   )
 }
 
-function ImageSlot({ url, onChange, onRemove }: { url: string; onChange: (url: string) => void; onRemove: () => void }) {
+function ImageSlot({ url, isCover, canMoveUp, canMoveDown, onChange, onRemove, onMoveUp, onMoveDown }: {
+  url: string
+  isCover: boolean
+  canMoveUp: boolean
+  canMoveDown: boolean
+  onChange: (url: string) => void
+  onRemove: () => void
+  onMoveUp: () => void
+  onMoveDown: () => void
+}) {
+  const toast = useAdminToast()
   const fileRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -342,7 +394,9 @@ function ImageSlot({ url, onChange, onRemove }: { url: string; onChange: (url: s
       if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
       onChange(data.url)
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     } finally {
       setUploading(false)
     }
@@ -350,12 +404,17 @@ function ImageSlot({ url, onChange, onRemove }: { url: string; onChange: (url: s
 
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
-      <div style={{ width: 40, height: 40, flexShrink: 0, background: 'var(--adm-surface-2)', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0 }}>
+        <button type="button" className="adm-btn ghost sm" onClick={onMoveUp} disabled={!canMoveUp} title="Subir" style={{ padding: '2px 6px', lineHeight: 1 }}>▲</button>
+        <button type="button" className="adm-btn ghost sm" onClick={onMoveDown} disabled={!canMoveDown} title="Bajar" style={{ padding: '2px 6px', lineHeight: 1 }}>▼</button>
+      </div>
+      <div style={{ width: 40, height: 40, flexShrink: 0, background: 'var(--adm-surface-2)', overflow: 'hidden', position: 'relative' }}>
         {url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         )}
       </div>
+      {isCover && <span className="adm-badge ok" style={{ flexShrink: 0 }}>Portada</span>}
       <input className="adm-input" value={url} onChange={(e) => onChange(e.target.value)} placeholder="https://... o subí un archivo" style={{ flex: 1 }} />
       <input
         ref={fileRef}
