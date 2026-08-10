@@ -2,13 +2,12 @@
 
 import { useState } from 'react'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
-import { Underline } from '@/components/ui/Underline'
 
-export function Consultas() {
-  const [clientName, setClientName] = useState('')
+export function ArrepentimientoForm() {
+  const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [message, setMessage] = useState('')
+  const [referencia, setReferencia] = useState('')
+  const [motivo, setMotivo] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
@@ -18,20 +17,20 @@ export function Consultas() {
     setError(null)
     setSending(true)
     try {
-      const fullMessage = phone ? `Teléfono: ${phone}\n\n${message}` : message
+      const message = `[SOLICITUD DE ARREPENTIMIENTO]\nReferencia de pedido: ${referencia || '-'}\nMotivo: ${motivo}`
       const res = await fetch('/api/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientName, email, message: fullMessage }),
+        body: JSON.stringify({ clientName: nombre, email, message }),
       })
       const data = await res.json().catch(() => null)
-      if (!res.ok) throw new Error(data?.error || 'No se pudo enviar la consulta')
+      if (!res.ok) throw new Error(data?.error || 'No se pudo enviar la solicitud')
 
       setSent(true)
-      setClientName('')
+      setNombre('')
       setEmail('')
-      setPhone('')
-      setMessage('')
+      setReferencia('')
+      setMotivo('')
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -40,35 +39,23 @@ export function Consultas() {
   }
 
   return (
-    <section data-dt="consultas" style={{ position: 'relative' }}>
-      <RevealOnScroll>
-        <span className="kicker" style={{ display: 'block', marginBottom: 14 }}>¿Tenés una consulta?</span>
-        <h2 className="display" style={{ fontSize: 32, margin: '0 0 12px' }}>
-          Escribinos, <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline>te respondemos</Underline></em>.
-        </h2>
-      </RevealOnScroll>
-      <div className="subtitle-connector" data-reveal="up" data-delay="0.15" style={{ marginBottom: 32 }}>
-        <p className="edit" style={{ fontSize: 16, lineHeight: 1.5, color: 'var(--ink-soft)', margin: 0, maxWidth: 460 }}>
-          Contanos qué estás buscando y te contestamos por mail.
-        </p>
-      </div>
-
+    <section data-dt="arrepentimiento-form" style={{ position: 'relative', maxWidth: 560 }}>
       {sent ? (
         <RevealOnScroll>
           <div className="adm-alert" style={{ border: '1px solid var(--line)', padding: '20px 24px', background: 'var(--bg-deep)' }}>
-            Gracias — recibimos tu consulta y te vamos a responder pronto.
+            Recibimos tu solicitud de arrepentimiento — te vamos a contactar por mail para coordinar la devolución.
           </div>
         </RevealOnScroll>
       ) : (
-        <RevealOnScroll delay={1}>
+        <RevealOnScroll>
           <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {error && (
               <div style={{ color: 'var(--ink)', background: '#f3d9d9', padding: '10px 14px', fontSize: 13 }}>{error}</div>
             )}
 
             <input
-              value={clientName}
-              onChange={(e) => setClientName(e.target.value)}
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
               placeholder="Nombre"
               required
               maxLength={200}
@@ -84,17 +71,16 @@ export function Consultas() {
               style={inputStyle}
             />
             <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Celular (opcional)"
-              maxLength={40}
+              value={referencia}
+              onChange={(e) => setReferencia(e.target.value)}
+              placeholder="Referencia de pedido (opcional)"
+              maxLength={200}
               style={inputStyle}
             />
             <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Contanos tu consulta"
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              placeholder="Contanos qué pieza querés devolver y por qué"
               required
               maxLength={2000}
               rows={4}
@@ -102,7 +88,7 @@ export function Consultas() {
             />
 
             <button className="btn" type="submit" disabled={sending} style={{ alignSelf: 'flex-start' }}>
-              {sending ? 'Enviando...' : 'Enviar consulta'}
+              {sending ? 'Enviando...' : 'Enviar solicitud'}
             </button>
           </form>
         </RevealOnScroll>

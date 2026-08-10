@@ -4,7 +4,7 @@ import * as Icon from '@/components/ui/Icon'
 
 const LINKS = [
   { label: 'Catálogo completo', desc: 'Piezas Mayores y Pequeños Tesoros.', href: '/catalogo' },
-  { label: 'Inspiración', desc: 'Casas reales, compuestas con nuestras piezas.', href: '/inspiracion' },
+  { label: 'Inspiración', desc: 'Casas reales, compuestas con nuestras piezas.', href: '/#inspiracion' },
   { label: 'Nosotros', desc: 'Quiénes somos y qué buscamos en cada pieza.', href: '/nosotros' },
   { label: 'Contacto', desc: 'Showroom en Rafaela, Santa Fe.', href: '/contacto' },
 ]

@@ -8,9 +8,13 @@ import { SplitChars } from '@/components/ui/SplitChars'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { useCart } from '@/lib/cart'
 import type { Product } from '@/lib/types'
+import type { BackendCategory } from '@/lib/backend-types'
+
+const SIDEBAR_PAGE_SIZE = 10
 
 interface Props {
   products: Product[]
+  categories?: BackendCategory[]
   compact?: boolean
 }
 
@@ -27,7 +31,7 @@ interface PlacedItem {
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n))
 
-export function Visualizador({ products, compact = false }: Props) {
+export function Visualizador({ products, categories = [], compact = false }: Props) {
   const cart = useCart()
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoSize, setPhotoSize] = useState<{ w: number; h: number } | null>(null)
@@ -35,6 +39,13 @@ export function Visualizador({ products, compact = false }: Props) {
   const [selectedUid, setSelectedUid] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [addedId, setAddedId] = useState<string | null>(null)
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
+  const [sidebarPage, setSidebarPage] = useState(0)
+
+  const changeCategoryFilter = (id: string | null) => {
+    setCategoryFilter(id)
+    setSidebarPage(0)
+  }
 
   function addToCart(product: Product) {
     cart.add(product)
@@ -47,6 +58,12 @@ export function Visualizador({ products, compact = false }: Props) {
   const zCounter = useRef(1)
 
   const withImage = products.filter((p) => p.imageUrl)
+  const filteredProducts = categoryFilter ? withImage.filter((p) => p.category === categoryFilter) : withImage
+  const sidebarTotalPages = Math.ceil(filteredProducts.length / SIDEBAR_PAGE_SIZE)
+  const sidebarPageItems = filteredProducts.slice(
+    sidebarPage * SIDEBAR_PAGE_SIZE,
+    (sidebarPage + 1) * SIDEBAR_PAGE_SIZE
+  )
 
   function handlePhotoFile(file?: File) {
     if (!file || !file.type.startsWith('image/')) return
@@ -226,15 +243,17 @@ export function Visualizador({ products, compact = false }: Props) {
   }
 
   return (
-    <section data-dt="visualizador-embed" data-size={compact ? 'compact' : undefined} style={{ position: 'relative', padding: '32px 24px 72px' }}>
-      <div style={{ marginBottom: 20 }}>
-        <div className="kicker" data-reveal="up" style={{ marginBottom: 10 }}>Probalo en tu casa</div>
-        <h2 className="display" data-reveal="headline" style={{ fontSize: compact ? 'clamp(24px, 4.5vw, 34px)' : 'clamp(28px, 5vw, 40px)', margin: '0 0 10px' }}>
-          <SplitChars text="Visualizador de" />{' '}
-          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline><SplitChars text="espacios" /></Underline></em>
-        </h2>
-        <div className="subtitle-connector" data-reveal="up" data-delay="0.15">
-          <p style={{ margin: 0, maxWidth: 560, fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.6 }}>
+    <section id="visualizador" data-dt="visualizador-embed" data-size={compact ? 'compact' : undefined} style={{ position: 'relative', padding: '32px 24px 72px' }}>
+      <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 24 }}>
+        <div>
+          <div className="kicker" data-reveal="up" style={{ marginBottom: 10 }}>Probalo en tu casa</div>
+          <h2 className="display" data-reveal="headline" style={{ fontSize: compact ? 'clamp(24px, 4.5vw, 34px)' : 'clamp(28px, 5vw, 40px)', margin: 0 }}>
+            <SplitChars text="Visualizador de" />{' '}
+            <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline><SplitChars text="espacios" /></Underline></em>
+          </h2>
+        </div>
+        <div className="subtitle-connector" data-reveal="up" data-delay="0.15" style={{ maxWidth: 400, marginTop: 0 }}>
+          <p style={{ margin: 0, fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.6 }}>
             Subí una foto de tu ambiente y arrastrá piezas del catálogo encima para imaginar cómo quedan
             antes de comprar. Podés moverlas, cambiarlas de tamaño y descargar el resultado.
           </p>
@@ -332,8 +351,33 @@ export function Visualizador({ products, compact = false }: Props) {
           <div className="mono" style={{ marginBottom: 12, fontSize: 9, letterSpacing: '0.18em' }}>
             Arrastrá un mueble a la foto
           </div>
+
+          {categories.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+              <button
+                type="button"
+                onClick={() => changeCategoryFilter(null)}
+                className="viz-cat-chip"
+                data-active={categoryFilter === null}
+              >
+                Todas
+              </button>
+              {categories.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => changeCategoryFilter(c.id)}
+                  className="viz-cat-chip"
+                  data-active={categoryFilter === c.id}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="viz-sidebar-grid">
-            {withImage.map((p) => (
+            {sidebarPageItems.map((p) => (
               <div key={p.id} className="viz-thumb">
                 <div
                   className="viz-thumb-img"
@@ -375,6 +419,32 @@ export function Visualizador({ products, compact = false }: Props) {
               </div>
             ))}
           </div>
+
+          {sidebarTotalPages > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+              <button
+                type="button"
+                className="viz-page-btn"
+                onClick={() => setSidebarPage((p) => p - 1)}
+                disabled={sidebarPage === 0}
+                aria-label="Página anterior"
+              >
+                <Icon.Arrow style={{ transform: 'rotate(180deg)', width: 13, height: 13 }} />
+              </button>
+              <span className="mono" style={{ fontSize: 9 }}>
+                {sidebarPage + 1} / {sidebarTotalPages}
+              </span>
+              <button
+                type="button"
+                className="viz-page-btn"
+                onClick={() => setSidebarPage((p) => p + 1)}
+                disabled={sidebarPage >= sidebarTotalPages - 1}
+                aria-label="Página siguiente"
+              >
+                <Icon.Arrow style={{ width: 13, height: 13 }} />
+              </button>
+            </div>
+          )}
         </aside>
       </div>
     </section>

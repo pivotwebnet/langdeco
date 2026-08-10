@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Visita } from '@/components/sections/Visita'
 
 export const metadata: Metadata = {
@@ -12,7 +13,10 @@ export default function ContactoPage() {
   return (
     <>
       <Header />
-      <Visita />
+      <main className="pd-page">
+        <PageHeader label="Contacto" />
+        <Visita />
+      </main>
       <Footer />
     </>
   )

@@ -15,14 +15,16 @@ import { Marquee } from '@/components/ui/Marquee'
 import { PromoBar } from '@/components/ui/PromoBar'
 import type { Product } from '@/lib/types'
 import type { SiteContent } from '@/lib/site-content'
+import type { BackendCategory } from '@/lib/backend-types'
 
 interface HomeClientProps {
   products: Product[]
   featured: Product[]
   siteContent: SiteContent
+  categories: BackendCategory[]
 }
 
-export default function HomeClient({ products, featured, siteContent }: HomeClientProps) {
+export default function HomeClient({ products, featured, siteContent, categories }: HomeClientProps) {
   const fillRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -79,7 +81,7 @@ export default function HomeClient({ products, featured, siteContent }: HomeClie
 
           <Inspiracion items={siteContent.inspiracion} products={products} />
 
-          <Visualizador products={products} compact />
+          <Visualizador products={products} categories={categories} compact />
 
           <Visita />
 

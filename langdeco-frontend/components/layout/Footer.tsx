@@ -7,7 +7,7 @@ const FOOTER_LINKS = {
   coleccion: [
     { label: 'Catálogo',              href: '/catalogo' },
     { label: 'Nuestra Selección',     href: '/#seleccion' },
-    { label: 'Inspiración',           href: '/inspiracion' },
+    { label: 'Inspiración',           href: '/#inspiracion' },
     { label: 'Piezas Mayores',        href: '/catalogo?cat=mayor' },
     { label: 'Pequeños Tesoros',      href: '/catalogo?cat=tesoro' },
   ],
@@ -16,7 +16,18 @@ const FOOTER_LINKS = {
     { label: 'Visita el showroom',       href: '/contacto' },
     { label: 'Asesoría de interiorismo', href: '/contacto' },
   ],
+  ayuda: [
+    { label: 'Cómo comprar',              href: '/como-comprar' },
+    { label: 'Envíos y devoluciones',     href: '/envios-y-devoluciones' },
+    { label: 'Preguntas frecuentes',      href: '/preguntas-frecuentes' },
+    { label: 'Botón de arrepentimiento',  href: '/boton-de-arrepentimiento' },
+  ],
 }
+
+const LEGAL_LINKS = [
+  { label: 'Términos y condiciones', href: '/terminos-y-condiciones' },
+  { label: 'Privacidad',             href: '/politica-de-privacidad' },
+]
 
 const linkStyle: CSSProperties = {
   color: 'rgba(242,241,237,0.58)',
@@ -100,6 +111,18 @@ export function Footer() {
           </div>
         </div>
 
+        {/* Ayuda */}
+        <div className="footer-col">
+          <div className="mono" style={{ color: 'rgba(242,241,237,0.28)', marginBottom: 18, fontSize: 9 }}>
+            Ayuda
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+            {FOOTER_LINKS.ayuda.map((l) => (
+              <FooterLink key={l.label} href={l.href}>{l.label}</FooterLink>
+            ))}
+          </div>
+        </div>
+
         {/* Contacto */}
         <div className="footer-col">
           <div className="mono" style={{ color: 'rgba(242,241,237,0.28)', marginBottom: 18, fontSize: 9 }}>
@@ -154,10 +177,10 @@ export function Footer() {
             © 2026 · LasLangDeco
           </span>
           <div style={{ display: 'flex', gap: 20 }}>
-            {['Privacidad', 'Cookies', 'Aviso legal'].map((label) => (
-              <a
-                key={label}
-                href="#"
+            {LEGAL_LINKS.map((l) => (
+              <Link
+                key={l.label}
+                href={l.href}
                 style={{
                   ...linkStyle,
                   fontSize: 10, letterSpacing: '0.08em',
@@ -167,8 +190,8 @@ export function Footer() {
                 onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(242,241,237,0.7)' }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(242,241,237,0.28)' }}
               >
-                {label}
-              </a>
+                {l.label}
+              </Link>
             ))}
           </div>
         </div>

@@ -51,7 +51,7 @@ export function Visita() {
           <div className="visita-info-grid">
             {INFO.map((item) => (
               <div key={item.label} className="visita-info-item">
-                <div className="mono" style={{ marginBottom: 6 }}>{item.label}</div>
+                <div className="mono visita-info-label" style={{ marginBottom: 6 }}>{item.label}</div>
                 <div style={{ lineHeight: 1.4 }}>{item.value}</div>
               </div>
             ))}
@@ -60,7 +60,7 @@ export function Visita() {
 
         <RevealOnScroll delay={3}>
           <div className="visita-socials">
-            <div className="mono" style={{ marginBottom: 16, fontSize: 9, letterSpacing: '0.22em' }}>Seguinos en redes</div>
+            <div className="mono visita-info-label" style={{ marginBottom: 16, fontSize: 9, letterSpacing: '0.22em' }}>Seguinos en redes</div>
             <div style={{ display: 'flex', gap: 16 }}>
               {SOCIALS.map((s, i) => (
                 <a

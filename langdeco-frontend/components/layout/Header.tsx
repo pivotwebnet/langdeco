@@ -24,18 +24,18 @@ function normalize(s: string): string {
 
 const NAV_LINKS = [
   { label: 'Catálogo', href: '/catalogo' },
-  { label: 'Inspiración', href: '/inspiracion' },
+  { label: 'Inspiración', href: '/#inspiracion' },
   { label: 'Nosotros', href: '/nosotros' },
   { label: 'Contacto', href: '/contacto' },
-  { label: 'Visualizador', href: '/visualizador' },
+  { label: 'Visualizador', href: '/#visualizador' },
 ]
 
 const DRAWER_LINKS = [
   { label: 'Catálogo', href: '/catalogo' },
   { label: 'La Selección', href: '/#seleccion' },
-  { label: 'Inspiración', href: '/inspiracion' },
+  { label: 'Inspiración', href: '/#inspiracion' },
   { label: 'Nosotros', href: '/nosotros' },
-  { label: 'Visualizador de espacios', href: '/visualizador' },
+  { label: 'Visualizador de espacios', href: '/#visualizador' },
   { label: 'Contacto / Showroom', href: '/contacto' },
 ]
 
