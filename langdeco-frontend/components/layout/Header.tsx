@@ -7,13 +7,14 @@ import { useRouter } from 'next/navigation'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { useCart, useCartUI } from '@/lib/cart'
+import { useWishlist } from '@/lib/wishlist'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Magnetic } from '@/components/ui/Magnetic'
 import * as Icon from '@/components/ui/Icon'
 import type { Product } from '@/lib/types'
 
 interface HeaderProps {
-  logoFont?: string
+  hasPromo?: boolean
 }
 
 const SEARCH_RESULTS_LIMIT = 6
@@ -39,9 +40,10 @@ const DRAWER_LINKS = [
   { label: 'Contacto / Showroom', href: '/contacto' },
 ]
 
-export function Header({ logoFont = 'Sail' }: HeaderProps) {
+export function Header({ hasPromo = false }: HeaderProps) {
   const { count } = useCart()
   const { open: onCartOpen } = useCartUI()
+  const { count: savedCount } = useWishlist()
   const router = useRouter()
   const [menuOpen, setMenuOpen]     = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -49,6 +51,7 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
   const [query, setQuery]           = useState('')
   const [catalog, setCatalog]       = useState<Product[] | null>(null)
   const [catalogError, setCatalogError] = useState(false)
+  const [logoUrl, setLogoUrl]       = useState('/assets/logo.png')
   const inputRef                    = useRef<HTMLInputElement>(null)
   const cartCountRef                = useRef<HTMLSpanElement>(null)
   const cartBadgeRef                = useRef<HTMLSpanElement>(null)
@@ -62,6 +65,14 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
       .then((data: Product[]) => setCatalog(data))
       .catch(() => setCatalogError(true))
   }, [searchOpen, catalog])
+
+  /* ── logo editable desde /admin/contenido (GET público) ────────── */
+  useEffect(() => {
+    fetch('/api/admin/site-content')
+      .then((res) => { if (!res.ok) throw new Error(); return res.json() })
+      .then((data: { logoUrl?: string }) => { if (data.logoUrl) setLogoUrl(data.logoUrl) })
+      .catch(() => {})
+  }, [])
 
   const results = useMemo(() => {
     const q = normalize(query.trim())
@@ -133,7 +144,9 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
       {/* ══════════════════════════════════════════════════
           HEADER BAR
       ══════════════════════════════════════════════════ */}
-      <header className={`header${scrolled ? ' condensed' : ''}`}>
+      <header
+        className={`header${scrolled ? ' condensed' : ''}${hasPromo ? ' has-promo' : ''}`}
+      >
 
         {/* Mobile: hamburger */}
         <button
@@ -151,7 +164,7 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
           aria-label="LasLangDeco — inicio"
         >
           <Image
-            src="/assets/logo.png"
+            src={logoUrl}
             alt="LasLangDeco"
             className="logo-img"
             width={150}
@@ -180,6 +193,22 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
               </button>
             </Magnetic>
           </Tooltip>
+          <Tooltip label="Guardados" side="bottom">
+            <Magnetic>
+              <Link href="/guardados" aria-label="Ver guardados" className="icon-btn" style={{ position: 'relative' }}>
+                <Icon.Heart width={19} height={19} filled={savedCount > 0} />
+                {savedCount > 0 && (
+                  <span style={{
+                    position: 'absolute', top: 2, right: 2,
+                    minWidth: 14, height: 14, padding: '0 3px', borderRadius: 999,
+                    background: 'var(--ink)', color: 'var(--bg)',
+                    fontFamily: 'var(--font-ui)', fontSize: 9, fontWeight: 700,
+                    display: 'grid', placeItems: 'center',
+                  }}>{savedCount}</span>
+                )}
+              </Link>
+            </Magnetic>
+          </Tooltip>
           <Tooltip label="Ver selección" side="bottom">
             <Magnetic>
               <button onClick={onCartOpen} aria-label="Ver selección" className="cart-pill">
@@ -202,6 +231,18 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
           >
             <Icon.Search />
           </button>
+          <Link href="/guardados" className="icon-btn" aria-label="Ver guardados" style={{ position: 'relative' }}>
+            <Icon.Heart width={19} height={19} filled={savedCount > 0} />
+            {savedCount > 0 && (
+              <span style={{
+                position: 'absolute', top: 2, right: 2,
+                width: 14, height: 14, borderRadius: 999,
+                background: 'var(--ink)', color: 'var(--bg)',
+                fontFamily: 'var(--font-ui)', fontSize: 8, fontWeight: 700,
+                display: 'grid', placeItems: 'center',
+              }}>{savedCount}</span>
+            )}
+          </Link>
           <button
             className="icon-btn"
             onClick={onCartOpen}
@@ -447,7 +488,7 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
             flexShrink: 0,
           }}>
             <Link href="/" onClick={closeAll} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-              <Image src="/assets/logo.png" alt="LasLangDeco" width={150} height={150} style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
+              <Image src={logoUrl} alt="LasLangDeco" width={150} height={150} style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
             </Link>
             <button
               className="icon-btn"

@@ -36,7 +36,7 @@ public class ClientsController : ControllerBase
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim().ToLower();
-            query = query.Where(c => c.CompanyOrFullName.ToLower().Contains(s) || (c.TaxId != null && c.TaxId.Contains(s)));
+            query = query.Where(c => c.CompanyOrFullName.ToLower().Contains(s) || (c.TaxId != null && c.TaxId.Contains(s)) || (c.Dni != null && c.Dni.Contains(s)));
         }
 
         var clients = await query.OrderBy(c => c.CompanyOrFullName).ToListAsync();
@@ -254,6 +254,7 @@ public class ClientsController : ControllerBase
         client.Locality = input.Locality;
         client.Note = input.Note;
         client.InitialBalance = input.InitialBalance;
+        client.Dni = input.Dni;
         client.NicknameML = input.NicknameML;
         client.SalesCategory = input.SalesCategory;
         client.SalesDiscountPercent = input.SalesDiscountPercent;
@@ -300,7 +301,7 @@ public class ClientsController : ControllerBase
         c.Id, c.CompanyOrFullName, c.FirstName, c.LastName, c.Cell, c.Phone,
         c.Email, c.WebPage, c.Address, c.Province, c.PostalCode,
         c.Locality, c.Note, c.InitialBalance,
-        c.NicknameML, c.SalesCategory, c.SalesDiscountPercent, c.NoteForClient,
+        c.Dni, c.NicknameML, c.SalesCategory, c.SalesDiscountPercent, c.NoteForClient,
         c.BillingCompanyOrFullName, c.TaxId, c.IvaCondition, c.DefaultReceiptType,
         c.BillingPhone, c.BillingCell, c.FiscalAddress, c.FiscalLocality,
         c.FiscalProvince, c.FiscalPostalCode, c.Active,

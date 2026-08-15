@@ -21,11 +21,10 @@ export default function PoliticaDePrivacidadPage() {
           intro="Qué datos recolectamos cuando nos escribís y cómo los usamos."
         />
 
-        <section style={{ padding: '0 24px 96px', maxWidth: 720 }}>
+        <section style={{ padding: '0 24px 96px', maxWidth: 720, margin: '0 auto' }}>
           <LegalSection title="Qué datos recolectamos">
             <p>
-              Cuando completás el formulario de contacto o el de solicitud de arrepentimiento, recolectamos tu nombre,
-              email y el mensaje que nos escribís.
+              Cuando completás el formulario de contacto, recolectamos tu nombre, email y el mensaje que nos escribís.
             </p>
           </LegalSection>
 

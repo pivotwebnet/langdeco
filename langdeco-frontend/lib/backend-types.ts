@@ -139,6 +139,7 @@ interface BackendPartyBase {
 }
 
 export interface BackendClient extends BackendPartyBase {
+  dni: string | null
   nicknameML: string | null
   salesCategory: string | null
   salesDiscountPercent: number

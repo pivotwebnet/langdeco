@@ -22,7 +22,7 @@ export default function ComoComprarPage() {
           intro="Coordinamos cada compra a mano — sin checkout automático de por medio."
         />
 
-        <section style={{ padding: '0 24px 96px', maxWidth: 720 }}>
+        <section style={{ padding: '0 24px 96px', maxWidth: 720, margin: '0 auto' }}>
           <LegalSection title="1. Explorá el catálogo">
             <p>
               Recorré el <Link href="/catalogo">catálogo</Link> completo o filtrá entre Piezas Mayores y Pequeños Tesoros.

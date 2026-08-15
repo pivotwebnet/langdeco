@@ -23,14 +23,14 @@ export function PageHeader({ label, kicker, title, intro }: PageHeaderProps) {
       </div>
 
       {title && (
-        <div style={{ padding: '48px 24px 8px' }}>
+        <div style={{ padding: '48px 24px 8px', maxWidth: 720, margin: '0 auto' }}>
           {kicker && (
             <span className="kicker" style={{ display: 'block', marginBottom: 14 }}>{kicker}</span>
           )}
-          <h1 className="display" style={{ fontSize: 40, margin: '0 0 8px', maxWidth: 640 }}>{title}</h1>
+          <h1 className="display" style={{ fontSize: 40, margin: '0 0 8px' }}>{title}</h1>
           {intro && (
             <div className="subtitle-connector" style={{ marginTop: 18, marginBottom: 8 }}>
-              <p className="edit" style={{ fontSize: 18, lineHeight: 1.5, maxWidth: 560, color: 'var(--ink-soft)', margin: 0 }}>
+              <p className="edit" style={{ fontSize: 18, lineHeight: 1.5, color: 'var(--ink-soft)', margin: 0 }}>
                 {intro}
               </p>
             </div>

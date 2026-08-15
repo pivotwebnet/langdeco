@@ -35,8 +35,8 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
     q: '¿Puedo devolver un producto?',
     a: (
       <>
-        Sí. Revisá las condiciones en <Link href="/envios-y-devoluciones">Envíos y devoluciones</Link> y, si compraste a
-        distancia, tu derecho de arrepentimiento en <Link href="/boton-de-arrepentimiento">Botón de arrepentimiento</Link>.
+        Sí. Revisá las condiciones en <Link href="/envios-y-devoluciones">Envíos y devoluciones</Link>, incluido tu derecho
+        de arrepentimiento si compraste a distancia.
       </>
     ),
   },
@@ -62,7 +62,7 @@ export default function PreguntasFrecuentesPage() {
           intro="Las dudas más comunes antes de comprar. Si no encontrás la tuya, escribinos."
         />
 
-        <section style={{ padding: '0 24px 96px', maxWidth: 720 }}>
+        <section style={{ padding: '0 24px 96px', maxWidth: 720, margin: '0 auto' }}>
           {FAQS.map((item) => (
             <details key={item.q} style={{ borderTop: '1px solid var(--line)', padding: '18px 0' }}>
               <summary

@@ -21,6 +21,8 @@ export default function ContenidoAdmin() {
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null)
+  const [uploadingHero, setUploadingHero] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -37,6 +39,8 @@ export default function ContenidoAdmin() {
   useEffect(() => { load() }, [load])
 
   const setPromoBar = (value: string) => setContent((c) => c && { ...c, promoBar: value })
+  const setField = <K extends keyof SiteContent>(key: K, value: SiteContent[K]) =>
+    setContent((c) => c && { ...c, [key]: value })
 
   const setItem = (index: number, patch: Partial<InspiracionForm>) => {
     setContent((c) => {
@@ -63,6 +67,29 @@ export default function ContenidoAdmin() {
       toast.error(msg)
     } finally {
       setUploadingIndex(null)
+    }
+  }
+
+  const uploadFieldImage = async (
+    field: 'heroImageUrl' | 'logoUrl',
+    file: globalThis.File,
+    setUploading: (v: boolean) => void,
+  ) => {
+    setUploading(true)
+    setError(null)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/admin/site-content/upload', { method: 'POST', body: form })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
+      setField(field, data.url)
+    } catch (e) {
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -93,7 +120,7 @@ export default function ContenidoAdmin() {
       <div className="adm-page-head">
         <div>
           <h1 className="adm-title">Contenido del sitio</h1>
-          <p className="adm-eyebrow">Barra de promociones y los 4 estilos de Inspiración de la home (el cuarto es el patio).</p>
+          <p className="adm-eyebrow">Barra de promociones, Hero, logotipo y los 4 estilos de Inspiración de la home (el cuarto es el patio).</p>
         </div>
       </div>
 
@@ -109,6 +136,50 @@ export default function ContenidoAdmin() {
             style={{ width: '100%' }}
           />
         </Field>
+      </section>
+
+      <section className="adm-card" style={{ display: 'flex', gap: 16, padding: 16, marginBottom: 36 }}>
+        <div style={{ flexShrink: 0, width: 120 }}>
+          <div style={{ width: 120, height: 150, background: 'var(--adm-surface-2)', overflow: 'hidden', marginBottom: 8, position: 'relative' }}>
+            {content.heroImageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={content.heroImageUrl} alt="Hero" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            )}
+          </div>
+          <HiddenFileInput uploading={uploadingHero} onUpload={(f) => uploadFieldImage('heroImageUrl', f, setUploadingHero)} />
+        </div>
+        <div className="adm-grid-2" style={{ flex: 1, gap: 10 }}>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <h2 className="adm-section-title" style={{ margin: '0 0 4px' }}>Hero (portada del home)</h2>
+          </div>
+          <Field label="Título">
+            <input className="adm-input" value={content.heroTitle} onChange={(e) => setField('heroTitle', e.target.value)} style={{ width: '100%' }} />
+          </Field>
+          <Field label="Título — énfasis (en cursiva, segunda línea)">
+            <input className="adm-input" value={content.heroTitleEmphasis} onChange={(e) => setField('heroTitleEmphasis', e.target.value)} style={{ width: '100%' }} />
+          </Field>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <Field label="Subtítulo">
+              <textarea className="adm-textarea" value={content.heroSubtitle} onChange={(e) => setField('heroSubtitle', e.target.value)} rows={2} />
+            </Field>
+          </div>
+        </div>
+      </section>
+
+      <section className="adm-card" style={{ display: 'flex', gap: 16, padding: 16, marginBottom: 36, alignItems: 'center' }}>
+        <div style={{ flexShrink: 0, width: 120 }}>
+          <div style={{ width: 120, height: 80, background: 'var(--adm-surface-2)', overflow: 'hidden', marginBottom: 8, position: 'relative', display: 'grid', placeItems: 'center' }}>
+            {content.logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={content.logoUrl} alt="Logotipo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+            )}
+          </div>
+          <HiddenFileInput uploading={uploadingLogo} onUpload={(f) => uploadFieldImage('logoUrl', f, setUploadingLogo)} />
+        </div>
+        <div>
+          <h2 className="adm-section-title" style={{ margin: '0 0 4px' }}>Logotipo</h2>
+          <p className="adm-eyebrow" style={{ margin: 0 }}>Se usa en el header y el pie de página de todo el sitio.</p>
+        </div>
       </section>
 
       <section>
@@ -142,8 +213,6 @@ function InspiracionCard({ index, item, uploading, onChange, onUpload }: {
   onChange: (patch: Partial<InspiracionForm>) => void
   onUpload: (file: globalThis.File) => void
 }) {
-  const fileRef = useRef<HTMLInputElement>(null)
-
   return (
     <div className="adm-card" style={{ display: 'flex', gap: 16, padding: 16, marginBottom: 12 }}>
       <div style={{ flexShrink: 0, width: 120 }}>
@@ -153,16 +222,7 @@ function InspiracionCard({ index, item, uploading, onChange, onUpload }: {
             <img src={item.imageUrl} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           )}
         </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          style={{ display: 'none' }}
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = '' }}
-        />
-        <button type="button" className="adm-btn ghost sm" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ width: '100%' }}>
-          {uploading ? 'Subiendo...' : 'Cambiar foto'}
-        </button>
+        <HiddenFileInput uploading={uploading} onUpload={onUpload} />
       </div>
 
       <div className="adm-grid-2" style={{ flex: 1, gap: 10 }}>
@@ -191,6 +251,24 @@ function InspiracionCard({ index, item, uploading, onChange, onUpload }: {
         </div>
       </div>
     </div>
+  )
+}
+
+function HiddenFileInput({ uploading, onUpload }: { uploading: boolean; onUpload: (file: globalThis.File) => void }) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  return (
+    <>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        style={{ display: 'none' }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = '' }}
+      />
+      <button type="button" className="adm-btn ghost sm" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ width: '100%' }}>
+        {uploading ? 'Subiendo...' : 'Cambiar foto'}
+      </button>
+    </>
   )
 }
 

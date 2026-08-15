@@ -21,7 +21,7 @@ export default function TerminosYCondicionesPage() {
           intro="Las reglas que rigen el uso de este sitio y las compras coordinadas a través de él."
         />
 
-        <section style={{ padding: '0 24px 96px', maxWidth: 720 }}>
+        <section style={{ padding: '0 24px 96px', maxWidth: 720, margin: '0 auto' }}>
           <LegalSection title="Aceptación de los términos">
             <p>
               El uso de este sitio implica la aceptación de estos términos y condiciones. Si no estás de acuerdo con

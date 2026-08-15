@@ -92,6 +92,7 @@
 .adm-nav-link .ic { font-size: 14px; width: 16px; flex-shrink: 0; text-align: center; opacity: 0.85; }
 .adm-sidebar.collapsed .adm-nav-link { justify-content: center; padding: 10px 0; margin: 1px 12px; }
 .adm-sidebar.collapsed .adm-nav-link .label { display: none; }
+.adm-sidebar.collapsed .adm-nav-link .adm-badge { display: none; }
 
 .adm-sidebar-foot { padding: 16px 20px; border-top: 1px solid rgba(242,241,237,0.1); }
 .adm-sidebar-foot a {

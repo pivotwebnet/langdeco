@@ -23,6 +23,15 @@ const tabStyle = (active: boolean) => ({
   fontWeight: 500, transition: 'background 0.25s, color 0.25s',
 })
 
+type SortOption = 'relevancia' | 'precio-asc' | 'precio-desc' | 'nombre-asc'
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: 'relevancia', label: 'Destacado' },
+  { value: 'precio-asc', label: 'Precio: menor a mayor' },
+  { value: 'precio-desc', label: 'Precio: mayor a menor' },
+  { value: 'nombre-asc', label: 'Nombre A-Z' },
+]
+
 interface ProductosProps {
   products: Product[]
   initialCategory?: 'mayor' | 'tesoro'
@@ -33,6 +42,9 @@ export function Productos({ products, initialCategory }: ProductosProps) {
   const [added, setAdded] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [quickView, setQuickView] = useState<Product | null>(null)
+  const [sortBy, setSortBy] = useState<SortOption>('relevancia')
+  const [priceMin, setPriceMin] = useState('')
+  const [priceMax, setPriceMax] = useState('')
   const { add } = useCart()
   const router = useRouter()
 
@@ -43,10 +55,30 @@ export function Productos({ products, initialCategory }: ProductosProps) {
   }
 
   const changeTab = (t: typeof tab) => { setTab(t); setPage(0) }
+  const changeSort = (s: SortOption) => { setSortBy(s); setPage(0) }
+  const changePriceMin = (v: string) => { setPriceMin(v); setPage(0) }
+  const changePriceMax = (v: string) => { setPriceMax(v); setPage(0) }
+
+  const hasActiveFilters = sortBy !== 'relevancia' || priceMin !== '' || priceMax !== ''
+  const clearFilters = () => { setSortBy('relevancia'); setPriceMin(''); setPriceMax(''); setPage(0) }
 
   const piezasMayores  = products.filter(p => p.category === 'mayor')
   const pequenosTesoros = products.filter(p => p.category === 'tesoro')
-  const items      = tab === 'mayores' ? piezasMayores : pequenosTesoros
+  const categoryItems = tab === 'mayores' ? piezasMayores : pequenosTesoros
+
+  const min = priceMin !== '' ? Number(priceMin) : null
+  const max = priceMax !== '' ? Number(priceMax) : null
+  const filteredItems = categoryItems.filter(p =>
+    (min === null || p.priceNum >= min) && (max === null || p.priceNum <= max)
+  )
+
+  const items = [...filteredItems].sort((a, b) => {
+    if (sortBy === 'precio-asc') return a.priceNum - b.priceNum
+    if (sortBy === 'precio-desc') return b.priceNum - a.priceNum
+    if (sortBy === 'nombre-asc') return a.name.localeCompare(b.name)
+    return 0
+  })
+
   const totalPages = Math.ceil(items.length / PAGE_SIZE)
   const pageItems  = items.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
@@ -89,55 +121,125 @@ export function Productos({ products, initialCategory }: ProductosProps) {
           </RevealOnScroll>
         </div>
 
-        {/* ── Grid + arrows ────────────────────────────────────── */}
-        <div className="prod-nav">
-          <button
-            className="prod-arrow prod-arrow-left"
-            onClick={() => setPage(p => p - 1)}
-            disabled={page === 0}
-            aria-label="Página anterior"
-          >
-            <Icon.Arrow style={{ transform: 'rotate(180deg)' }} />
-          </button>
+        {/* ── Sidebar de filtros + contenido ──────────────────── */}
+        <div className="cat-layout">
+          <aside className="cat-sidebar">
+            <div className="cat-sidebar-block">
+              <span className="mono cat-sidebar-label">Ordenar por</span>
+              <div className="cat-sort-list">
+                {SORT_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    className="cat-sort-btn"
+                    data-active={sortBy === opt.value}
+                    onClick={() => changeSort(opt.value)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <div
-            className={tab === 'mayores' ? 'prod-grid-mayores' : 'prod-grid-tesoros'}
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '32px 16px' }}
-          >
-            {pageItems.map((p, i) => (
-              <RevealOnScroll key={`${p.id}-${page}`} delay={Math.min(i, 3)}>
-                <ProductCard
-                  p={p}
-                  variant="grid"
-                  onAdd={onAdd}
-                  added={added}
-                  onSelect={(prod) => router.push(`/producto/${prod.id}`)}
-                  onQuickView={setQuickView}
+            <div className="cat-sidebar-block">
+              <span className="mono cat-sidebar-label">Precio</span>
+              <div className="cat-price-inputs">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="Mín"
+                  value={priceMin}
+                  onChange={(e) => changePriceMin(e.target.value)}
+                  className="cat-price-input"
+                  aria-label="Precio mínimo"
                 />
-              </RevealOnScroll>
-            ))}
-          </div>
+                <span className="cat-price-sep">—</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="Máx"
+                  value={priceMax}
+                  onChange={(e) => changePriceMax(e.target.value)}
+                  className="cat-price-input"
+                  aria-label="Precio máximo"
+                />
+              </div>
+            </div>
 
-          <button
-            className="prod-arrow prod-arrow-right"
-            onClick={() => setPage(p => p + 1)}
-            disabled={page >= totalPages - 1}
-            aria-label="Página siguiente"
-          >
-            <Icon.Arrow />
-          </button>
+            {hasActiveFilters && (
+              <button className="cat-clear-btn" onClick={clearFilters}>
+                <Icon.Close /> Limpiar filtros
+              </button>
+            )}
+          </aside>
+
+          <div className="cat-content">
+            <div className="mono" style={{ marginBottom: 16, color: 'var(--ink-mute)' }}>
+              {items.length} {items.length === 1 ? 'producto' : 'productos'}
+            </div>
+
+            {items.length === 0 ? (
+              <div className="cat-empty">
+                <p className="edit" style={{ fontSize: 18, margin: '0 0 16px', color: 'var(--ink-soft)' }}>
+                  No encontramos productos con estos filtros.
+                </p>
+                <button className="cat-clear-btn" onClick={clearFilters}>
+                  <Icon.Close /> Limpiar filtros
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="prod-nav">
+                  <button
+                    className="prod-arrow prod-arrow-left"
+                    onClick={() => setPage(p => p - 1)}
+                    disabled={page === 0}
+                    aria-label="Página anterior"
+                  >
+                    <Icon.Arrow style={{ transform: 'rotate(180deg)' }} />
+                  </button>
+
+                  <div
+                    className={tab === 'mayores' ? 'prod-grid-mayores' : 'prod-grid-tesoros'}
+                    style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '32px 16px' }}
+                  >
+                    {pageItems.map((p, i) => (
+                      <RevealOnScroll key={`${p.id}-${page}`} delay={Math.min(i, 3)}>
+                        <ProductCard
+                          p={p}
+                          variant="grid"
+                          onAdd={onAdd}
+                          added={added}
+                          onSelect={(prod) => router.push(`/producto/${prod.id}`)}
+                          onQuickView={setQuickView}
+                        />
+                      </RevealOnScroll>
+                    ))}
+                  </div>
+
+                  <button
+                    className="prod-arrow prod-arrow-right"
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={page >= totalPages - 1}
+                    aria-label="Página siguiente"
+                  >
+                    <Icon.Arrow />
+                  </button>
+                </div>
+
+                {/* ── Page dots ────────────────────────────────── */}
+                {totalPages > 1 && (
+                  <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 32 }}>
+                    {Array.from({ length: totalPages }).map((_, i) => (
+                      <button key={i} onClick={() => setPage(i)} aria-label={`Página ${i + 1}`}
+                        style={{ width: i === page ? 24 : 8, height: 2, border: 0, padding: 0, cursor: 'pointer', background: i === page ? 'var(--ink)' : 'var(--line)', transition: 'width 0.3s, background 0.3s' }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
-
-        {/* ── Page dots ────────────────────────────────────────── */}
-        {totalPages > 1 && (
-          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 32, padding: '0 24px' }}>
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <button key={i} onClick={() => setPage(i)} aria-label={`Página ${i + 1}`}
-                style={{ width: i === page ? 24 : 8, height: 2, border: 0, padding: 0, cursor: 'pointer', background: i === page ? 'var(--ink)' : 'var(--line)', transition: 'width 0.3s, background 0.3s' }}
-              />
-            ))}
-          </div>
-        )}
 
         <ProductQuickView product={quickView} onClose={() => setQuickView(null)} onAdd={onAdd} />
     </section>

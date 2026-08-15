@@ -3,6 +3,7 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Visita } from '@/components/sections/Visita'
+import { ScrollAnimator } from '@/components/ui/ScrollAnimator'
 
 export const metadata: Metadata = {
   title: 'Contacto — LasLangDeco',
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 export default function ContactoPage() {
   return (
     <>
+      <ScrollAnimator />
       <Header />
       <main className="pd-page">
         <PageHeader label="Contacto" />

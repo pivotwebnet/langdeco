@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Productos } from '@/components/sections/Productos'
+import { ScrollAnimator } from '@/components/ui/ScrollAnimator'
 
 export const metadata: Metadata = {
   title: 'Catálogo — LasLangDeco',
@@ -21,6 +22,7 @@ export default async function CatalogoPage({
 
   return (
     <>
+      <ScrollAnimator />
       <Header />
       <main className="pd-page">
         <PageHeader label="Catálogo" />

@@ -5,12 +5,22 @@ import type { LookbookEntry } from './types'
 export interface SiteContent {
   promoBar: string
   inspiracion: [LookbookEntry, LookbookEntry, LookbookEntry, LookbookEntry]
+  heroImageUrl: string
+  heroTitle: string
+  heroTitleEmphasis: string
+  heroSubtitle: string
+  logoUrl: string
 }
 
 const FILE_NAME = 'site-content.json'
 
 const DEFAULT_CONTENT: SiteContent = {
   promoBar: '20% Descuento en contado o efectivo · 3 cuotas sin interés · Rafaela, Santa Fe',
+  heroImageUrl: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=85',
+  heroTitle: 'El hogar es',
+  heroTitleEmphasis: 'donde comienza la historia',
+  heroSubtitle: 'Y en Las Lang vas a encontrar el mueble que va a acompañar ese proceso.',
+  logoUrl: '/assets/logo.png',
   inspiracion: [
     {
       id: 'estar-norte', n: '01', name: 'Estar del norte', place: 'Piso · Chamberí',
@@ -40,7 +50,7 @@ const DEFAULT_CONTENT: SiteContent = {
   ],
 }
 
-function isValidContent(value: unknown): value is SiteContent {
+function isValidContent(value: unknown): value is Partial<SiteContent> {
   if (!value || typeof value !== 'object') return false
   const v = value as Record<string, unknown>
   return typeof v.promoBar === 'string' && Array.isArray(v.inspiracion) && v.inspiracion.length === 4
@@ -50,7 +60,9 @@ export async function getSiteContent(): Promise<SiteContent> {
   try {
     const raw = await readFile(dataPath(FILE_NAME), 'utf-8')
     const parsed = JSON.parse(raw)
-    return isValidContent(parsed) ? parsed : DEFAULT_CONTENT
+    // Se mezcla con los defaults para que archivos guardados antes de agregar
+    // los campos de Hero/logo no pierdan promoBar/inspiración ya editados.
+    return isValidContent(parsed) ? { ...DEFAULT_CONTENT, ...parsed } : DEFAULT_CONTENT
   } catch {
     return DEFAULT_CONTENT
   }

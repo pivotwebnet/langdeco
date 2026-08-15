@@ -68,9 +68,14 @@ export default function HomeClient({ products, featured, siteContent, categories
             <div ref={fillRef} className="fill" />
           </div>
 
-          <Header />
+          <Header hasPromo={Boolean(siteContent.promoBar)} />
 
-          <Hero />
+          <Hero
+            heroImageUrl={siteContent.heroImageUrl}
+            heroTitle={siteContent.heroTitle}
+            heroTitleEmphasis={siteContent.heroTitleEmphasis}
+            heroSubtitle={siteContent.heroSubtitle}
+          />
 
           <Favoritos showBadge items={featured} />
 

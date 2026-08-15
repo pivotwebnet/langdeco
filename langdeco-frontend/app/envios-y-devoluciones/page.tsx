@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -22,7 +21,7 @@ export default function EnviosYDevolucionesPage() {
           intro="Cómo llega tu pedido y qué hacer si algo no sale como esperabas."
         />
 
-        <section style={{ padding: '0 24px 96px', maxWidth: 720 }}>
+        <section style={{ padding: '0 24px 96px', maxWidth: 720, margin: '0 auto' }}>
           <LegalSection title="Zonas de envío">
             <p>[COMPLETAR: zonas de cobertura y transportistas con los que trabajamos]</p>
           </LegalSection>
@@ -44,8 +43,10 @@ export default function EnviosYDevolucionesPage() {
               desde la entrega. Escribinos por WhatsApp o email para coordinarla.
             </p>
             <p style={{ marginTop: 10 }}>
-              Si compraste a distancia y querés ejercer tu derecho de arrepentimiento, visitá{' '}
-              <Link href="/boton-de-arrepentimiento">Botón de arrepentimiento</Link>.
+              Si compraste a distancia (por WhatsApp, email u otro medio fuera de un local comercial), de acuerdo con el
+              artículo 34 de la Ley de Defensa del Consumidor (N.º 24.240) tenés derecho a revocar la compra dentro de los
+              diez (10) días corridos desde la entrega del bien, sin costo ni necesidad de justificar el motivo.
+              Escribinos por WhatsApp o email para ejercerlo.
             </p>
           </LegalSection>
 

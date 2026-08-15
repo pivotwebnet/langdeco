@@ -23,6 +23,9 @@ type ProductForm = {
   images: string[]
 }
 
+// Mismo umbral que usa el badge público "¡Últimas N!" en ProductCard.tsx.
+const LOW_STOCK_THRESHOLD = 3
+
 const EMPTY_FORM: ProductForm = {
   id: '', name: '', categoryId: '', tag: '', material: '', origin: '', roomTags: [],
   price: '', originalPrice: '', wholesalePrice: '', stock: '0', note: '', aspect: '', featured: false,
@@ -48,6 +51,7 @@ export default function ProductosAdmin() {
   const [filter, setFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [showInactive, setShowInactive] = useState(false)
+  const [lowStockOnly, setLowStockOnly] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState<ProductForm | null>(null)
@@ -81,8 +85,11 @@ export default function ProductosAdmin() {
     if (!showInactive && !p.active) return false
     if (filter !== 'all' && p.categoryId !== filter) return false
     if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false
+    if (lowStockOnly && !(p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD)) return false
     return true
   })
+
+  const lowStockCount = products.filter((p) => p.active && p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD).length
 
   const openCreate = () => {
     setIsNewForm(true)
@@ -163,7 +170,10 @@ export default function ProductosAdmin() {
       <div className="adm-page-head">
         <div>
           <h1 className="adm-title">Productos</h1>
-          <p className="adm-eyebrow">{filtered.length} piezas</p>
+          <p className="adm-eyebrow">
+            {filtered.length} piezas
+            {lowStockCount > 0 && <> · <span style={{ color: '#A8432A' }}>{lowStockCount} con stock bajo</span></>}
+          </p>
         </div>
         <button className="adm-btn" onClick={openCreate}>+ Añadir pieza</button>
       </div>
@@ -185,6 +195,10 @@ export default function ProductosAdmin() {
         <label className="adm-checkbox-row">
           <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
           Mostrar inactivos
+        </label>
+        <label className="adm-checkbox-row">
+          <input type="checkbox" checked={lowStockOnly} onChange={(e) => setLowStockOnly(e.target.checked)} />
+          Solo stock bajo
         </label>
       </div>
 
@@ -212,7 +226,13 @@ export default function ProductosAdmin() {
                 </td>
                 <td>{p.categoryName}</td>
                 <td className="mono">$ {p.price.toLocaleString('de-DE')}</td>
-                <td className="mono">{p.stock}</td>
+                <td className="mono">
+                  {p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD ? (
+                    <span className="adm-badge warn">{p.stock}</span>
+                  ) : p.stock <= 0 ? (
+                    <span className="adm-badge danger">0</span>
+                  ) : p.stock}
+                </td>
                 <td><span className={`adm-badge ${p.active ? 'ok' : 'danger'}`}>{p.active ? 'Activo' : 'Inactivo'}</span></td>
                 <td>
                   <div className="adm-table-actions">

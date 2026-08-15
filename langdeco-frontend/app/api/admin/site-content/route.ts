@@ -20,7 +20,12 @@ export async function PUT(request: NextRequest) {
     typeof body.promoBar !== 'string' ||
     !Array.isArray(body.inspiracion) ||
     body.inspiracion.length !== 4 ||
-    body.inspiracion.some((item) => !item || typeof item.name !== 'string')
+    body.inspiracion.some((item) => !item || typeof item.name !== 'string') ||
+    typeof body.heroImageUrl !== 'string' ||
+    typeof body.heroTitle !== 'string' ||
+    typeof body.heroTitleEmphasis !== 'string' ||
+    typeof body.heroSubtitle !== 'string' ||
+    typeof body.logoUrl !== 'string'
   ) {
     return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 })
   }

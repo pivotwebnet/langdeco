@@ -18,7 +18,7 @@ export function Consultas() {
     setError(null)
     setSending(true)
     try {
-      const fullMessage = phone ? `Teléfono: ${phone}\n\n${message}` : message
+      const fullMessage = `Teléfono: ${phone}\n\n${message}`
       const res = await fetch('/api/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -87,7 +87,8 @@ export function Consultas() {
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="Celular (opcional)"
+              placeholder="Celular"
+              required
               maxLength={40}
               style={inputStyle}
             />

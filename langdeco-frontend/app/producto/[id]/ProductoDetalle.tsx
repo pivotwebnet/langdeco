@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { useCart } from '@/lib/cart'
+import { useWishlist } from '@/lib/wishlist'
+import { trackRecentlyViewed, useRecentlyViewed } from '@/lib/recentlyViewed'
 import { useEscapeKey } from '@/lib/useEscapeKey'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
@@ -36,6 +38,8 @@ export function ProductoDetalle({ product, related }: Props) {
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 })
   const ctaRef = useRef<HTMLButtonElement>(null)
   const { add } = useCart()
+  const { has: isSaved, toggle: toggleSaved } = useWishlist()
+  const recentlyViewed = useRecentlyViewed(product.id)
   const router = useRouter()
 
   useEscapeKey(() => setZoomOpen(false))
@@ -44,6 +48,8 @@ export function ProductoDetalle({ product, related }: Props) {
     document.body.style.overflow = zoomOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [zoomOpen])
+
+  useEffect(() => { trackRecentlyViewed(product) }, [product])
 
   const onAddRelated = (p: Product) => {
     add(p)
@@ -273,6 +279,17 @@ export function ProductoDetalle({ product, related }: Props) {
                   <Icon.Whatsapp />
                 </a>
               </Tooltip>
+              <Tooltip label={isSaved(product.id) ? 'Quitar de guardados' : 'Guardar'}>
+                <button
+                  className="pd-save-cta"
+                  data-saved={isSaved(product.id)}
+                  onClick={() => toggleSaved(product.id)}
+                  aria-label={isSaved(product.id) ? `Quitar ${product.name} de guardados` : `Guardar ${product.name}`}
+                  aria-pressed={isSaved(product.id)}
+                >
+                  <Icon.Heart filled={isSaved(product.id)} />
+                </button>
+              </Tooltip>
             </div>
 
             <div className="mono" style={{ marginTop: 16, fontSize: 9, color: 'var(--ink-soft)', lineHeight: 1.7 }}>
@@ -292,6 +309,30 @@ export function ProductoDetalle({ product, related }: Props) {
               </div>
               <div className="pd-related-track">
                 {related.map((p) => (
+                  <div key={p.id} className="pd-related-item">
+                    <ProductCard
+                      p={p}
+                      variant="grid"
+                      added={addedRelatedId}
+                      onAdd={onAddRelated}
+                      onSelect={(prod) => router.push(`/producto/${prod.id}`)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Vistos recientemente ────────────────────────────── */}
+        {recentlyViewed.length > 0 && (
+          <div className="pd-recent">
+            <div style={{ padding: '0 24px' }}>
+              <div className="pd-related-label" style={{ marginBottom: 18 }}>
+                Vistos recientemente
+              </div>
+              <div className="pd-related-track">
+                {recentlyViewed.map((p) => (
                   <div key={p.id} className="pd-related-item">
                     <ProductCard
                       p={p}

@@ -8,6 +8,7 @@ import * as Icon from '@/components/ui/Icon'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { formatPrice } from '@/lib/data'
+import { useWishlist } from '@/lib/wishlist'
 import type { Product } from '@/lib/types'
 
 const WHATSAPP_NUMBER = '5493492287864'
@@ -30,6 +31,9 @@ interface ProductCardProps {
 
 export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQuickView, showBadge }: ProductCardProps) {
   const [imgError, setImgError] = useState(false)
+  const [imgLoaded, setImgLoaded] = useState(false)
+  const { has: isSaved, toggle: toggleSaved } = useWishlist()
+  const saved = isSaved(p.id)
   const isAdded = added === p.id
   const showImage = !!p.imageUrl && !imgError
   const addBtnRef = useRef<HTMLButtonElement>(null)
@@ -62,18 +66,22 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
       >
         <div className="prod-card-media" style={{ background: '#ECEAE4' }}>
           {showImage ? (
-            // Foto cargada por la administradora como URL libre (sin upload propio todavía —
-            // ver Pendiente en DOCUMENTACION.md): puede ser cualquier dominio, así que se sirve
-            // `unoptimized` en vez de pasar por el pipeline de optimización de next/image.
-            <Image
-              src={p.imageUrl!}
-              alt={p.name}
-              fill
-              unoptimized
-              sizes="(min-width: 900px) 33vw, 50vw"
-              onError={() => setImgError(true)}
-              style={{ objectFit: 'cover', objectPosition: 'center', transition: 'transform 0.5s ease' }}
-            />
+            <>
+              {!imgLoaded && <div className="img-skeleton" aria-hidden="true" />}
+              {/* Foto cargada por la administradora como URL libre (sin upload propio todavía —
+              ver Pendiente en DOCUMENTACION.md): puede ser cualquier dominio, así que se sirve
+              `unoptimized` en vez de pasar por el pipeline de optimización de next/image. */}
+              <Image
+                src={p.imageUrl!}
+                alt={p.name}
+                fill
+                unoptimized
+                sizes="(min-width: 900px) 33vw, 50vw"
+                onError={() => setImgError(true)}
+                onLoad={() => setImgLoaded(true)}
+                style={{ objectFit: 'cover', objectPosition: 'center', opacity: imgLoaded ? 1 : 0 }}
+              />
+            </>
           ) : (
             <ImagePlaceholder />
           )}
@@ -136,6 +144,27 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
             </Tooltip>
           </div>
         )}
+
+        <div style={{ position: 'absolute', top: 10, right: onQuickView ? 60 : 10, zIndex: 4 }}>
+          <Tooltip label={saved ? 'Quitar de guardados' : 'Guardar'}>
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleSaved(p.id) }}
+              aria-label={saved ? `Quitar ${p.name} de guardados` : `Guardar ${p.name}`}
+              aria-pressed={saved}
+              style={{
+                width: 40, height: 40, borderRadius: 999,
+                background: 'rgba(242,241,237,0.92)', color: saved ? '#B0453A' : 'var(--ink)',
+                border: 0, cursor: 'pointer', display: 'grid', placeItems: 'center',
+                boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)',
+                transition: 'background 0.2s, color 0.2s, transform 0.2s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+            >
+              <Icon.Heart width={17} height={17} filled={saved} />
+            </button>
+          </Tooltip>
+        </div>
 
         {onQuickView && (
           <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 4 }}>
