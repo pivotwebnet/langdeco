@@ -121,13 +121,11 @@ body {
 }
 .header.has-promo { top: var(--promo-h); }
 
-/* Al arrancar el scroll pasa de sólido a "vidrio esmerilado" — translúcido + blur. */
+/* Al arrancar el scroll solo se achica el padding/logo — el fondo se mantiene
+   sólido siempre, sin efecto vidrio/transparencia. */
 .header.condensed {
   min-height: calc(var(--header-h) - 14px);
   padding: 8px 20px;
-  background: color-mix(in oklab, var(--bg) 72%, transparent);
-  backdrop-filter: blur(18px) saturate(1.3);
-  -webkit-backdrop-filter: blur(18px) saturate(1.3);
 }
 
 .header .icon-btn {
@@ -160,6 +158,77 @@ body {
   transition: opacity 0.2s, transform 0.2s;
 }
 .header .cart-pill:hover { opacity: 0.82; transform: translateY(-1px); }
+
+/* ── Buscador inline del navbar ───────────────────────────────────────
+   Se expande a la izquierda del ícono de lupa en vez de abrir una
+   pantalla completa; el resultado vive en un panel desplegable. */
+.nav-search-input {
+  width: 0; opacity: 0;
+  border: 0; border-bottom: 1px solid transparent;
+  background: transparent; outline: none;
+  font-family: var(--font-ui); font-size: 13px; color: var(--ink);
+  padding: 8px 0;
+  transition: width 0.32s cubic-bezier(.16,.84,.2,1), opacity 0.2s ease, border-color 0.2s ease;
+}
+.nav-search-input.open { width: 190px; opacity: 1; border-bottom-color: var(--ink); padding: 8px 2px; }
+.nav-search-input.open.mobile { width: 100%; }
+.nav-search-input::placeholder { color: var(--ink-mute); }
+
+.nav-search-dropdown {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  width: min(340px, 86vw);
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 20px 48px -16px rgba(0,0,0,0.25);
+  padding: 16px;
+  z-index: 5;
+  animation: navSearchIn 0.18s ease;
+}
+.nav-search-dropdown.mobile { position: fixed; top: var(--header-h); left: 16px; right: 16px; width: auto; }
+@keyframes navSearchIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+.nav-search-chip {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  background: var(--bg-deep);
+  color: var(--ink-soft);
+  font-family: var(--font-ui); font-size: 12px;
+  cursor: pointer; border-radius: 999px;
+  transition: border-color 0.18s, background 0.18s;
+}
+.nav-search-chip:hover { border-color: var(--ink); background: var(--bg); }
+
+.nav-search-result {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 8px 4px; background: none; border: 0; cursor: pointer;
+  border-bottom: 1px solid var(--line); text-align: left;
+}
+.nav-search-result:last-of-type { border-bottom: 0; }
+
+.nav-search-viewall {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; margin-top: 8px; padding: 10px;
+  background: transparent; border: 0; border-top: 1px solid var(--line);
+  cursor: pointer;
+  font-family: var(--font-ui); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.06em; color: var(--ink);
+  transition: opacity 0.18s;
+}
+.nav-search-viewall:hover { opacity: 0.7; }
+
+/* Solo en mobile, mientras el buscador está abierto, el menú hamburguesa y el
+   logo ceden su lugar a la barra de búsqueda de ancho completo. Esto vive acá
+   (media query), nunca como unmount en React, para que el grid de desktop
+   —donde el logo es fijo— jamás se vea afectado por el estado de búsqueda. */
+@media (max-width: 767px) {
+  .header.search-open .header-hamburger,
+  .header.search-open .header-logo-link { display: none; }
+}
 
 /* ── Typography ─────────────────────────────────────────────────────── */
 .kicker {
@@ -492,6 +561,66 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
 
 .look-items { scrollbar-width: none; }
 .look-items::-webkit-scrollbar { display: none; }
+
+/* ── Hotspots "shop the look" sobre las fotos de Inspiración ────────── */
+.look-hotspot {
+  position: relative;
+  transform: translate(-50%, -50%);
+  width: 26px; height: 26px; border-radius: 999px;
+  background: rgba(242,241,237,0.94); color: var(--ink);
+  border: 0; cursor: pointer; display: grid; place-items: center;
+  box-shadow: 0 4px 16px -4px rgba(0,0,0,0.5);
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+.look-hotspot:hover { background: var(--bg); transform: translate(-50%, -50%) scale(1.1); }
+.look-hotspot-ring {
+  position: absolute; inset: -6px; border-radius: 999px;
+  border: 1.5px solid rgba(242,241,237,0.85);
+  animation: lookHotspotPulse 2.2s ease-out infinite;
+}
+@keyframes lookHotspotPulse {
+  0% { transform: scale(0.75); opacity: 0.9; }
+  70%, 100% { transform: scale(1.5); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .look-hotspot-ring { animation: none; } }
+
+.look-hotspot-card {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg); color: var(--ink);
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 20px 48px -16px rgba(0,0,0,0.5);
+  animation: lookHotspotCardIn 0.16s ease;
+}
+.look-hotspot-card.up { top: auto; bottom: calc(100% + 14px); }
+.look-hotspot-card.left { left: 0; transform: none; }
+.look-hotspot-card.right { left: auto; right: 0; transform: none; }
+@keyframes lookHotspotCardIn { from { opacity: 0; transform: translateX(-50%) translateY(-4px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+.look-hotspot-card.left, .look-hotspot-card.right { animation-name: lookHotspotCardInFlat; }
+@keyframes lookHotspotCardInFlat { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+.look-hotspot-thumb {
+  position: relative; flex-shrink: 0;
+  width: 44px; height: 52px; border-radius: 5px; overflow: hidden;
+  background: #ECEAE4; display: block;
+}
+.look-hotspot-name {
+  display: block; font-family: var(--font-ui); font-size: 13px; color: var(--ink);
+  text-decoration: none; margin-bottom: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.look-hotspot-name:hover { text-decoration: underline; }
+.look-hotspot-add {
+  flex-shrink: 0; width: 30px; height: 30px; border-radius: 999px;
+  background: var(--ink); color: var(--bg); border: 0; cursor: pointer;
+  display: grid; place-items: center; transition: transform 0.15s, background 0.2s;
+}
+.look-hotspot-add:hover { transform: scale(1.08); }
 
 .look-frame::after {
   content: '';

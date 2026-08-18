@@ -25,6 +25,31 @@ export interface Product {
   specs?: ProductSpec[]
 }
 
+export interface NosotrosHito {
+  year: string
+  label: string
+}
+
+export interface NosotrosPilar {
+  title: string
+  desc: string
+}
+
+export interface NosotrosContent {
+  title: string
+  titleEmphasis: string
+  intro: string
+  photos: { showroom: string; taller: string; detalle: string }
+  hitos: [NosotrosHito, NosotrosHito, NosotrosHito, NosotrosHito]
+  pilares: [NosotrosPilar, NosotrosPilar, NosotrosPilar]
+}
+
+export interface LookbookHotspot {
+  x: number        // % desde la izquierda (0-100)
+  y: number        // % desde arriba (0-100)
+  productId: string
+}
+
 export interface LookbookEntry {
   id: string
   n: string
@@ -34,6 +59,7 @@ export interface LookbookEntry {
   pieces: string[]
   imageUrl?: string
   isPatio?: boolean
+  hotspots?: LookbookHotspot[]
 }
 
 export interface SeleccionItem extends Product {

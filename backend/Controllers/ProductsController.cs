@@ -4,6 +4,7 @@ using backend.Attributes;
 using backend.Data;
 using backend.Dtos;
 using backend.Models;
+using backend.Services;
 
 namespace backend.Controllers;
 
@@ -172,6 +173,12 @@ public class ProductsController : ControllerBase
                 return "Ya existe un producto con ese id";
         }
 
+        if (string.IsNullOrWhiteSpace(input.Name))
+            return "El nombre es obligatorio";
+
+        if (string.IsNullOrWhiteSpace(input.Material))
+            return "El material es obligatorio";
+
         if (!await _db.Categories.AnyAsync(c => c.Id == input.CategoryId))
             return "La categoría indicada no existe";
 
@@ -231,10 +238,6 @@ public class ProductsController : ControllerBase
         p.Specs.OrderBy(s => s.Order).Select(s => new ProductSpecDto(s.Label, s.Value)).ToList(),
         p.Images.OrderBy(i => i.Order).Select(i => i.Url).ToList());
 
-    private bool IsAdmin()
-    {
-        var configuredKey = _config["AdminApiKey"];
-        if (string.IsNullOrEmpty(configuredKey)) return true;
-        return Request.Headers["X-Admin-Key"].ToString() == configuredKey;
-    }
+    private bool IsAdmin() =>
+        AdminKeyComparer.Matches(Request.Headers["X-Admin-Key"].ToString(), _config["AdminApiKey"]);
 }

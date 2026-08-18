@@ -4,6 +4,7 @@ using backend.Attributes;
 using backend.Data;
 using backend.Dtos;
 using backend.Models;
+using backend.Services;
 
 namespace backend.Controllers;
 
@@ -95,10 +96,6 @@ public class CategoriesController : ControllerBase
         return NoContent();
     }
 
-    private bool IsAdmin()
-    {
-        var configuredKey = _config["AdminApiKey"];
-        if (string.IsNullOrEmpty(configuredKey)) return true;
-        return Request.Headers["X-Admin-Key"].ToString() == configuredKey;
-    }
+    private bool IsAdmin() =>
+        AdminKeyComparer.Matches(Request.Headers["X-Admin-Key"].ToString(), _config["AdminApiKey"]);
 }

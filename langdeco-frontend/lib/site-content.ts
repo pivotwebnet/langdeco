@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'fs/promises'
 import { ensureDataDir, dataPath } from './storage'
-import type { LookbookEntry } from './types'
+import type { LookbookEntry, NosotrosContent } from './types'
 
 export interface SiteContent {
   promoBar: string
@@ -10,6 +10,7 @@ export interface SiteContent {
   heroTitleEmphasis: string
   heroSubtitle: string
   logoUrl: string
+  nosotros: NosotrosContent
 }
 
 const FILE_NAME = 'site-content.json'
@@ -21,24 +22,48 @@ const DEFAULT_CONTENT: SiteContent = {
   heroTitleEmphasis: 'donde comienza la historia',
   heroSubtitle: 'Y en Las Lang vas a encontrar el mueble que va a acompañar ese proceso.',
   logoUrl: '/assets/logo.png',
+  nosotros: {
+    title: 'Una casa no se decora.',
+    titleEmphasis: 'Se compone.',
+    intro: 'Desde 2014 elegimos, a mano, mobiliario y objetos para hogares que no tienen apuro. En Rafaela, Santa Fe, armamos un showroom con piezas que acompañan una casa durante años, no una temporada.',
+    photos: {
+      showroom: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1000&q=80',
+      taller: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=700&q=80',
+      detalle: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=700&q=80',
+    },
+    hitos: [
+      { year: '2014', label: 'Abrimos las puertas en Rafaela, con un puñado de piezas elegidas a mano.' },
+      { year: '2017', label: 'Mudamos el showroom a Sgto. Cabral, para tener más lugar para curar.' },
+      { year: '2021', label: 'Sumamos Pequeños Tesoros: objetos y detalles además del mobiliario grande.' },
+      { year: 'Hoy', label: 'Seguimos visitando talleres chicos, una pieza a la vez.' },
+    ],
+    pilares: [
+      { title: 'Curaduría a mano', desc: 'Cada pieza se elige una por una — no compramos por catálogo de fábrica, visitamos talleres chicos.' },
+      { title: 'Materiales que duran', desc: 'Maderas honestas, telas que envejecen con gracia. Nada pensado para tirar en un par de años.' },
+      { title: 'Piezas atemporales', desc: 'Diseño que no depende de una moda de temporada — para casas que no tienen apuro.' },
+    ],
+  },
   inspiracion: [
     {
       id: 'estar-norte', n: '01', name: 'Estar del norte', place: 'Piso · Chamberí',
       desc: 'Luz fría, lana cruda, una pieza por pared.',
       pieces: ['Butaca Laurel', 'Alfombra Anatolia', 'Cerámica Sojo'],
       imageUrl: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=85',
+      hotspots: [],
     },
     {
       id: 'comedor-lento', n: '02', name: 'Comedor lento', place: 'Casa · Mallorca',
       desc: 'Mesa de piedra, sillas dispares, sin centro.',
       pieces: ['Mesa Arenisca', 'Sillas Möller', 'Lámpara Pergamino'],
       imageUrl: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=800&q=85',
+      hotspots: [],
     },
     {
       id: 'estudio-tinta', n: '03', name: 'Estudio de tinta', place: 'Atelier · Salamanca',
       desc: 'Una mesa larga, paredes encaladas, pocos libros.',
       pieces: ['Mesa Olmo', 'Silla Hara', 'Lámpara Pergamino'],
       imageUrl: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=800&q=85',
+      hotspots: [],
     },
     {
       id: 'patio-quieto', n: '04', name: 'Patio quieto', place: 'Exterior · Terraza',
@@ -46,6 +71,7 @@ const DEFAULT_CONTENT: SiteContent = {
       pieces: [],
       imageUrl: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=85',
       isPatio: true,
+      hotspots: [],
     },
   ],
 }

@@ -9,6 +9,7 @@ import { SplitChars } from '@/components/ui/SplitChars'
 import { ProductCard } from '@/components/ui/ProductCard'
 import { ProductQuickView } from '@/components/ui/ProductQuickView'
 import * as Icon from '@/components/ui/Icon'
+import { normalize } from '@/lib/normalize'
 import type { Product } from '@/lib/types'
 
 const PAGE_SIZE = 6
@@ -35,9 +36,10 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 interface ProductosProps {
   products: Product[]
   initialCategory?: 'mayor' | 'tesoro'
+  initialQuery?: string
 }
 
-export function Productos({ products, initialCategory }: ProductosProps) {
+export function Productos({ products, initialCategory, initialQuery }: ProductosProps) {
   const [tab, setTab] = useState<'mayores' | 'tesoros'>(initialCategory === 'tesoro' ? 'tesoros' : 'mayores')
   const [added, setAdded] = useState<string | null>(null)
   const [page, setPage] = useState(0)
@@ -45,8 +47,12 @@ export function Productos({ products, initialCategory }: ProductosProps) {
   const [sortBy, setSortBy] = useState<SortOption>('relevancia')
   const [priceMin, setPriceMin] = useState('')
   const [priceMax, setPriceMax] = useState('')
+  const [searchQuery, setSearchQuery] = useState(initialQuery ?? '')
   const { add } = useCart()
   const router = useRouter()
+
+  const searchActive = searchQuery.trim().length > 0
+  const clearSearch = () => { setSearchQuery(''); setPage(0); router.replace('/catalogo') }
 
   const onAdd = (p: Product) => {
     add(p)
@@ -64,7 +70,18 @@ export function Productos({ products, initialCategory }: ProductosProps) {
 
   const piezasMayores  = products.filter(p => p.category === 'mayor')
   const pequenosTesoros = products.filter(p => p.category === 'tesoro')
-  const categoryItems = tab === 'mayores' ? piezasMayores : pequenosTesoros
+
+  const categoryItems = searchActive
+    ? (() => {
+        const q = normalize(searchQuery.trim())
+        return products.filter(p =>
+          normalize(p.name).includes(q) ||
+          normalize(p.material).includes(q) ||
+          (p.tag && normalize(p.tag).includes(q)) ||
+          (p.note && normalize(p.note).includes(q))
+        )
+      })()
+    : (tab === 'mayores' ? piezasMayores : pequenosTesoros)
 
   const min = priceMin !== '' ? Number(priceMin) : null
   const max = priceMax !== '' ? Number(priceMax) : null
@@ -101,24 +118,39 @@ export function Productos({ products, initialCategory }: ProductosProps) {
             </p>
           </div>
 
-          <RevealOnScroll delay={2}>
-            <div role="tablist" style={{ display: 'inline-flex', alignItems: 'stretch', border: '1px solid var(--ink)' }}>
-              <button role="tab" aria-selected={tab === 'mayores'} onClick={() => changeTab('mayores')} style={tabStyle(tab === 'mayores')}>
-                Piezas Mayores
-              </button>
-              <button role="tab" aria-selected={tab === 'tesoros'} onClick={() => changeTab('tesoros')} style={{ ...tabStyle(tab === 'tesoros'), borderLeft: '1px solid var(--ink)' }}>
-                Pequeños Tesoros
-              </button>
-            </div>
-          </RevealOnScroll>
+          {searchActive ? (
+            <RevealOnScroll delay={2}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                <span className="mono" style={{ color: 'var(--ink-mute)' }}>
+                  Resultados para &ldquo;{searchQuery}&rdquo;
+                </span>
+                <button className="cat-clear-btn" onClick={clearSearch} style={{ alignSelf: 'auto' }}>
+                  <Icon.Close /> Ver todo el catálogo
+                </button>
+              </div>
+            </RevealOnScroll>
+          ) : (
+            <>
+              <RevealOnScroll delay={2}>
+                <div role="tablist" style={{ display: 'inline-flex', alignItems: 'stretch', border: '1px solid var(--ink)' }}>
+                  <button role="tab" aria-selected={tab === 'mayores'} onClick={() => changeTab('mayores')} style={tabStyle(tab === 'mayores')}>
+                    Piezas Mayores
+                  </button>
+                  <button role="tab" aria-selected={tab === 'tesoros'} onClick={() => changeTab('tesoros')} style={{ ...tabStyle(tab === 'tesoros'), borderLeft: '1px solid var(--ink)' }}>
+                    Pequeños Tesoros
+                  </button>
+                </div>
+              </RevealOnScroll>
 
-          <RevealOnScroll delay={3}>
-            <div style={{ marginTop: 16 }}>
-              <span className="mono">
-                {tab === 'mayores' ? 'Desde $ 2.190.000 · piezas de inversión' : 'Desde $ 22.000 · regalos, detalles, comienzos'}
-              </span>
-            </div>
-          </RevealOnScroll>
+              <RevealOnScroll delay={3}>
+                <div style={{ marginTop: 16 }}>
+                  <span className="mono">
+                    {tab === 'mayores' ? 'Desde $ 2.190.000 · piezas de inversión' : 'Desde $ 22.000 · regalos, detalles, comienzos'}
+                  </span>
+                </div>
+              </RevealOnScroll>
+            </>
+          )}
         </div>
 
         {/* ── Sidebar de filtros + contenido ──────────────────── */}
@@ -180,10 +212,12 @@ export function Productos({ products, initialCategory }: ProductosProps) {
             {items.length === 0 ? (
               <div className="cat-empty">
                 <p className="edit" style={{ fontSize: 18, margin: '0 0 16px', color: 'var(--ink-soft)' }}>
-                  No encontramos productos con estos filtros.
+                  {searchActive
+                    ? <>No encontramos productos para &ldquo;{searchQuery}&rdquo;.</>
+                    : 'No encontramos productos con estos filtros.'}
                 </p>
-                <button className="cat-clear-btn" onClick={clearFilters}>
-                  <Icon.Close /> Limpiar filtros
+                <button className="cat-clear-btn" onClick={searchActive ? clearSearch : clearFilters}>
+                  <Icon.Close /> {searchActive ? 'Ver todo el catálogo' : 'Limpiar filtros'}
                 </button>
               </div>
             ) : (

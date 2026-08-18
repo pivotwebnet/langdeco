@@ -15,9 +15,9 @@ export const metadata: Metadata = {
 export default async function CatalogoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cat?: string }>
+  searchParams: Promise<{ cat?: string; q?: string }>
 }) {
-  const [products, { cat }] = await Promise.all([getProducts(), searchParams])
+  const [products, { cat, q }] = await Promise.all([getProducts(), searchParams])
   const initialCategory = cat === 'mayor' || cat === 'tesoro' ? cat : undefined
 
   return (
@@ -26,7 +26,7 @@ export default async function CatalogoPage({
       <Header />
       <main className="pd-page">
         <PageHeader label="Catálogo" />
-        <Productos products={products.map(toProduct)} initialCategory={initialCategory} />
+        <Productos products={products.map(toProduct)} initialCategory={initialCategory} initialQuery={q} />
       </main>
       <Footer />
     </>
