@@ -1,6 +1,8 @@
 import { getProducts, getCategories } from '@/lib/api'
 import { toProduct } from '@/lib/product-mapper'
 import { getSiteContent } from '@/lib/site-content'
+import { Visita } from '@/components/sections/Visita'
+import { Explorar } from '@/components/sections/Explorar'
 import HomeClient from './HomeClient'
 
 export default async function HomePage() {
@@ -17,6 +19,8 @@ export default async function HomePage() {
       featured={featuredProducts.map(toProduct)}
       siteContent={siteContent}
       categories={categories}
+      visita={<Visita />}
+      explorar={<Explorar />}
     />
   )
 }

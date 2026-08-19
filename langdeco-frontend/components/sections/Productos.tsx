@@ -11,6 +11,7 @@ import { ProductQuickView } from '@/components/ui/ProductQuickView'
 import * as Icon from '@/components/ui/Icon'
 import { normalize } from '@/lib/normalize'
 import type { Product } from '@/lib/types'
+import type { BackendCategory } from '@/lib/backend-types'
 
 const PAGE_SIZE = 6
 
@@ -35,12 +36,14 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 
 interface ProductosProps {
   products: Product[]
+  categories: BackendCategory[]
   initialCategory?: 'mayor' | 'tesoro'
   initialQuery?: string
 }
 
-export function Productos({ products, initialCategory, initialQuery }: ProductosProps) {
+export function Productos({ products, categories, initialCategory, initialQuery }: ProductosProps) {
   const [tab, setTab] = useState<'mayores' | 'tesoros'>(initialCategory === 'tesoro' ? 'tesoros' : 'mayores')
+  const [subcategory, setSubcategory] = useState<string>('all')
   const [added, setAdded] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [quickView, setQuickView] = useState<Product | null>(null)
@@ -60,16 +63,20 @@ export function Productos({ products, initialCategory, initialQuery }: Productos
     setTimeout(() => setAdded(v => v === p.id ? null : v), 1200)
   }
 
-  const changeTab = (t: typeof tab) => { setTab(t); setPage(0) }
+  const changeTab = (t: typeof tab) => { setTab(t); setSubcategory('all'); setPage(0) }
+  const changeSubcategory = (c: string) => { setSubcategory(c); setPage(0) }
   const changeSort = (s: SortOption) => { setSortBy(s); setPage(0) }
   const changePriceMin = (v: string) => { setPriceMin(v); setPage(0) }
   const changePriceMax = (v: string) => { setPriceMax(v); setPage(0) }
 
-  const hasActiveFilters = sortBy !== 'relevancia' || priceMin !== '' || priceMax !== ''
-  const clearFilters = () => { setSortBy('relevancia'); setPriceMin(''); setPriceMax(''); setPage(0) }
+  const hasActiveFilters = sortBy !== 'relevancia' || priceMin !== '' || priceMax !== '' || subcategory !== 'all'
+  const clearFilters = () => { setSortBy('relevancia'); setPriceMin(''); setPriceMax(''); setSubcategory('all'); setPage(0) }
 
-  const piezasMayores  = products.filter(p => p.category === 'mayor')
-  const pequenosTesoros = products.filter(p => p.category === 'tesoro')
+  const groupByCategoryId = new Map(categories.map(c => [c.id, c.group]))
+  const categoriesInTab = categories.filter(c => c.group === (tab === 'mayores' ? 'Mayor' : 'Tesoro'))
+
+  const piezasMayores  = products.filter(p => groupByCategoryId.get(p.category) === 'Mayor')
+  const pequenosTesoros = products.filter(p => groupByCategoryId.get(p.category) === 'Tesoro')
 
   const categoryItems = searchActive
     ? (() => {
@@ -86,7 +93,8 @@ export function Productos({ products, initialCategory, initialQuery }: Productos
   const min = priceMin !== '' ? Number(priceMin) : null
   const max = priceMax !== '' ? Number(priceMax) : null
   const filteredItems = categoryItems.filter(p =>
-    (min === null || p.priceNum >= min) && (max === null || p.priceNum <= max)
+    (min === null || p.priceNum >= min) && (max === null || p.priceNum <= max) &&
+    (subcategory === 'all' || p.category === subcategory)
   )
 
   const items = [...filteredItems].sort((a, b) => {
@@ -156,6 +164,31 @@ export function Productos({ products, initialCategory, initialQuery }: Productos
         {/* ── Sidebar de filtros + contenido ──────────────────── */}
         <div className="cat-layout">
           <aside className="cat-sidebar">
+            {!searchActive && categoriesInTab.length > 0 && (
+              <div className="cat-sidebar-block">
+                <span className="mono cat-sidebar-label">Categoría</span>
+                <div className="cat-sort-list">
+                  <button
+                    className="cat-sort-btn"
+                    data-active={subcategory === 'all'}
+                    onClick={() => changeSubcategory('all')}
+                  >
+                    Todas
+                  </button>
+                  {categoriesInTab.map(c => (
+                    <button
+                      key={c.id}
+                      className="cat-sort-btn"
+                      data-active={subcategory === c.id}
+                      onClick={() => changeSubcategory(c.id)}
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="cat-sidebar-block">
               <span className="mono cat-sidebar-label">Ordenar por</span>
               <div className="cat-sort-list">

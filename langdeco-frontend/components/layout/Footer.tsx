@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, type CSSProperties, type ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import Link from 'next/link'
 import * as Icon from '@/components/ui/Icon'
+import { useSiteLogo } from '@/lib/useSiteLogo'
 
 const FOOTER_LINKS = {
   navegacion: [
@@ -67,15 +68,7 @@ function ContactRow({ href, icon, children, external }: { href: string; icon: Re
 }
 
 export function Footer() {
-  const [logoUrl, setLogoUrl] = useState('/assets/logo.png')
-
-  /* ── logo editable desde /admin/contenido (GET público) ─────────── */
-  useEffect(() => {
-    fetch('/api/admin/site-content')
-      .then((res) => { if (!res.ok) throw new Error(); return res.json() })
-      .then((data: { logoUrl?: string }) => { if (data.logoUrl) setLogoUrl(data.logoUrl) })
-      .catch(() => {})
-  }, [])
+  const logoUrl = useSiteLogo()
 
   return (
     <footer className="site-footer">

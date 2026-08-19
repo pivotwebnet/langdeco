@@ -9,6 +9,7 @@ import gsap from 'gsap'
 import { useCart, useCartUI } from '@/lib/cart'
 import { useWishlist } from '@/lib/wishlist'
 import { normalize } from '@/lib/normalize'
+import { useSiteLogo } from '@/lib/useSiteLogo'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Magnetic } from '@/components/ui/Magnetic'
 import * as Icon from '@/components/ui/Icon'
@@ -49,7 +50,7 @@ export function Header({ hasPromo = false }: HeaderProps) {
   const [query, setQuery]           = useState('')
   const [catalog, setCatalog]       = useState<Product[] | null>(null)
   const [catalogError, setCatalogError] = useState(false)
-  const [logoUrl, setLogoUrl]       = useState('/assets/logo.png')
+  const logoUrl                     = useSiteLogo()
   const inputRef                    = useRef<HTMLInputElement>(null)
   const inputMobileRef              = useRef<HTMLInputElement>(null)
   const cartCountRef                = useRef<HTMLSpanElement>(null)
@@ -64,14 +65,6 @@ export function Header({ hasPromo = false }: HeaderProps) {
       .then((data: Product[]) => setCatalog(data))
       .catch(() => setCatalogError(true))
   }, [searchOpen, catalog])
-
-  /* ── logo editable desde /admin/contenido (GET público) ────────── */
-  useEffect(() => {
-    fetch('/api/admin/site-content')
-      .then((res) => { if (!res.ok) throw new Error(); return res.json() })
-      .then((data: { logoUrl?: string }) => { if (data.logoUrl) setLogoUrl(data.logoUrl) })
-      .catch(() => {})
-  }, [])
 
   const allResults = useMemo(() => {
     const q = normalize(query.trim())

@@ -22,17 +22,25 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<CategoryDto>>> GetAll([FromQuery] bool includeInactive = false)
+    public async Task<ActionResult<List<CategoryDto>>> GetAll(
+        [FromQuery] bool includeInactive = false, [FromQuery] string? search = null,
+        [FromQuery] CategoryGroup? group = null)
     {
         if (includeInactive && !IsAdmin())
             return Unauthorized(new { error = "Invalid or missing X-Admin-Key" });
 
         var query = _db.Categories.AsNoTracking().AsQueryable();
         if (!includeInactive) query = query.Where(c => c.Active);
+        if (group is not null) query = query.Where(c => c.Group == group);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim().ToLower();
+            query = query.Where(c => c.Name.ToLower().Contains(s));
+        }
 
         var categories = await query
             .OrderBy(c => c.Name)
-            .Select(c => new CategoryDto(c.Id, c.Name, c.Active))
+            .Select(c => new CategoryDto(c.Id, c.Name, c.Group, c.Active))
             .ToListAsync();
 
         return Ok(categories);
@@ -48,11 +56,11 @@ public class CategoriesController : ControllerBase
         if (await _db.Categories.AnyAsync(c => c.Id == input.Id))
             return BadRequest(new { error = "Ya existe una categoría con ese id" });
 
-        var category = new Category { Id = input.Id, Name = input.Name, Active = true };
+        var category = new Category { Id = input.Id, Name = input.Name, Group = input.Group, Active = true };
         _db.Categories.Add(category);
         await _db.SaveChangesAsync();
 
-        return Ok(new CategoryDto(category.Id, category.Name, category.Active));
+        return Ok(new CategoryDto(category.Id, category.Name, category.Group, category.Active));
     }
 
     [HttpPut("{id}")]
@@ -63,9 +71,10 @@ public class CategoriesController : ControllerBase
         if (category is null) return NotFound();
 
         category.Name = input.Name;
+        category.Group = input.Group;
         await _db.SaveChangesAsync();
 
-        return Ok(new CategoryDto(category.Id, category.Name, category.Active));
+        return Ok(new CategoryDto(category.Id, category.Name, category.Group, category.Active));
     }
 
     [HttpPost("{id}/activate")]

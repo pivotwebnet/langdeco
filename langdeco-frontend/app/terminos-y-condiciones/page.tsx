@@ -3,13 +3,16 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { LegalSection } from '@/components/ui/LegalSection'
+import { getSiteContent } from '@/lib/site-content'
 
 export const metadata: Metadata = {
   title: 'Términos y condiciones — LasLangDeco',
   description: 'Términos y condiciones de uso del sitio de LasLangDeco.',
 }
 
-export default function TerminosYCondicionesPage() {
+export default async function TerminosYCondicionesPage() {
+  const { terminos } = (await getSiteContent()).legal
+
   return (
     <>
       <Header />
@@ -47,7 +50,8 @@ export default function TerminosYCondicionesPage() {
           <LegalSection title="Propiedad intelectual">
             <p>
               Las fotografías, textos y demás contenido del sitio son propiedad de LasLangDeco
-              [COMPLETAR: razón social / CUIT] o de sus autores originales, y no pueden utilizarse sin autorización.
+              {terminos.razonSocial ? ` (${terminos.razonSocial})` : ' [razón social/CUIT a confirmar]'} o de sus autores
+              originales, y no pueden utilizarse sin autorización.
             </p>
           </LegalSection>
 

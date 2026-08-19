@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getProducts } from '@/lib/api'
+import { getProducts, getCategories } from '@/lib/api'
 import { toProduct } from '@/lib/product-mapper'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
@@ -17,7 +17,7 @@ export default async function CatalogoPage({
 }: {
   searchParams: Promise<{ cat?: string; q?: string }>
 }) {
-  const [products, { cat, q }] = await Promise.all([getProducts(), searchParams])
+  const [products, categories, { cat, q }] = await Promise.all([getProducts(), getCategories(), searchParams])
   const initialCategory = cat === 'mayor' || cat === 'tesoro' ? cat : undefined
 
   return (
@@ -26,7 +26,7 @@ export default async function CatalogoPage({
       <Header />
       <main className="pd-page">
         <PageHeader label="Catálogo" />
-        <Productos products={products.map(toProduct)} initialCategory={initialCategory} initialQuery={q} />
+        <Productos products={products.map(toProduct)} categories={categories} initialCategory={initialCategory} initialQuery={q} />
       </main>
       <Footer />
     </>

@@ -3,13 +3,18 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { LegalSection } from '@/components/ui/LegalSection'
+import { getSiteContent } from '@/lib/site-content'
 
 export const metadata: Metadata = {
   title: 'Política de privacidad — LasLangDeco',
   description: 'Cómo tratamos los datos personales que nos compartís en LasLangDeco.',
 }
 
-export default function PoliticaDePrivacidadPage() {
+const PENDIENTE = 'Pendiente de completar en el panel admin.'
+
+export default async function PoliticaDePrivacidadPage() {
+  const { privacidad } = (await getSiteContent()).legal
+
   return (
     <>
       <Header />
@@ -36,14 +41,13 @@ export default function PoliticaDePrivacidadPage() {
           </LegalSection>
 
           <LegalSection title="Con quién los compartimos">
-            <p>[COMPLETAR: si los datos se comparten con proveedores de envío/logística u otros terceros]</p>
+            <p>{privacidad.terceros || PENDIENTE}</p>
           </LegalSection>
 
           <LegalSection title="Cookies">
             <p>
               El sitio utiliza cookies técnicas necesarias para su funcionamiento (por ejemplo, para mantener los
-              productos en tu carrito de compras). [COMPLETAR: si se incorporan cookies analíticas o de terceros en el
-              futuro, detallar aquí cuáles y con qué fin]
+              productos en tu carrito de compras). {privacidad.cookies || PENDIENTE}
             </p>
           </LegalSection>
 

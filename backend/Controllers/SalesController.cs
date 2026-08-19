@@ -178,11 +178,13 @@ public class SalesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<SaleDto>>> GetAll(
+    public async Task<ActionResult> GetAll(
         [FromQuery] SaleStatus? status = null,
         [FromQuery] ClientType? clientType = null,
         [FromQuery] DateTime? from = null,
-        [FromQuery] DateTime? to = null)
+        [FromQuery] DateTime? to = null,
+        [FromQuery] int? page = null,
+        [FromQuery] int? pageSize = null)
     {
         var query = _db.Sales.Include(s => s.Items).AsNoTracking().AsQueryable();
 
@@ -191,7 +193,15 @@ public class SalesController : ControllerBase
         if (from is not null) query = query.Where(s => s.CreatedAt >= DateTime.SpecifyKind(from.Value, DateTimeKind.Utc));
         if (to is not null) query = query.Where(s => s.CreatedAt <= DateTime.SpecifyKind(to.Value, DateTimeKind.Utc));
 
-        var sales = await query.OrderByDescending(s => s.CreatedAt).ToListAsync();
+        query = query.OrderByDescending(s => s.CreatedAt);
+
+        if (page is not null)
+        {
+            var paged = await Paging.ApplyAsync(query, page.Value, pageSize);
+            return Ok(new PagedResult<SaleDto>(paged.Items.Select(ToDto).ToList(), paged.Total, paged.Page, paged.PageSize));
+        }
+
+        var sales = await query.ToListAsync();
         return Ok(sales.Select(ToDto));
     }
 
@@ -324,13 +334,15 @@ public class SalesController : ControllerBase
     {
         decimal subtotal = 0;
 
+        var productIds = inputs.Select(i => i.ProductId).Distinct().ToList();
+        var products = await _db.Products.Where(p => productIds.Contains(p.Id) && p.Active).ToDictionaryAsync(p => p.Id);
+
         foreach (var itemInput in inputs)
         {
             if (itemInput.Quantity <= 0)
                 throw new ItemValidationException("La cantidad debe ser mayor a 0");
 
-            var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == itemInput.ProductId && p.Active);
-            if (product is null)
+            if (!products.TryGetValue(itemInput.ProductId, out var product))
                 throw new ItemValidationException($"Producto '{itemInput.ProductId}' no existe o está inactivo");
 
             var unitPrice = PricingService.ResolveUnitPrice(product, itemInput.PriceType);

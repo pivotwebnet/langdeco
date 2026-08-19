@@ -59,6 +59,9 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
       data-card={variant === 'strip' ? true : undefined}
       onClick={onSelect ? () => onSelect(p) : undefined}
       style={onSelect ? { cursor: 'pointer' } : undefined}
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      onKeyDown={onSelect ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(p) } } : undefined}
     >
       <div
         className="prod-card-img"
@@ -68,9 +71,9 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
           {showImage ? (
             <>
               {!imgLoaded && <div className="img-skeleton" aria-hidden="true" />}
-              {/* Foto cargada por la administradora como URL libre (sin upload propio todavía —
-              ver Pendiente en DOCUMENTACION.md): puede ser cualquier dominio, así que se sirve
-              `unoptimized` en vez de pasar por el pipeline de optimización de next/image. */}
+              {/* La foto de producto acepta subir archivo o pegar una URL libre de cualquier
+              dominio — por eso se sirve `unoptimized` en vez de pasar por el pipeline de
+              optimización de next/image (que requeriría fijar los dominios de antemano). */}
               <Image
                 src={p.imageUrl!}
                 alt={p.name}

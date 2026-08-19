@@ -1,5 +1,4 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Sail&family=Italianno&family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&display=swap');
-@import "tailwindcss";
 
 /* ── Design tokens ──────────────────────────────────────────────────── */
 :root {
@@ -136,6 +135,9 @@ body {
   transition: background 0.18s;
 }
 .header .icon-btn:hover { background: var(--bg-deep); }
+
+.explorar-link { background: var(--bg); transition: background 0.2s; }
+.explorar-link:hover { background: var(--bg-deep); }
 
 .header .logo-img {
   height: var(--logo-h);

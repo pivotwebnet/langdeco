@@ -44,6 +44,27 @@ export interface NosotrosContent {
   pilares: [NosotrosPilar, NosotrosPilar, NosotrosPilar]
 }
 
+export interface LegalContent {
+  envios: {
+    zonas: string
+    costosPlazos: string
+    plazoDevolucionDias: string
+    plazoDanioHoras: string
+  }
+  terminos: {
+    razonSocial: string
+  }
+  faq: {
+    zonasCobertura: string
+    plazoEntrega: string
+    garantia: string
+  }
+  privacidad: {
+    terceros: string
+    cookies: string
+  }
+}
+
 export interface LookbookHotspot {
   x: number        // % desde la izquierda (0-100)
   y: number        // % desde arriba (0-100)

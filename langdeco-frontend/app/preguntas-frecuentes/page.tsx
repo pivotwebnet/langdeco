@@ -3,54 +3,59 @@ import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { getSiteContent } from '@/lib/site-content'
 
 export const metadata: Metadata = {
   title: 'Preguntas frecuentes — LasLangDeco',
   description: 'Respuestas a las dudas más comunes sobre compras, envíos y devoluciones en LasLangDeco.',
 }
 
-const FAQS: { q: string; a: React.ReactNode }[] = [
-  {
-    q: '¿Cómo pago mi pedido?',
-    a: (
-      <>
-        Hoy no contamos con pago online en el sitio. Coordinamos cada compra por WhatsApp o email, donde te confirmamos
-        los medios de pago disponibles. Más detalles en <Link href="/como-comprar">Cómo comprar</Link>.
-      </>
-    ),
-  },
-  {
-    q: '¿Hacen envíos a todo el país?',
-    a: '[COMPLETAR: zonas de cobertura de envío]',
-  },
-  {
-    q: '¿Puedo retirar en el showroom?',
-    a: 'Sí, en Sgto. Cabral 104, Rafaela, Santa Fe. Horario de atención: 9:00–12:00 y 15:30–19:30.',
-  },
-  {
-    q: '¿Cuánto tarda en llegar mi pedido?',
-    a: '[COMPLETAR: plazo estimado de entrega según zona]',
-  },
-  {
-    q: '¿Puedo devolver un producto?',
-    a: (
-      <>
-        Sí. Revisá las condiciones en <Link href="/envios-y-devoluciones">Envíos y devoluciones</Link>, incluido tu derecho
-        de arrepentimiento si compraste a distancia.
-      </>
-    ),
-  },
-  {
-    q: '¿Las piezas tienen garantía?',
-    a: '[COMPLETAR: condiciones de garantía por producto]',
-  },
-  {
-    q: '¿Cómo sé si un producto está disponible?',
-    a: 'Escribinos por WhatsApp antes de coordinar el pago — el stock se actualiza a mano y te confirmamos disponibilidad al momento.',
-  },
-]
+const PENDIENTE = 'Pendiente de completar en el panel admin.'
 
-export default function PreguntasFrecuentesPage() {
+export default async function PreguntasFrecuentesPage() {
+  const { faq } = (await getSiteContent()).legal
+
+  const FAQS: { q: string; a: React.ReactNode }[] = [
+    {
+      q: '¿Cómo pago mi pedido?',
+      a: (
+        <>
+          Hoy no contamos con pago online en el sitio. Coordinamos cada compra por WhatsApp o email, donde te confirmamos
+          los medios de pago disponibles. Más detalles en <Link href="/como-comprar">Cómo comprar</Link>.
+        </>
+      ),
+    },
+    {
+      q: '¿Hacen envíos a todo el país?',
+      a: faq.zonasCobertura || PENDIENTE,
+    },
+    {
+      q: '¿Puedo retirar en el showroom?',
+      a: 'Sí, en Sgto. Cabral 104, Rafaela, Santa Fe. Horario de atención: 9:00–12:00 y 15:30–19:30.',
+    },
+    {
+      q: '¿Cuánto tarda en llegar mi pedido?',
+      a: faq.plazoEntrega || PENDIENTE,
+    },
+    {
+      q: '¿Puedo devolver un producto?',
+      a: (
+        <>
+          Sí. Revisá las condiciones en <Link href="/envios-y-devoluciones">Envíos y devoluciones</Link>, incluido tu derecho
+          de arrepentimiento si compraste a distancia.
+        </>
+      ),
+    },
+    {
+      q: '¿Las piezas tienen garantía?',
+      a: faq.garantia || PENDIENTE,
+    },
+    {
+      q: '¿Cómo sé si un producto está disponible?',
+      a: 'Escribinos por WhatsApp antes de coordinar el pago — el stock se actualiza a mano y te confirmamos disponibilidad al momento.',
+    },
+  ]
+
   return (
     <>
       <Header />

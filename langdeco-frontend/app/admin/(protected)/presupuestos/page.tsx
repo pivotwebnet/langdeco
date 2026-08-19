@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import type { BackendBudget, BackendClient, BackendProduct, BackendSale, BudgetStatus, ClientType, PaymentMethod } from '@/lib/backend-types'
+import type { BackendBudget, BackendClient, BackendProduct, BackendSale, BudgetStatus, ClientType, PagedResult, PaymentMethod } from '@/lib/backend-types'
 import { ReceiptView } from '@/components/admin/ReceiptView'
 import { useEscapeKey } from '@/lib/useEscapeKey'
 import { useAdminToast } from '@/components/admin/AdminToast'
+import { adminApi as api } from '@/lib/admin/api'
+import { Field } from '@/components/admin/Field'
 
 /** Precio unitario según el tipo de cliente — mayorista si el producto tiene precio mayorista cargado, si no cae a minorista. */
 function resolvePrice(product: BackendProduct | undefined, clientType: ClientType): number {
@@ -13,44 +15,56 @@ function resolvePrice(product: BackendProduct | undefined, clientType: ClientTyp
   return product.price
 }
 
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api/admin/backend${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  const data = res.status === 204 ? null : await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
-  return data as T
-}
-
 const STATUS_LABEL: Record<BudgetStatus, string> = { Open: 'Abierto', Converted: 'Convertido en venta', Expired: 'Vencido', Cancelled: 'Cancelado' }
 const STATUS_BADGE: Record<BudgetStatus, string> = { Open: 'warn', Converted: 'ok', Expired: 'neutral', Cancelled: 'danger' }
 const CLIENT_TYPE_LABEL: Record<ClientType, string> = { Retail: 'Minorista', Wholesale: 'Mayorista' }
+const PAGE_SIZE = 50
 
 export default function PresupuestosAdmin() {
   const toast = useAdminToast()
   const [budgets, setBudgets] = useState<BackendBudget[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
   const [products, setProducts] = useState<BackendProduct[]>([])
   const [statusFilter, setStatusFilter] = useState<BudgetStatus | 'all'>('all')
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [receiptBudget, setReceiptBudget] = useState<BackendBudget | null>(null)
   const [receiptSale, setReceiptSale] = useState<BackendSale | null>(null)
   const [convertingBudget, setConvertingBudget] = useState<BackendBudget | null>(null)
 
+  const statusQs = statusFilter !== 'all' ? `&status=${statusFilter}` : ''
+
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const qs = statusFilter !== 'all' ? `?status=${statusFilter}` : ''
-      setBudgets(await api<BackendBudget[]>(`/budgets${qs}`))
+      const result = await api<PagedResult<BackendBudget>>(`/budgets?page=1&pageSize=${PAGE_SIZE}${statusQs}`)
+      setBudgets(result.items)
+      setTotal(result.total)
+      setPage(1)
     } catch (e) {
       setError((e as Error).message)
     } finally {
       setLoading(false)
     }
-  }, [statusFilter])
+  }, [statusQs])
+
+  const loadMore = async () => {
+    setLoadingMore(true)
+    try {
+      const nextPage = page + 1
+      const result = await api<PagedResult<BackendBudget>>(`/budgets?page=${nextPage}&pageSize=${PAGE_SIZE}${statusQs}`)
+      setBudgets((prev) => [...prev, ...result.items])
+      setPage(nextPage)
+    } catch (e) {
+      toast.error((e as Error).message)
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   useEffect(() => { load() }, [load])
   useEffect(() => { api<BackendProduct[]>('/products').then(setProducts).catch(() => {}) }, [])
@@ -73,7 +87,7 @@ export default function PresupuestosAdmin() {
       <div className="adm-page-head">
         <div>
           <h1 className="adm-title">Presupuestos</h1>
-          <p className="adm-eyebrow">{budgets.length} presupuestos</p>
+          <p className="adm-eyebrow">{budgets.length} de {total} presupuestos</p>
         </div>
         <button className="adm-btn" onClick={() => setShowForm(true)}>+ Nuevo presupuesto</button>
       </div>
@@ -137,6 +151,14 @@ export default function PresupuestosAdmin() {
         </table>
         {!loading && budgets.length === 0 && <div className="adm-empty">Sin presupuestos.</div>}
       </div>
+
+      {!loading && budgets.length < total && (
+        <div className="adm-load-more">
+          <button className="adm-btn sm ghost" onClick={loadMore} disabled={loadingMore}>
+            {loadingMore ? 'Cargando…' : `Cargar más (${budgets.length}/${total})`}
+          </button>
+        </div>
+      )}
 
       {showForm && (
         <NewBudgetModal
@@ -398,11 +420,3 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="adm-field">
-      <label className="adm-field-label">{label}</label>
-      {children}
-    </div>
-  )
-}

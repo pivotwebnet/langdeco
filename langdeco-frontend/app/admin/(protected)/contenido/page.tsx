@@ -8,15 +8,10 @@ import { formatPrice } from '@/lib/data'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { useEscapeKey } from '@/lib/useEscapeKey'
 import { ProductPicker } from '@/components/admin/ProductPicker'
+import { adminFetch as api } from '@/lib/admin/api'
+import { Field } from '@/components/admin/Field'
 
 type InspiracionForm = SiteContent['inspiracion'][number]
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, { ...init, headers: { 'Content-Type': 'application/json', ...init?.headers } })
-  const data = res.status === 204 ? null : await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
-  return data as T
-}
 
 export default function ContenidoAdmin() {
   const toast = useAdminToast()
@@ -89,13 +84,16 @@ export default function ContenidoAdmin() {
     })
   }
 
+  const setLegal = <K extends keyof SiteContent['legal']>(section: K, patch: Partial<SiteContent['legal'][K]>) =>
+    setContent((c) => c && { ...c, legal: { ...c.legal, [section]: { ...c.legal[section], ...patch } } })
+
   const uploadImage = async (index: number, file: globalThis.File) => {
     setUploadingIndex(index)
     setError(null)
     try {
       const form = new FormData()
       form.append('file', file)
-      const res = await fetch('/api/admin/site-content/upload', { method: 'POST', body: form })
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
       setItem(index, { imageUrl: data.url })
@@ -118,7 +116,7 @@ export default function ContenidoAdmin() {
     try {
       const form = new FormData()
       form.append('file', file)
-      const res = await fetch('/api/admin/site-content/upload', { method: 'POST', body: form })
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
       setField(field, data.url)
@@ -137,7 +135,7 @@ export default function ContenidoAdmin() {
     try {
       const form = new FormData()
       form.append('file', file)
-      const res = await fetch('/api/admin/site-content/upload', { method: 'POST', body: form })
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
       setNosotrosPhoto(key, data.url)
@@ -297,6 +295,73 @@ export default function ContenidoAdmin() {
             </div>
           </div>
         ))}
+      </section>
+
+      <section className="adm-card" style={{ padding: 16, marginBottom: 36 }}>
+        <h2 className="adm-section-title" style={{ margin: '0 0 12px' }}>Legal</h2>
+        <p className="adm-eyebrow" style={{ margin: '0 0 16px' }}>
+          Completa estos datos para reemplazar los textos pendientes en Envíos y devoluciones, Términos, Preguntas frecuentes y Privacidad.
+        </p>
+
+        <h3 className="adm-eyebrow" style={{ margin: '0 0 8px' }}>Envíos y devoluciones</h3>
+        <div className="adm-grid-2" style={{ gap: 10, marginBottom: 20 }}>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <Field label="Zonas de cobertura y transportistas">
+              <textarea className="adm-textarea" value={content.legal.envios.zonas} onChange={(e) => setLegal('envios', { zonas: e.target.value })} rows={2} />
+            </Field>
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <Field label="Costos de envío y tiempo estimado de entrega">
+              <textarea className="adm-textarea" value={content.legal.envios.costosPlazos} onChange={(e) => setLegal('envios', { costosPlazos: e.target.value })} rows={2} />
+            </Field>
+          </div>
+          <Field label="Plazo de devolución (días)">
+            <input className="adm-input" value={content.legal.envios.plazoDevolucionDias} onChange={(e) => setLegal('envios', { plazoDevolucionDias: e.target.value })} style={{ width: '100%' }} />
+          </Field>
+          <Field label="Plazo para reportar daños de envío (ej. '48 horas')">
+            <input className="adm-input" value={content.legal.envios.plazoDanioHoras} onChange={(e) => setLegal('envios', { plazoDanioHoras: e.target.value })} style={{ width: '100%' }} />
+          </Field>
+        </div>
+
+        <h3 className="adm-eyebrow" style={{ margin: '0 0 8px' }}>Términos y condiciones</h3>
+        <div className="adm-grid-2" style={{ gap: 10, marginBottom: 20 }}>
+          <Field label="Razón social / CUIT">
+            <input className="adm-input" value={content.legal.terminos.razonSocial} onChange={(e) => setLegal('terminos', { razonSocial: e.target.value })} style={{ width: '100%' }} />
+          </Field>
+        </div>
+
+        <h3 className="adm-eyebrow" style={{ margin: '0 0 8px' }}>Preguntas frecuentes</h3>
+        <div className="adm-grid-2" style={{ gap: 10, marginBottom: 20 }}>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <Field label="¿Hacen envíos a todo el país?">
+              <textarea className="adm-textarea" value={content.legal.faq.zonasCobertura} onChange={(e) => setLegal('faq', { zonasCobertura: e.target.value })} rows={2} />
+            </Field>
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <Field label="¿Cuánto tarda en llegar mi pedido?">
+              <textarea className="adm-textarea" value={content.legal.faq.plazoEntrega} onChange={(e) => setLegal('faq', { plazoEntrega: e.target.value })} rows={2} />
+            </Field>
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <Field label="¿Las piezas tienen garantía?">
+              <textarea className="adm-textarea" value={content.legal.faq.garantia} onChange={(e) => setLegal('faq', { garantia: e.target.value })} rows={2} />
+            </Field>
+          </div>
+        </div>
+
+        <h3 className="adm-eyebrow" style={{ margin: '0 0 8px' }}>Política de privacidad</h3>
+        <div className="adm-grid-2" style={{ gap: 10 }}>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <Field label="Con quién se comparten los datos (envío/logística, terceros)">
+              <textarea className="adm-textarea" value={content.legal.privacidad.terceros} onChange={(e) => setLegal('privacidad', { terceros: e.target.value })} rows={2} />
+            </Field>
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <Field label="Cookies analíticas o de terceros (si se usan)">
+              <textarea className="adm-textarea" value={content.legal.privacidad.cookies} onChange={(e) => setLegal('privacidad', { cookies: e.target.value })} rows={2} />
+            </Field>
+          </div>
+        </div>
       </section>
 
       <section>
@@ -548,11 +613,3 @@ function HiddenFileInput({ uploading, onUpload }: { uploading: boolean; onUpload
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="adm-field">
-      <label className="adm-field-label">{label}</label>
-      {children}
-    </div>
-  )
-}

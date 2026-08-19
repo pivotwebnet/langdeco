@@ -22,9 +22,10 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<ProductDto>>> GetAll(
+    public async Task<ActionResult> GetAll(
         [FromQuery] bool includeInactive = false, [FromQuery] string? category = null,
-        [FromQuery] bool? featured = null)
+        [FromQuery] bool? featured = null, [FromQuery] string? search = null,
+        [FromQuery] int? page = null, [FromQuery] int? pageSize = null)
     {
         if (includeInactive && !IsAdmin())
             return Unauthorized(new { error = "Invalid or missing X-Admin-Key" });
@@ -39,8 +40,21 @@ public class ProductsController : ControllerBase
         if (!includeInactive) query = query.Where(p => p.Active);
         if (!string.IsNullOrEmpty(category)) query = query.Where(p => p.CategoryId == category);
         if (featured is not null) query = query.Where(p => p.Featured == featured);
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim().ToLower();
+            query = query.Where(p => p.Name.ToLower().Contains(s) || p.Material.ToLower().Contains(s));
+        }
 
-        var products = await query.OrderBy(p => p.Name).ToListAsync();
+        query = query.OrderBy(p => p.Name);
+
+        if (page is not null)
+        {
+            var paged = await Paging.ApplyAsync(query, page.Value, pageSize);
+            return Ok(new PagedResult<ProductDto>(paged.Items.Select(ToDto).ToList(), paged.Total, paged.Page, paged.PageSize));
+        }
+
+        var products = await query.ToListAsync();
         return Ok(products.Select(ToDto));
     }
 
@@ -150,8 +164,9 @@ public class ProductsController : ControllerBase
         var product = await _db.Products.FindAsync(id);
         if (product is null) return NotFound();
 
-        var hasSales = await _db.SaleItems.AnyAsync(i => i.ProductId == id);
-        if (hasSales)
+        var isReferenced = await _db.SaleItems.AnyAsync(i => i.ProductId == id)
+            || await _db.BudgetItems.AnyAsync(i => i.ProductId == id);
+        if (isReferenced)
         {
             product.Active = false;
             await _db.SaveChangesAsync();

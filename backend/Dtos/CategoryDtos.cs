@@ -1,5 +1,7 @@
+using backend.Models;
+
 namespace backend.Dtos;
 
-public record CategoryDto(string Id, string Name, bool Active);
+public record CategoryDto(string Id, string Name, CategoryGroup Group, bool Active);
 
-public record CategoryUpsertDto(string Id, string Name);
+public record CategoryUpsertDto(string Id, string Name, CategoryGroup Group);

@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import type { BackendClient, BackendProduct, BackendSale, ClientType, PaymentMethod, SaleStatus } from '@/lib/backend-types'
+import type { BackendClient, BackendProduct, BackendSale, ClientType, PagedResult, PaymentMethod, SaleStatus } from '@/lib/backend-types'
 import { ReceiptView } from '@/components/admin/ReceiptView'
 import { useEscapeKey } from '@/lib/useEscapeKey'
 import { useAdminToast } from '@/components/admin/AdminToast'
+import { adminApi as api } from '@/lib/admin/api'
+import { Field } from '@/components/admin/Field'
 
 /** Precio unitario según el tipo de cliente — mayorista si el producto tiene precio mayorista cargado, si no cae a minorista. */
 function resolvePrice(product: BackendProduct | undefined, clientType: ClientType): number {
@@ -13,42 +15,54 @@ function resolvePrice(product: BackendProduct | undefined, clientType: ClientTyp
   return product.price
 }
 
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api/admin/backend${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  const data = res.status === 204 ? null : await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
-  return data as T
-}
-
 const STATUS_LABEL: Record<SaleStatus, string> = { Pending: 'Pendiente', Paid: 'Pagada', Cancelled: 'Cancelada' }
 const STATUS_BADGE: Record<SaleStatus, string> = { Pending: 'warn', Paid: 'ok', Cancelled: 'neutral' }
 const CLIENT_TYPE_LABEL: Record<ClientType, string> = { Retail: 'Minorista', Wholesale: 'Mayorista' }
+const PAGE_SIZE = 50
 
 export default function VentasAdmin() {
   const toast = useAdminToast()
   const [sales, setSales] = useState<BackendSale[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
   const [products, setProducts] = useState<BackendProduct[]>([])
   const [statusFilter, setStatusFilter] = useState<SaleStatus | 'all'>('all')
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [receiptSale, setReceiptSale] = useState<BackendSale | null>(null)
+
+  const statusQs = statusFilter !== 'all' ? `&status=${statusFilter}` : ''
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const qs = statusFilter !== 'all' ? `?status=${statusFilter}` : ''
-      setSales(await api<BackendSale[]>(`/sales${qs}`))
+      const result = await api<PagedResult<BackendSale>>(`/sales?page=1&pageSize=${PAGE_SIZE}${statusQs}`)
+      setSales(result.items)
+      setTotal(result.total)
+      setPage(1)
     } catch (e) {
       setError((e as Error).message)
     } finally {
       setLoading(false)
     }
-  }, [statusFilter])
+  }, [statusQs])
+
+  const loadMore = async () => {
+    setLoadingMore(true)
+    try {
+      const nextPage = page + 1
+      const result = await api<PagedResult<BackendSale>>(`/sales?page=${nextPage}&pageSize=${PAGE_SIZE}${statusQs}`)
+      setSales((prev) => [...prev, ...result.items])
+      setPage(nextPage)
+    } catch (e) {
+      toast.error((e as Error).message)
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   useEffect(() => { load() }, [load])
   useEffect(() => { api<BackendProduct[]>('/products').then(setProducts).catch(() => {}) }, [])
@@ -71,7 +85,7 @@ export default function VentasAdmin() {
       <div className="adm-page-head">
         <div>
           <h1 className="adm-title">Ventas</h1>
-          <p className="adm-eyebrow">{sales.length} ventas</p>
+          <p className="adm-eyebrow">{sales.length} de {total} ventas</p>
         </div>
         <button className="adm-btn" onClick={() => setShowForm(true)}>+ Nueva venta manual</button>
       </div>
@@ -138,6 +152,14 @@ export default function VentasAdmin() {
         </table>
         {!loading && sales.length === 0 && <div className="adm-empty">Sin ventas.</div>}
       </div>
+
+      {!loading && sales.length < total && (
+        <div className="adm-load-more">
+          <button className="adm-btn sm ghost" onClick={loadMore} disabled={loadingMore}>
+            {loadingMore ? 'Cargando…' : `Cargar más (${sales.length}/${total})`}
+          </button>
+        </div>
+      )}
 
       {showForm && (
         <NewSaleModal
@@ -338,11 +360,3 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="adm-field">
-      <label className="adm-field-label">{label}</label>
-      {children}
-    </div>
-  )
-}

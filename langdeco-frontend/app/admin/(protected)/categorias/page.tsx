@@ -3,16 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { BackendCategory } from '@/lib/backend-types'
 import { useAdminToast } from '@/components/admin/AdminToast'
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api/admin/backend${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  const data = res.status === 204 ? null : await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
-  return data as T
-}
+import { adminApi as api } from '@/lib/admin/api'
 
 export default function CategoriasAdmin() {
   const toast = useAdminToast()

@@ -57,13 +57,13 @@ export function Nosotros({ content = DEFAULT_NOSOTROS }: NosotrosProps) {
       <RevealOnScroll delay={2}>
         <div className="nosotros-photos">
           <div className="nosotros-photo nosotros-photo-lg">
-            <Image src={photos.showroom} alt="Showroom de LasLangDeco" fill unoptimized sizes="(min-width: 900px) 55vw, 100vw" style={{ objectFit: 'cover' }} />
+            <Image src={photos.showroom} alt="Showroom de LasLangDeco" fill sizes="(min-width: 900px) 55vw, 100vw" style={{ objectFit: 'cover' }} />
           </div>
           <div className="nosotros-photo">
-            <Image src={photos.taller} alt="Taller de un proveedor" fill unoptimized sizes="(min-width: 900px) 25vw, 50vw" style={{ objectFit: 'cover' }} />
+            <Image src={photos.taller} alt="Taller de un proveedor" fill sizes="(min-width: 900px) 25vw, 50vw" style={{ objectFit: 'cover' }} />
           </div>
           <div className="nosotros-photo">
-            <Image src={photos.detalle} alt="Detalle de una pieza" fill unoptimized sizes="(min-width: 900px) 25vw, 50vw" style={{ objectFit: 'cover' }} />
+            <Image src={photos.detalle} alt="Detalle de una pieza" fill sizes="(min-width: 900px) 25vw, 50vw" style={{ objectFit: 'cover' }} />
           </div>
         </div>
       </RevealOnScroll>
@@ -85,7 +85,7 @@ export function Nosotros({ content = DEFAULT_NOSOTROS }: NosotrosProps) {
           <RevealOnScroll key={p.title} delay={i + 4}>
             <div>
               <div className="nosotros-pilar-img">
-                <Image src={pilarImages[i]} alt="" fill unoptimized sizes="(min-width: 900px) 25vw, 45vw" style={{ objectFit: 'cover' }} />
+                <Image src={pilarImages[i]} alt="" fill sizes="(min-width: 900px) 25vw, 45vw" style={{ objectFit: 'cover' }} />
               </div>
               <h3 style={{ fontFamily: 'var(--font-ui)', fontSize: 16, fontWeight: 500, margin: '14px 0 8px' }}>{p.title}</h3>
               <p className="edit" style={{ fontSize: 15, lineHeight: 1.5, color: 'var(--ink-mute)', margin: 0 }}>{p.desc}</p>

@@ -3,13 +3,18 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { LegalSection } from '@/components/ui/LegalSection'
+import { getSiteContent } from '@/lib/site-content'
 
 export const metadata: Metadata = {
   title: 'Envíos y devoluciones — LasLangDeco',
   description: 'Zonas de envío, plazos y condiciones de devolución de LasLangDeco.',
 }
 
-export default function EnviosYDevolucionesPage() {
+const PENDIENTE = 'Pendiente de completar en el panel admin.'
+
+export default async function EnviosYDevolucionesPage() {
+  const { envios } = (await getSiteContent()).legal
+
   return (
     <>
       <Header />
@@ -23,11 +28,11 @@ export default function EnviosYDevolucionesPage() {
 
         <section style={{ padding: '0 24px 96px', maxWidth: 720, margin: '0 auto' }}>
           <LegalSection title="Zonas de envío">
-            <p>[COMPLETAR: zonas de cobertura y transportistas con los que trabajamos]</p>
+            <p>{envios.zonas || PENDIENTE}</p>
           </LegalSection>
 
           <LegalSection title="Costos y plazos">
-            <p>[COMPLETAR: costo de envío según zona y tiempo estimado de entrega]</p>
+            <p>{envios.costosPlazos || PENDIENTE}</p>
           </LegalSection>
 
           <LegalSection title="Seguimiento del pedido">
@@ -39,8 +44,9 @@ export default function EnviosYDevolucionesPage() {
 
           <LegalSection title="Devoluciones">
             <p>
-              Aceptamos devoluciones de productos sin uso, en su embalaje original, dentro de [COMPLETAR: plazo en días]
-              desde la entrega. Escribinos por WhatsApp o email para coordinarla.
+              Aceptamos devoluciones de productos sin uso, en su embalaje original, dentro de{' '}
+              {envios.plazoDevolucionDias ? `${envios.plazoDevolucionDias} días` : '[plazo a confirmar]'}
+              {' '}desde la entrega. Escribinos por WhatsApp o email para coordinarla.
             </p>
             <p style={{ marginTop: 10 }}>
               Si compraste a distancia (por WhatsApp, email u otro medio fuera de un local comercial), de acuerdo con el
@@ -52,8 +58,9 @@ export default function EnviosYDevolucionesPage() {
 
           <LegalSection title="Piezas dañadas en el envío">
             <p>
-              Si tu pedido llega dañado, contactanos dentro de las [COMPLETAR: 48 horas / plazo] siguientes a la entrega con
-              fotos del estado del producto y el embalaje.
+              Si tu pedido llega dañado, contactanos dentro de{' '}
+              {envios.plazoDanioHoras ? `las ${envios.plazoDanioHoras}` : '[plazo a confirmar]'}
+              {' '}siguientes a la entrega con fotos del estado del producto y el embalaje.
             </p>
           </LegalSection>
         </section>

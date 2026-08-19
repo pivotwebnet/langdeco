@@ -28,3 +28,9 @@ public record BudgetDto(
 public record BudgetStatusUpdateDto(BudgetStatus Status);
 
 public record BudgetConvertDto(PaymentMethod PaymentMethod);
+
+public record ExpiringBudgetDto(int Id, int Number, string CustomerName, DateTime ValidUntil, decimal Total);
+
+public record BudgetsSummaryDto(
+    int OpenCount, int ExpiringSoonCount, int ConvertedCount, int ConversionRatePercent,
+    List<ExpiringBudgetDto> ExpiringSoon);

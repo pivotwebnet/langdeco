@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Hero } from '@/components/sections/Hero'
@@ -8,8 +8,6 @@ import { Favoritos } from '@/components/sections/Favoritos'
 import { CatalogoRapido } from '@/components/sections/CatalogoRapido'
 import { Inspiracion } from '@/components/sections/Inspiracion'
 import { Visualizador } from '@/components/sections/Visualizador'
-import { Visita } from '@/components/sections/Visita'
-import { Explorar } from '@/components/sections/Explorar'
 import { ScrollAnimator } from '@/components/ui/ScrollAnimator'
 import { Marquee } from '@/components/ui/Marquee'
 import { PromoBar } from '@/components/ui/PromoBar'
@@ -22,9 +20,13 @@ interface HomeClientProps {
   featured: Product[]
   siteContent: SiteContent
   categories: BackendCategory[]
+  // Server Components pasados como slots — así Visita/Explorar (sin interactividad propia)
+  // no se empaquetan al bundle de cliente solo por vivir dentro de este árbol 'use client'.
+  visita: ReactNode
+  explorar: ReactNode
 }
 
-export default function HomeClient({ products, featured, siteContent, categories }: HomeClientProps) {
+export default function HomeClient({ products, featured, siteContent, categories, visita, explorar }: HomeClientProps) {
   const fillRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -88,9 +90,9 @@ export default function HomeClient({ products, featured, siteContent, categories
 
           <Visualizador products={products} categories={categories} compact />
 
-          <Visita />
+          {visita}
 
-          <Explorar />
+          {explorar}
         </div>
 
         {/* Footer lives outside .device so its dark background is truly full-width */}

@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'fs/promises'
 import { ensureDataDir, dataPath } from './storage'
-import type { LookbookEntry, NosotrosContent } from './types'
+import type { LegalContent, LookbookEntry, NosotrosContent } from './types'
 
 export interface SiteContent {
   promoBar: string
@@ -11,6 +11,7 @@ export interface SiteContent {
   heroSubtitle: string
   logoUrl: string
   nosotros: NosotrosContent
+  legal: LegalContent
 }
 
 const FILE_NAME = 'site-content.json'
@@ -42,6 +43,12 @@ const DEFAULT_CONTENT: SiteContent = {
       { title: 'Materiales que duran', desc: 'Maderas honestas, telas que envejecen con gracia. Nada pensado para tirar en un par de años.' },
       { title: 'Piezas atemporales', desc: 'Diseño que no depende de una moda de temporada — para casas que no tienen apuro.' },
     ],
+  },
+  legal: {
+    envios: { zonas: '', costosPlazos: '', plazoDevolucionDias: '', plazoDanioHoras: '' },
+    terminos: { razonSocial: '' },
+    faq: { zonasCobertura: '', plazoEntrega: '', garantia: '' },
+    privacidad: { terceros: '', cookies: '' },
   },
   inspiracion: [
     {

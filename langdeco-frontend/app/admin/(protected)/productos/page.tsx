@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { BackendCategory, BackendProduct } from '@/lib/backend-types'
 import { useAdminToast } from '@/components/admin/AdminToast'
+import { adminApi as api } from '@/lib/admin/api'
+import { Field } from '@/components/admin/Field'
 
 type ProductForm = {
   id: string
@@ -34,15 +36,6 @@ const EMPTY_FORM: ProductForm = {
 
 const ROOM_TAG_OPTIONS = ['Living', 'Comedor', 'Dormitorio', 'Cocina', 'Baño', 'Exterior', 'Oficina', 'Entrada']
 
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api/admin/backend${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  const data = res.status === 204 ? null : await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
-  return data as T
-}
 
 export default function ProductosAdmin() {
   const toast = useAdminToast()
@@ -409,7 +402,7 @@ function ImageSlot({ url, isCover, canMoveUp, canMoveDown, onChange, onRemove, o
     try {
       const form = new FormData()
       form.append('file', file)
-      const res = await fetch('/api/admin/products/upload', { method: 'POST', body: form })
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
       onChange(data.url)
@@ -513,11 +506,3 @@ function RoomTagsInput({ value, onChange }: { value: string[]; onChange: (v: str
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="adm-field">
-      <label className="adm-field-label">{label}</label>
-      {children}
-    </div>
-  )
-}
