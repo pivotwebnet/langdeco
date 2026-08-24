@@ -4,6 +4,7 @@ import { toProduct } from '@/lib/product-mapper'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Visualizador } from '@/components/sections/Visualizador'
+import { ScrollAnimator } from '@/components/ui/ScrollAnimator'
 import * as Icon from '@/components/ui/Icon'
 import Link from 'next/link'
 
@@ -17,6 +18,7 @@ export default async function VisualizadorPage() {
 
   return (
     <>
+      <ScrollAnimator />
       <Header />
       <main style={{ paddingTop: 'var(--header-h)', minHeight: '100vh', background: 'var(--bg)' }}>
         <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)' }}>

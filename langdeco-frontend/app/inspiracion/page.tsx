@@ -5,6 +5,7 @@ import { getSiteContent } from '@/lib/site-content'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Inspiracion } from '@/components/sections/Inspiracion'
+import { ScrollAnimator } from '@/components/ui/ScrollAnimator'
 
 export const metadata: Metadata = {
   title: 'Inspiración — LasLangDeco',
@@ -16,6 +17,7 @@ export default async function InspiracionPage() {
 
   return (
     <>
+      <ScrollAnimator />
       <Header />
       <Inspiracion items={siteContent.inspiracion} products={products.map(toProduct)} />
       <Footer />

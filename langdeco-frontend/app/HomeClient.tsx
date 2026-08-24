@@ -57,16 +57,18 @@ export default function HomeClient({ products, featured, siteContent }: HomeClie
       <ScrollAnimator />
 
       <div className="stage">
+        {/* PromoBar/scroll-track/Header are sticky — kept outside .device because
+            its overflow:hidden (for the animated orbs) breaks position:sticky */}
+        <PromoBar text={siteContent.promoBar} />
+
+        {/* Scroll progress */}
+        <div className="scroll-track">
+          <div ref={fillRef} className="fill" />
+        </div>
+
+        <Header hasPromoBar={!!siteContent.promoBar} />
+
         <div className="device" id="device">
-
-          <PromoBar text={siteContent.promoBar} />
-
-          {/* Scroll progress */}
-          <div className="scroll-track">
-            <div ref={fillRef} className="fill" />
-          </div>
-
-          <Header />
 
           <Hero />
 

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Visita } from '@/components/sections/Visita'
+import { ScrollAnimator } from '@/components/ui/ScrollAnimator'
 
 export const metadata: Metadata = {
   title: 'Contacto — LasLangDeco',
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 export default function ContactoPage() {
   return (
     <>
+      <ScrollAnimator />
       <Header />
       <Visita />
       <Footer />

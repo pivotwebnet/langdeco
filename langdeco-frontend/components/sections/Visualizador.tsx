@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import * as Icon from '@/components/ui/Icon'
+import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
 import type { Product } from '@/lib/types'
 
 interface Props {
@@ -214,7 +215,7 @@ export function Visualizador({ products, compact = false }: Props) {
 
   return (
     <section data-dt="visualizador-embed" data-size={compact ? 'compact' : undefined} style={{ position: 'relative', padding: '32px 24px 72px' }}>
-      <div style={{ marginBottom: 20 }}>
+      <RevealOnScroll style={{ marginBottom: 20 }}>
         <div className="kicker" style={{ marginBottom: 10 }}>Probalo en tu casa</div>
         <h2 className="display" style={{ fontSize: compact ? 'clamp(24px, 4.5vw, 34px)' : 'clamp(28px, 5vw, 40px)', margin: '0 0 10px' }}>
           Visualizador de{' '}
@@ -224,11 +225,11 @@ export function Visualizador({ products, compact = false }: Props) {
           Subí una foto de tu ambiente y arrastrá piezas del catálogo encima para imaginar cómo quedan
           antes de comprar. Podés moverlas, cambiarlas de tamaño y descargar el resultado.
         </p>
-      </div>
+      </RevealOnScroll>
 
       <div className="viz-layout">
         {/* ── Canvas ─────────────────────────────────────────── */}
-        <div className="viz-canvas-col">
+        <RevealOnScroll delay={1} className="viz-canvas-col">
           {!photoUrl ? (
             <div
               className={`viz-dropzone${dragOver ? ' over' : ''}`}
@@ -308,10 +309,10 @@ export function Visualizador({ products, compact = false }: Props) {
             style={{ display: 'none' }}
             onChange={(e) => handlePhotoFile(e.target.files?.[0])}
           />
-        </div>
+        </RevealOnScroll>
 
         {/* ── Catálogo lateral ───────────────────────────────── */}
-        <aside className="viz-sidebar">
+        <RevealOnScroll delay={2} as="aside" className="viz-sidebar">
           <div className="mono" style={{ marginBottom: 12, fontSize: 9, letterSpacing: '0.18em' }}>
             Arrastrá un mueble a la foto
           </div>
@@ -334,7 +335,7 @@ export function Visualizador({ products, compact = false }: Props) {
               </button>
             ))}
           </div>
-        </aside>
+        </RevealOnScroll>
       </div>
     </section>
   )

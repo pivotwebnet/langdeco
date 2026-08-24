@@ -14,6 +14,7 @@ import type { Product } from '@/lib/types'
 
 interface HeaderProps {
   logoFont?: string
+  hasPromoBar?: boolean
 }
 
 const SEARCH_RESULTS_LIMIT = 6
@@ -39,7 +40,7 @@ const DRAWER_LINKS = [
   { label: 'Contacto / Showroom', href: '/contacto' },
 ]
 
-export function Header({ logoFont = 'Sail' }: HeaderProps) {
+export function Header({ logoFont = 'Sail', hasPromoBar = false }: HeaderProps) {
   const { count } = useCart()
   const { open: onCartOpen } = useCartUI()
   const router = useRouter()
@@ -133,7 +134,7 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
       {/* ══════════════════════════════════════════════════
           HEADER BAR
       ══════════════════════════════════════════════════ */}
-      <header className={`header${scrolled ? ' condensed' : ''}`}>
+      <header className={`header${scrolled ? ' condensed' : ''}${hasPromoBar ? ' with-promo' : ''}`}>
 
         {/* Mobile: hamburger */}
         <button
@@ -146,7 +147,7 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
 
         {/* Desktop: nav left */}
         <nav className="nav-left dt-only" aria-label="Navegación principal">
-          {NAV_LINKS.slice(0, 2).map((l) => (
+          {NAV_LINKS.slice(0, 3).map((l) => (
             <Link key={l.href} href={l.href} className="nav-link">{l.label}</Link>
           ))}
         </nav>
@@ -157,19 +158,13 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
           style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
           aria-label="LasLangDeco — inicio"
         >
-          <Image
-            src="/assets/logo.png"
-            alt="LasLangDeco"
-            className="logo-img"
-            width={150}
-            height={150}
-            priority
-          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/assets/logo.png" alt="LasLangDeco" className="logo-img" />
         </Link>
 
         {/* Desktop: nav right */}
         <nav className="nav-right dt-only" aria-label="Navegación secundaria">
-          {NAV_LINKS.slice(2).map((l) => (
+          {NAV_LINKS.slice(3).map((l) => (
             <Link key={l.href} href={l.href} className="nav-link">{l.label}</Link>
           ))}
           <Tooltip label="Buscar" side="bottom">
@@ -445,12 +440,13 @@ export function Header({ logoFont = 'Sail' }: HeaderProps) {
           {/* Drawer header */}
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '18px 20px',
+            padding: '26px 20px',
             borderBottom: '1px solid var(--line)',
             flexShrink: 0,
           }}>
             <Link href="/" onClick={closeAll} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-              <Image src="/assets/logo.png" alt="LasLangDeco" width={150} height={150} style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/assets/logo.png" alt="LasLangDeco" style={{ height: 38, width: 'auto', objectFit: 'contain' }} />
             </Link>
             <button
               className="icon-btn"

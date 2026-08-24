@@ -4,6 +4,7 @@ import { toProduct } from '@/lib/product-mapper'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Productos } from '@/components/sections/Productos'
+import { ScrollAnimator } from '@/components/ui/ScrollAnimator'
 
 export const metadata: Metadata = {
   title: 'Catálogo — LasLangDeco',
@@ -20,6 +21,7 @@ export default async function CatalogoPage({
 
   return (
     <>
+      <ScrollAnimator />
       <Header />
       <Productos products={products.map(toProduct)} initialCategory={initialCategory} />
       <Footer />

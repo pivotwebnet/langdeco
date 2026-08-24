@@ -9,6 +9,7 @@ import { useCart } from '@/lib/cart'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
+import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
 import * as Icon from '@/components/ui/Icon'
 import { formatPrice } from '@/lib/data'
 import type { Product } from '@/lib/types'
@@ -79,7 +80,7 @@ export function ProductoDetalle({ product, related }: Props) {
         <div className="pd-body">
 
           {/* Gallery */}
-          <div className="pd-gallery">
+          <RevealOnScroll className="pd-gallery">
             <div className="pd-main-wrap">
               {showMainImage ? (
                 <Image
@@ -110,10 +111,10 @@ export function ProductoDetalle({ product, related }: Props) {
                 ))}
               </div>
             )}
-          </div>
+          </RevealOnScroll>
 
           {/* Info */}
-          <div className="pd-info">
+          <RevealOnScroll delay={1} className="pd-info">
             {(product.tag || isLowStock || isOutOfStock) && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
                 {product.tag && (
@@ -209,7 +210,7 @@ export function ProductoDetalle({ product, related }: Props) {
               Consultas por WhatsApp · Envíos a todo el país<br />
               Pago en cuotas · Coordinar entrega
             </div>
-          </div>
+          </RevealOnScroll>
         </div>
 
         {/* ── Related ──────────────────────────────────────── */}
@@ -221,23 +222,25 @@ export function ProductoDetalle({ product, related }: Props) {
                 También te puede gustar
               </div>
               <div className="pd-related-track">
-                {related.map(p => (
-                  <Link key={p.id} href={`/producto/${p.id}`} className="pd-related-card">
-                    <div className="pd-related-img" style={{ position: 'relative' }}>
-                      {p.imageUrl ? (
-                        <Image src={p.imageUrl} alt={p.name} fill unoptimized sizes="200px" />
-                      ) : (
-                        <ImagePlaceholder size={18} />
-                      )}
-                    </div>
-                    <div style={{
-                      fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 500,
-                      margin: '10px 0 4px', color: 'rgba(242,241,237,0.95)',
-                    }}>
-                      {p.name}
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 600, color: 'rgba(242,241,237,0.6)' }}>{p.price}</div>
-                  </Link>
+                {related.map((p, i) => (
+                  <RevealOnScroll key={p.id} delay={Math.min(i, 3)}>
+                    <Link href={`/producto/${p.id}`} className="pd-related-card">
+                      <div className="pd-related-img" style={{ position: 'relative' }}>
+                        {p.imageUrl ? (
+                          <Image src={p.imageUrl} alt={p.name} fill unoptimized sizes="200px" />
+                        ) : (
+                          <ImagePlaceholder size={18} />
+                        )}
+                      </div>
+                      <div style={{
+                        fontFamily: 'var(--font-ui)', fontSize: 14, fontWeight: 500,
+                        margin: '10px 0 4px', color: 'rgba(242,241,237,0.95)',
+                      }}>
+                        {p.name}
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 600, color: 'rgba(242,241,237,0.6)' }}>{p.price}</div>
+                    </Link>
+                  </RevealOnScroll>
                 ))}
               </div>
             </div>
