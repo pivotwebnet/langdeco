@@ -244,16 +244,14 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
 
   return (
     <section id="visualizador" data-dt="visualizador-embed" data-size={compact ? 'compact' : undefined} style={{ position: 'relative', padding: '32px 24px 72px' }}>
-      <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 24 }}>
-        <div>
-          <div className="kicker" data-reveal="up" style={{ marginBottom: 10 }}>Probalo en tu casa</div>
-          <h2 className="display" data-reveal="headline" style={{ fontSize: compact ? 'clamp(24px, 4.5vw, 34px)' : 'clamp(28px, 5vw, 40px)', margin: 0 }}>
-            <SplitChars text="Visualizador de" />{' '}
-            <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline><SplitChars text="espacios" /></Underline></em>
-          </h2>
-        </div>
-        <div className="subtitle-connector" data-reveal="up" data-delay="0.15" style={{ maxWidth: 400, marginTop: 0 }}>
-          <p style={{ margin: 0, fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.6 }}>
+      <div style={{ marginBottom: 28, maxWidth: 640 }}>
+        <div className="kicker" data-reveal="up" style={{ marginBottom: 10 }}>Probalo en tu casa</div>
+        <h2 className="display" data-reveal="headline" style={{ fontSize: compact ? 'clamp(24px, 4.5vw, 34px)' : 'clamp(28px, 5vw, 40px)', margin: '0 0 16px' }}>
+          <SplitChars text="Visualizador de" />{' '}
+          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline><SplitChars text="espacios" /></Underline></em>
+        </h2>
+        <div className="subtitle-connector" data-reveal="up" data-delay="0.15" style={{ maxWidth: 480 }}>
+          <p style={{ margin: 0, fontSize: 15, color: 'var(--ink-soft)', lineHeight: 1.6 }}>
             Subí una foto de tu ambiente y arrastrá piezas del catálogo encima para imaginar cómo quedan
             antes de comprar. Podés moverlas, cambiarlas de tamaño y descargar el resultado.
           </p>
