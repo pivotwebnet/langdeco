@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useGSAP } from '@gsap/react'
+import gsap from 'gsap'
 import { useEscapeKey } from '@/lib/useEscapeKey'
 import { formatPrice } from '@/lib/data'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
@@ -24,6 +26,8 @@ export function ProductQuickView({ product, onClose, onAdd }: ProductQuickViewPr
   // otro producto, "added" da false sin necesitar un efecto que lo resetee.
   const [addedId, setAddedId] = useState<string | null>(null)
   const open = !!product
+  const backdropRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
   useEscapeKey(onClose)
 
@@ -31,6 +35,16 @@ export function ProductQuickView({ product, onClose, onAdd }: ProductQuickViewPr
     document.body.style.overflow = open ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [open])
+
+  /* ── entrada suave al abrir: backdrop funde, panel sube con un leve rebote ─ */
+  useGSAP(() => {
+    if (!open || !backdropRef.current || !panelRef.current) return
+    gsap.fromTo(backdropRef.current, { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'power2.out' })
+    gsap.fromTo(panelRef.current,
+      { opacity: 0, y: 28, scale: 0.95 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'back.out(1.6)' }
+    )
+  }, { dependencies: [product?.id] })
 
   if (!product) return null
 
@@ -52,6 +66,7 @@ export function ProductQuickView({ product, onClose, onAdd }: ProductQuickViewPr
 
   return (
     <div
+      ref={backdropRef}
       role="dialog"
       aria-modal="true"
       aria-label={`Vista rápida — ${product.name}`}
@@ -65,6 +80,7 @@ export function ProductQuickView({ product, onClose, onAdd }: ProductQuickViewPr
       }}
     >
       <div
+        ref={panelRef}
         onClick={(e) => e.stopPropagation()}
         className="qv-panel"
         style={{

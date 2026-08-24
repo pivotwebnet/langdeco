@@ -1414,7 +1414,7 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
   .header.condensed { padding: 12px 64px !important; }
   .header .nav-links, .header .nav-icons { gap: 32px; }
 
-  [data-dt="hero-editorial"] { padding: 40px 64px 48px !important; }
+  [data-dt="hero-editorial"] { padding: calc(var(--promo-h) + var(--header-h) + 20px) 64px 48px !important; }
   [data-dt="hero-editorial"] .hero-top { display: grid; grid-template-columns: 1fr auto 1fr; gap: 32px; margin-bottom: 36px; }
   [data-dt="hero-editorial"] .hero-grid { display: grid; grid-template-columns: 6fr 7fr; gap: 64px; align-items: end; }
   [data-dt="hero-editorial"] .hero-h1 { font-size: 86px !important; line-height: 0.96 !important; margin: 0 0 20px !important; }
@@ -1550,10 +1550,9 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
    TOOLTIP
    ═══════════════════════════════════════════════════════════════════════ */
 .tooltip-bubble {
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 10px);
-  transform: translateX(-50%) translateY(4px);
+  position: fixed;
+  top: 0; left: 0; /* corregido por JS con coordenadas de viewport */
+  transform: translateY(4px);
   background: var(--ink);
   color: var(--bg);
   font-family: var(--font-ui);
@@ -1567,19 +1566,18 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.18s ease, transform 0.18s ease;
-  z-index: 60;
+  z-index: 600;
 }
 .tooltip-bubble::after {
   content: '';
-  position: absolute; top: 100%; left: 50%;
+  position: absolute; top: 100%;
+  left: var(--tt-arrow, 50%);
   transform: translateX(-50%);
   border: 5px solid transparent;
   border-top-color: var(--ink);
 }
 .tooltip-bubble.bottom {
-  bottom: auto;
-  top: calc(100% + 10px);
-  transform: translateX(-50%) translateY(-4px);
+  transform: translateY(-4px);
 }
 .tooltip-bubble.bottom::after {
   top: auto; bottom: 100%;
@@ -1588,7 +1586,7 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
 }
 .tooltip-bubble.is-visible {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(0);
 }
 @media (max-width: 899px) {
   /* no hay hover en touch, dejamos las acciones del visualizador siempre visibles */
