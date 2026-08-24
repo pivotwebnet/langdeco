@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useGSAP } from '@gsap/react'
@@ -12,6 +11,7 @@ import { trackRecentlyViewed, useRecentlyViewed } from '@/lib/recentlyViewed'
 import { useEscapeKey } from '@/lib/useEscapeKey'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
 import { Tooltip } from '@/components/ui/Tooltip'
@@ -90,22 +90,7 @@ export function ProductoDetalle({ product, related }: Props) {
 
       <main style={{ paddingTop: 'var(--header-h)', minHeight: '100vh', background: 'var(--bg)' }}>
 
-        {/* ── Back bar ─────────────────────────────────────── */}
-        <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)' }}>
-          <Link
-            href="/catalogo"
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              color: 'var(--ink-soft)', textDecoration: 'none',
-              fontFamily: 'ui-monospace, monospace', fontSize: 9,
-              letterSpacing: '0.16em', textTransform: 'uppercase',
-              transition: 'color 0.2s',
-            }}
-          >
-            <Icon.Arrow style={{ transform: 'rotate(180deg)', width: 14, height: 14 }} />
-            Catálogo
-          </Link>
-        </div>
+        <PageHeader label={product.name} parent={{ label: 'Catálogo', href: '/catalogo' }} />
 
         {/* ── Main: gallery + info ─────────────────────────── */}
         <div className="pd-body">

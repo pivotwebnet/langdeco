@@ -974,11 +974,12 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
 .pd-breadcrumb {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 24px;
+  gap: 8px;
+  padding: 16px 24px;
   border-bottom: 1px solid var(--line);
 }
 .pd-back {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -990,15 +991,29 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
   text-transform: uppercase;
   transition: color 0.2s;
 }
+.pd-back::after {
+  content: '';
+  position: absolute; left: 0; right: 0; bottom: -3px;
+  height: 1px; background: currentColor;
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.28s cubic-bezier(.2,.8,.2,1);
+}
 .pd-back:hover { color: var(--ink); }
-.pd-back svg { width: 12px; height: 12px; }
-.pd-back-sep { color: var(--line); font-size: 10px; }
+.pd-back:hover::after { transform: scaleX(1); }
+.pd-back-arrow {
+  width: 12px; height: 12px;
+  transform: rotate(180deg);
+  transition: transform 0.28s cubic-bezier(.2,.8,.2,1);
+}
+.pd-back:hover .pd-back-arrow { transform: rotate(180deg) translateX(3px); }
+.pd-back-sep { color: var(--line); font-size: 9px; }
 .pd-back-tag {
   font-family: ui-monospace, monospace;
   font-size: 9px;
+  font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-mute);
+  color: var(--ink);
 }
 
 /* Body — mobile: stacked */

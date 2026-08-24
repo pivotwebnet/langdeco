@@ -2,25 +2,38 @@ import Link from 'next/link'
 import * as Icon from '@/components/ui/Icon'
 import type { ReactNode } from 'react'
 
-interface PageHeaderProps {
-  /** Current page name shown in the breadcrumb tag, e.g. "Catálogo" */
+interface Crumb {
   label: string
+  href: string
+}
+
+interface PageHeaderProps {
+  /** Current page name shown en el breadcrumb, ej. "Catálogo" o el nombre del producto */
+  label: string
+  /** Nivel intermedio opcional entre Inicio y label, ej. { label: 'Catálogo', href: '/catalogo' } */
+  parent?: Crumb
   kicker?: string
   title?: ReactNode
   intro?: ReactNode
 }
 
-export function PageHeader({ label, kicker, title, intro }: PageHeaderProps) {
+export function PageHeader({ label, parent, kicker, title, intro }: PageHeaderProps) {
   return (
     <>
-      <div className="pd-breadcrumb">
+      <nav className="pd-breadcrumb" aria-label="Miga de pan">
         <Link href="/" className="pd-back">
-          <Icon.Arrow style={{ transform: 'rotate(180deg)' }} />
+          <Icon.Arrow className="pd-back-arrow" />
           Inicio
         </Link>
+        {parent && (
+          <>
+            <span className="pd-back-sep">/</span>
+            <Link href={parent.href} className="pd-back">{parent.label}</Link>
+          </>
+        )}
         <span className="pd-back-sep">/</span>
-        <span className="pd-back-tag">{label}</span>
-      </div>
+        <span className="pd-back-tag" aria-current="page">{label}</span>
+      </nav>
 
       {title && (
         <div style={{ padding: '48px 24px 8px', maxWidth: 720, margin: '0 auto' }}>
