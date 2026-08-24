@@ -16,7 +16,7 @@
   --font-script: 'Sail', cursive;
   --font-edit:   'Cormorant Garamond', serif;
 
-  --header-h: 64px;
+  --header-h: 74px;
   --logo-h:   48px;
   --promo-h:  32px;
 }
@@ -1384,7 +1384,7 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
    NAV ≥ 768px — header switches to desktop nav
    ═══════════════════════════════════════════════════════════════════════ */
 @media (min-width: 768px) {
-  :root { --header-h: 76px; --logo-h: 58px; }
+  :root { --header-h: 92px; --logo-h: 58px; }
 
   .header {
     grid-template-columns: auto 1fr auto !important;
@@ -1420,7 +1420,7 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
    DESKTOP ≥ 900px — full section layouts
    ═══════════════════════════════════════════════════════════════════════ */
 @media (min-width: 900px) {
-  :root { --header-h: 88px; --logo-h: 68px; }
+  :root { --header-h: 106px; --logo-h: 68px; }
   .dt-only { display: initial; }
   .mb-only { display: none; }
   .device { width: 100%; }
