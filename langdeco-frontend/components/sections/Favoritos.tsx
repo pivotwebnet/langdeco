@@ -67,12 +67,12 @@ export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProp
       <div style={{ position: 'relative' }}>
         {SELECCION.length > 1 && (
           <button
-            className="prod-arrow prod-arrow-left"
+            className="prod-arrow sel-arrow prod-arrow-left"
             onClick={() => scrollByStep(-1)}
             disabled={active === 0}
             aria-label="Anterior"
           >
-            <Icon.Arrow style={{ transform: 'rotate(180deg)' }} />
+            <Icon.Arrow style={{ width: 14, height: 14, transform: 'rotate(180deg)' }} />
           </button>
         )}
 
@@ -111,12 +111,12 @@ export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProp
 
         {SELECCION.length > 1 && (
           <button
-            className="prod-arrow prod-arrow-right"
+            className="prod-arrow sel-arrow prod-arrow-right"
             onClick={() => scrollByStep(1)}
             disabled={active === SELECCION.length - 1}
             aria-label="Siguiente"
           >
-            <Icon.Arrow />
+            <Icon.Arrow style={{ width: 14, height: 14 }} />
           </button>
         )}
       </div>

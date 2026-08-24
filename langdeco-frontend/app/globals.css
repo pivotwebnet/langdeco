@@ -391,6 +391,21 @@ body {
   transform: translateY(calc(-50% - 1px));
 }
 .prod-arrow:disabled { opacity: 0.18; cursor: default; pointer-events: none; }
+.prod-arrow:active:not(:disabled) { transform: translateY(calc(-50% - 1px)) scale(0.92); }
+
+/* ── Nuestros Favoritos: flecha más chica y liviana (vidrio), sobre el
+   peek de la card — el look pesado del .prod-arrow base no combinaba
+   con este carril ─────────────────────────────────────────────────── */
+.sel-arrow {
+  width: 32px; height: 32px;
+  background: color-mix(in oklab, var(--bg) 78%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-color: rgba(10,10,10,0.08);
+  box-shadow: 0 4px 14px -6px rgba(0,0,0,0.2);
+}
+.sel-arrow:hover:not(:disabled) { box-shadow: 0 8px 20px -6px rgba(0,0,0,0.3); }
+.sel-arrow:disabled { opacity: 0.35; }
 .prod-arrow-left { left: 4px; }
 .prod-arrow-right { right: 4px; }
 
