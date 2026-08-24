@@ -7,42 +7,42 @@ import { useRouter } from 'next/navigation'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { useCart, useCartUI } from '@/lib/cart'
+import { useWishlist } from '@/lib/wishlist'
+import { normalize } from '@/lib/normalize'
+import { useSiteLogo } from '@/lib/useSiteLogo'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Magnetic } from '@/components/ui/Magnetic'
 import * as Icon from '@/components/ui/Icon'
 import type { Product } from '@/lib/types'
 
 interface HeaderProps {
-  logoFont?: string
-  hasPromoBar?: boolean
+  hasPromo?: boolean
 }
 
-const SEARCH_RESULTS_LIMIT = 6
-
-function normalize(s: string): string {
-  return s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
-}
+const SEARCH_RESULTS_LIMIT = 5
+const QUICK_TERMS = ['Sofá', 'Alfombra', 'Cerámica', 'Lámpara', 'Mesas', 'Velas']
 
 const NAV_LINKS = [
   { label: 'Catálogo', href: '/catalogo' },
-  { label: 'Inspiración', href: '/inspiracion' },
+  { label: 'Inspiración', href: '/#inspiracion' },
   { label: 'Nosotros', href: '/nosotros' },
   { label: 'Contacto', href: '/contacto' },
-  { label: 'Visualizador', href: '/visualizador' },
+  { label: 'Visualizador', href: '/#visualizador' },
 ]
 
 const DRAWER_LINKS = [
   { label: 'Catálogo', href: '/catalogo' },
   { label: 'La Selección', href: '/#seleccion' },
-  { label: 'Inspiración', href: '/inspiracion' },
+  { label: 'Inspiración', href: '/#inspiracion' },
   { label: 'Nosotros', href: '/nosotros' },
-  { label: 'Visualizador de espacios', href: '/visualizador' },
+  { label: 'Visualizador de espacios', href: '/#visualizador' },
   { label: 'Contacto / Showroom', href: '/contacto' },
 ]
 
-export function Header({ logoFont = 'Sail', hasPromoBar = false }: HeaderProps) {
+export function Header({ hasPromo = false }: HeaderProps) {
   const { count } = useCart()
   const { open: onCartOpen } = useCartUI()
+  const { count: savedCount } = useWishlist()
   const router = useRouter()
   const [menuOpen, setMenuOpen]     = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -50,7 +50,9 @@ export function Header({ logoFont = 'Sail', hasPromoBar = false }: HeaderProps) 
   const [query, setQuery]           = useState('')
   const [catalog, setCatalog]       = useState<Product[] | null>(null)
   const [catalogError, setCatalogError] = useState(false)
+  const logoUrl                     = useSiteLogo()
   const inputRef                    = useRef<HTMLInputElement>(null)
+  const inputMobileRef              = useRef<HTMLInputElement>(null)
   const cartCountRef                = useRef<HTMLSpanElement>(null)
   const cartBadgeRef                = useRef<HTMLSpanElement>(null)
   const prevCount                   = useRef(count)
@@ -64,22 +66,31 @@ export function Header({ logoFont = 'Sail', hasPromoBar = false }: HeaderProps) 
       .catch(() => setCatalogError(true))
   }, [searchOpen, catalog])
 
-  const results = useMemo(() => {
+  const allResults = useMemo(() => {
     const q = normalize(query.trim())
     if (!q || !catalog) return []
-    return catalog
-      .filter((p) =>
-        normalize(p.name).includes(q) ||
-        normalize(p.material).includes(q) ||
-        (p.tag && normalize(p.tag).includes(q)) ||
-        (p.note && normalize(p.note).includes(q))
-      )
-      .slice(0, SEARCH_RESULTS_LIMIT)
+    return catalog.filter((p) =>
+      normalize(p.name).includes(q) ||
+      normalize(p.material).includes(q) ||
+      (p.tag && normalize(p.tag).includes(q)) ||
+      (p.note && normalize(p.note).includes(q))
+    )
   }, [query, catalog])
 
+  const results = allResults.slice(0, SEARCH_RESULTS_LIMIT)
+
+  const closeSearch = () => setSearchOpen(false)
+
   const goToProduct = (id: string) => {
-    setSearchOpen(false)
+    closeSearch()
     router.push(`/producto/${id}`)
+  }
+
+  const viewAllResults = () => {
+    const q = query.trim()
+    if (!q) return
+    closeSearch()
+    router.push(`/catalogo?q=${encodeURIComponent(q)}`)
   }
 
   /* ── bump + flash del contador cuando se agrega algo al carrito ─ */
@@ -103,79 +114,131 @@ export function Header({ logoFont = 'Sail', hasPromoBar = false }: HeaderProps) 
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  /* ── lock body scroll ─────────────────────────────────── */
+  /* ── lock body scroll (solo el drawer mobile, la búsqueda ya no es
+     pantalla completa) ─────────────────────────────────── */
   useEffect(() => {
-    document.body.style.overflow = (menuOpen || searchOpen) ? 'hidden' : ''
+    document.body.style.overflow = menuOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
-  }, [menuOpen, searchOpen])
+  }, [menuOpen])
 
-  /* ── auto-focus search input ──────────────────────────── */
+  /* ── auto-focus del input al abrir el buscador ───────────── */
   useEffect(() => {
     if (searchOpen) {
-      setTimeout(() => inputRef.current?.focus(), 60)
+      setTimeout(() => (inputRef.current ?? inputMobileRef.current)?.focus(), 60)
     } else {
       setQuery('')
     }
   }, [searchOpen])
 
-  /* ── ESC to close any panel ───────────────────────────── */
+  /* ── ESC y click afuera cierran el buscador / el menú ────── */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { setSearchOpen(false); setMenuOpen(false) }
     }
+    const onPointerDown = (e: MouseEvent) => {
+      if (searchOpen && !(e.target as Element).closest('.nav-search-scope')) {
+        setSearchOpen(false)
+      }
+    }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+    document.addEventListener('mousedown', onPointerDown)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.removeEventListener('mousedown', onPointerDown)
+    }
+  }, [searchOpen])
 
   const closeAll = () => { setMenuOpen(false); setSearchOpen(false) }
+
+  const searchPanelProps = {
+    query, results, totalResults: allResults.length, catalog, catalogError,
+    onSelect: goToProduct, onViewAll: viewAllResults,
+    onQuickTerm: (term: string) => setQuery(term),
+  }
 
   return (
     <>
       {/* ══════════════════════════════════════════════════
           HEADER BAR
       ══════════════════════════════════════════════════ */}
-      <header className={`header${scrolled ? ' condensed' : ''}${hasPromoBar ? ' with-promo' : ''}`}>
+      <header
+        className={`header${scrolled ? ' condensed' : ''}${hasPromo ? ' has-promo' : ''}${searchOpen ? ' search-open' : ''}`}
+      >
 
-        {/* Mobile: hamburger */}
+        {/* Mobile: hamburger — se oculta por CSS (solo en mobile) mientras se busca, para no
+            afectar nunca el grid de desktop, donde el logo y el resto de la barra son fijos. */}
         <button
-          className="icon-btn mb-only"
+          className="icon-btn mb-only header-hamburger"
           onClick={() => setMenuOpen(true)}
           aria-label="Abrir menú"
         >
           <Icon.Menu />
         </button>
 
-        {/* Desktop: nav left */}
-        <nav className="nav-left dt-only" aria-label="Navegación principal">
-          {NAV_LINKS.slice(0, 3).map((l) => (
+        {/* Logo — siempre montado; en mobile se oculta por CSS mientras se busca */}
+        <Link
+          href="/"
+          className="header-logo-link"
+          style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+          aria-label="LasLangDeco — inicio"
+        >
+          <Image
+            src={logoUrl}
+            alt="LasLangDeco"
+            className="logo-img"
+            width={150}
+            height={150}
+            priority
+          />
+        </Link>
+
+        {/* Desktop: nav — todos los links en una sola fila centrada, separados a distancia pareja */}
+        <nav className="nav-links dt-only" aria-label="Navegación principal">
+          {NAV_LINKS.map((l) => (
             <Link key={l.href} href={l.href} className="nav-link">{l.label}</Link>
           ))}
         </nav>
 
-        {/* Logo — always visible */}
-        <Link
-          href="/"
-          style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-          aria-label="LasLangDeco — inicio"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/assets/logo.png" alt="LasLangDeco" className="logo-img" />
-        </Link>
-
-        {/* Desktop: nav right */}
-        <nav className="nav-right dt-only" aria-label="Navegación secundaria">
-          {NAV_LINKS.slice(3).map((l) => (
-            <Link key={l.href} href={l.href} className="nav-link">{l.label}</Link>
-          ))}
-          <Tooltip label="Buscar" side="bottom">
+        {/* Desktop: search + cart */}
+        <div className="nav-icons dt-only">
+          <div className="nav-search-scope" style={{ position: 'relative' }}>
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && results.length > 0) goToProduct(results[0].id) }}
+              placeholder="Buscar…"
+              aria-label="Buscar en la colección"
+              className={`nav-search-input${searchOpen ? ' open' : ''}`}
+            />
+            {searchOpen && <SearchPanel {...searchPanelProps} />}
+          </div>
+          <Tooltip label={searchOpen ? 'Cerrar' : 'Buscar'} side="bottom">
             <Magnetic>
               <button
                 className="icon-btn search-btn"
-                aria-label="Buscar"
-                onClick={() => setSearchOpen(true)}
+                aria-label={searchOpen ? 'Cerrar búsqueda' : 'Buscar'}
+                onClick={() => setSearchOpen((v) => !v)}
               >
-                <Icon.Search />
+                {searchOpen ? <Icon.Close /> : <Icon.Search />}
               </button>
+            </Magnetic>
+          </Tooltip>
+          <Tooltip label="Guardados" side="bottom">
+            <Magnetic>
+              <Link href="/guardados" aria-label="Ver guardados" className="icon-btn" style={{ position: 'relative' }}>
+                <Icon.Heart width={19} height={19} filled={savedCount > 0} />
+                {savedCount > 0 && (
+                  <span style={{
+                    position: 'absolute', top: 2, right: 2,
+                    minWidth: 14, height: 14, padding: '0 3px', borderRadius: 999,
+                    background: 'var(--ink)', color: 'var(--bg)',
+                    fontFamily: 'var(--font-ui)', fontSize: 9, fontWeight: 700,
+                    display: 'grid', placeItems: 'center',
+                  }}>{savedCount}</span>
+                )}
+              </Link>
             </Magnetic>
           </Tooltip>
           <Tooltip label="Ver selección" side="bottom">
@@ -186,221 +249,71 @@ export function Header({ logoFont = 'Sail', hasPromoBar = false }: HeaderProps) 
               </button>
             </Magnetic>
           </Tooltip>
-        </nav>
+        </div>
 
         {/* Mobile: search + cart group */}
-        <div
-          className="mb-only"
-          style={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'flex-end' }}
-        >
-          <button
-            className="icon-btn search-btn"
-            aria-label="Buscar"
-            onClick={() => setSearchOpen(true)}
-          >
-            <Icon.Search />
-          </button>
-          <button
-            className="icon-btn"
-            onClick={onCartOpen}
-            aria-label="Ver selección"
-            style={{ position: 'relative' }}
-          >
-            <Icon.Cart />
-            {count > 0 && (
-              <span ref={cartBadgeRef} style={{
-                position: 'absolute', top: 2, right: 2,
-                width: 14, height: 14, borderRadius: 999,
-                background: 'var(--ink)', color: 'var(--bg)',
-                fontFamily: 'var(--font-ui)', fontSize: 8, fontWeight: 700,
-                display: 'grid', placeItems: 'center',
-              }}>{count}</span>
-            )}
-          </button>
-        </div>
-      </header>
-
-      {/* ══════════════════════════════════════════════════
-          SEARCH OVERLAY
-      ══════════════════════════════════════════════════ */}
-      <div
-        role="dialog"
-        aria-label="Buscar en la colección"
-        aria-modal="true"
-        style={{
-          position: 'fixed', inset: 0, zIndex: 300,
-          background: 'rgba(242,241,237,0.96)',
-          backdropFilter: 'blur(20px)',
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          padding: '0 24px',
-          opacity: searchOpen ? 1 : 0,
-          pointerEvents: searchOpen ? 'all' : 'none',
-          transition: 'opacity 0.25s ease',
-        }}
-      >
-        {/* Close */}
-        <button
-          onClick={() => setSearchOpen(false)}
-          style={{
-            position: 'absolute', top: 20, right: 20,
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: 'transparent', border: 0, cursor: 'pointer',
-            color: 'var(--ink-mute)',
-            fontFamily: 'var(--font-ui)', fontSize: 10,
-            letterSpacing: '0.16em', textTransform: 'uppercase', fontWeight: 500,
-          }}
-          aria-label="Cerrar búsqueda"
-        >
-          Cerrar&nbsp;
-          <span style={{
-            width: 28, height: 28, borderRadius: 999,
-            border: '1px solid var(--line)',
-            display: 'grid', placeItems: 'center',
-          }}>
-            <Icon.Close />
-          </span>
-        </button>
-
-        {/* Search content — slides up on open */}
-        <div
-          style={{
-            width: '100%', maxWidth: 580,
-            transform: searchOpen ? 'translateY(0)' : 'translateY(20px)',
-            transition: 'transform 0.38s cubic-bezier(.16,.84,.2,1)',
-          }}
-        >
-          {/* Label */}
-          <div
-            className="mono"
-            style={{ textAlign: 'center', marginBottom: 32, letterSpacing: '0.24em', color: 'var(--ink-mute)' }}
-          >
-            Buscar en la colección
-          </div>
-
-          {/* Input */}
-          <div style={{ position: 'relative' }}>
+        {searchOpen ? (
+          <div className="nav-search-scope mb-only" style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8, gridColumn: '1 / -1' }}>
             <input
-              ref={inputRef}
+              ref={inputMobileRef}
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && results.length > 0) goToProduct(results[0].id) }}
-              placeholder="sofá, alfombra, cerámica…"
-              aria-label="Término de búsqueda"
-              style={{
-                width: '100%',
-                fontFamily: 'var(--font-edit)', fontStyle: 'italic',
-                fontSize: 'clamp(22px, 4vw, 32px)', fontWeight: 300,
-                border: 'none',
-                borderBottom: '1.5px solid var(--ink)',
-                background: 'transparent', outline: 'none',
-                padding: '10px 40px 10px 0', color: 'var(--ink)',
-                textAlign: 'left', letterSpacing: '-0.01em',
-                caretColor: 'var(--ink)',
-              }}
+              placeholder="Buscar…"
+              aria-label="Buscar en la colección"
+              className="nav-search-input open mobile"
+              style={{ flex: 1 }}
             />
-            {query.length > 0 && (
-              <button
-                onClick={() => { setQuery(''); inputRef.current?.focus() }}
-                style={{
-                  position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)',
-                  background: 'transparent', border: 0, cursor: 'pointer',
-                  color: 'var(--ink-mute)', display: 'grid', placeItems: 'center',
-                }}
-                aria-label="Borrar"
-              >
-                <Icon.Close />
-              </button>
-            )}
+            <button className="icon-btn" onClick={closeSearch} aria-label="Cerrar búsqueda">
+              <Icon.Close />
+            </button>
+            <SearchPanel {...searchPanelProps} mobile />
           </div>
-
-          {/* Hint */}
+        ) : (
           <div
-            className="mono"
-            style={{ marginTop: 18, color: 'var(--ink-mute)', fontSize: 9, textAlign: 'center' }}
+            className="mb-only"
+            style={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'flex-end' }}
           >
-            Pulsa&nbsp;
-            <kbd style={{
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              border: '1px solid var(--line)', borderRadius: 4,
-              padding: '1px 5px', fontSize: 9, fontFamily: 'inherit',
-              color: 'var(--ink-mute)', background: 'var(--bg-deep)',
-            }}>ESC</kbd>
-            &nbsp;para cerrar
+            <button
+              className="icon-btn search-btn"
+              aria-label="Buscar"
+              onClick={() => setSearchOpen(true)}
+            >
+              <Icon.Search />
+            </button>
+            <Link href="/guardados" className="icon-btn" aria-label="Ver guardados" style={{ position: 'relative' }}>
+              <Icon.Heart width={19} height={19} filled={savedCount > 0} />
+              {savedCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: 2, right: 2,
+                  width: 14, height: 14, borderRadius: 999,
+                  background: 'var(--ink)', color: 'var(--bg)',
+                  fontFamily: 'var(--font-ui)', fontSize: 8, fontWeight: 700,
+                  display: 'grid', placeItems: 'center',
+                }}>{savedCount}</span>
+              )}
+            </Link>
+            <button
+              className="icon-btn"
+              onClick={onCartOpen}
+              aria-label="Ver selección"
+              style={{ position: 'relative' }}
+            >
+              <Icon.Cart />
+              {count > 0 && (
+                <span ref={cartBadgeRef} style={{
+                  position: 'absolute', top: 2, right: 2,
+                  width: 14, height: 14, borderRadius: 999,
+                  background: 'var(--ink)', color: 'var(--bg)',
+                  fontFamily: 'var(--font-ui)', fontSize: 8, fontWeight: 700,
+                  display: 'grid', placeItems: 'center',
+                }}>{count}</span>
+              )}
+            </button>
           </div>
-
-          {/* Quick links when empty */}
-          {query.length === 0 && (
-            <div style={{ marginTop: 40, display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
-              {['Sofá', 'Alfombra', 'Cerámica', 'Lámpara', 'Mesas', 'Velas'].map((term) => (
-                <button
-                  key={term}
-                  onClick={() => { setQuery(term); inputRef.current?.focus() }}
-                  style={{
-                    padding: '8px 14px',
-                    border: '1px solid var(--line)',
-                    background: 'var(--bg-deep)',
-                    color: 'var(--ink-soft)',
-                    fontFamily: 'var(--font-ui)', fontSize: 12,
-                    cursor: 'pointer', borderRadius: 999,
-                    transition: 'border-color 0.18s, background 0.18s',
-                    letterSpacing: '0.02em',
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--ink)'; (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg)' }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--line)'; (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-deep)' }}
-                >
-                  {term}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Live results */}
-          {query.length > 0 && (
-            <div style={{ marginTop: 32, maxHeight: '46vh', overflowY: 'auto' }}>
-              {!catalog && !catalogError && (
-                <div className="mono" style={{ textAlign: 'center', color: 'var(--ink-mute)', fontSize: 11 }}>
-                  Buscando…
-                </div>
-              )}
-              {catalogError && (
-                <div className="mono" style={{ textAlign: 'center', color: 'var(--ink-mute)', fontSize: 11 }}>
-                  No pudimos cargar el catálogo. Probá de nuevo en un momento.
-                </div>
-              )}
-              {catalog && results.length === 0 && (
-                <div className="mono" style={{ textAlign: 'center', color: 'var(--ink-mute)', fontSize: 11 }}>
-                  Sin resultados para &ldquo;{query}&rdquo;. Probá con otra palabra o consultanos por WhatsApp.
-                </div>
-              )}
-              {results.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => goToProduct(p.id)}
-                  aria-label={`Ver ${p.name}`}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 14, width: '100%',
-                    padding: '10px 6px', background: 'none', border: 0, cursor: 'pointer',
-                    borderBottom: '1px solid var(--line)', textAlign: 'left',
-                  }}
-                >
-                  <div style={{ position: 'relative', width: 44, height: 54, flexShrink: 0, background: '#ECEAE4', overflow: 'hidden', borderRadius: 3 }}>
-                    {p.imageUrl && (
-                      <Image src={p.imageUrl} alt="" fill unoptimized sizes="44px" style={{ objectFit: 'cover' }} />
-                    )}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: 14, color: 'var(--ink)' }}>{p.name}</div>
-                    <div className="mono" style={{ fontSize: 9, color: 'var(--ink-mute)', marginTop: 2 }}>{p.material}</div>
-                  </div>
-                  <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12, color: 'var(--ink)', flexShrink: 0 }}>{p.price}</div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+        )}
+      </header>
 
       {/* ══════════════════════════════════════════════════
           MOBILE DRAWER (slide from left)
@@ -440,13 +353,12 @@ export function Header({ logoFont = 'Sail', hasPromoBar = false }: HeaderProps) 
           {/* Drawer header */}
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            padding: '26px 20px',
+            padding: '18px 20px',
             borderBottom: '1px solid var(--line)',
             flexShrink: 0,
           }}>
             <Link href="/" onClick={closeAll} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/assets/logo.png" alt="LasLangDeco" style={{ height: 38, width: 'auto', objectFit: 'contain' }} />
+              <Image src={logoUrl} alt="LasLangDeco" width={150} height={150} style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
             </Link>
             <button
               className="icon-btn"
@@ -491,5 +403,86 @@ export function Header({ logoFont = 'Sail', hasPromoBar = false }: HeaderProps) 
         </aside>
       </div>
     </>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   Panel desplegable de resultados — comparte markup entre el
+   buscador inline de desktop (ancla a la derecha) y el de mobile
+   (ocupa todo el ancho debajo de la barra).
+══════════════════════════════════════════════════════════ */
+interface SearchPanelProps {
+  query: string
+  results: Product[]
+  totalResults: number
+  catalog: Product[] | null
+  catalogError: boolean
+  onSelect: (id: string) => void
+  onViewAll: () => void
+  onQuickTerm: (term: string) => void
+  mobile?: boolean
+}
+
+function SearchPanel({ query, results, totalResults, catalog, catalogError, onSelect, onViewAll, onQuickTerm, mobile }: SearchPanelProps) {
+  return (
+    <div className={`nav-search-dropdown${mobile ? ' mobile' : ''}`}>
+      {query.length === 0 && (
+        <>
+          <div className="mono" style={{ color: 'var(--ink-mute)', marginBottom: 10 }}>Búsquedas frecuentes</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {QUICK_TERMS.map((term) => (
+              <button key={term} className="nav-search-chip" onClick={() => onQuickTerm(term)}>
+                {term}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {query.length > 0 && (
+        <>
+          {!catalog && !catalogError && (
+            <div className="mono" style={{ color: 'var(--ink-mute)', padding: '8px 0' }}>Buscando…</div>
+          )}
+          {catalogError && (
+            <div className="mono" style={{ color: 'var(--ink-mute)', padding: '8px 0' }}>
+              No pudimos cargar el catálogo.
+            </div>
+          )}
+          {catalog && results.length === 0 && (
+            <div className="mono" style={{ color: 'var(--ink-mute)', padding: '8px 0' }}>
+              Sin resultados para &ldquo;{query}&rdquo;.
+            </div>
+          )}
+
+          {results.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => onSelect(p.id)}
+              aria-label={`Ver ${p.name}`}
+              className="nav-search-result"
+            >
+              <div style={{ position: 'relative', width: 38, height: 46, flexShrink: 0, background: '#ECEAE4', overflow: 'hidden', borderRadius: 3 }}>
+                {p.imageUrl && (
+                  <Image src={p.imageUrl} alt="" fill unoptimized sizes="38px" style={{ objectFit: 'cover' }} />
+                )}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                <div className="mono" style={{ fontSize: 9, color: 'var(--ink-mute)', marginTop: 2 }}>{p.material}</div>
+              </div>
+              <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: 'var(--ink)', flexShrink: 0 }}>{p.price}</div>
+            </button>
+          ))}
+
+          {totalResults > 0 && (
+            <button className="nav-search-viewall" onClick={onViewAll}>
+              Ver {totalResults === 1 ? 'el resultado' : `los ${totalResults} resultados`} para &ldquo;{query}&rdquo;
+              <Icon.Arrow width={12} height={12} />
+            </button>
+          )}
+        </>
+      )}
+    </div>
   )
 }

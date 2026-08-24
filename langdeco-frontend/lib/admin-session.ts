@@ -4,7 +4,9 @@ export const SESSION_COOKIE = 'lld_admin_session'
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000 // 7 días
 
 function getSecret(): string {
-  return process.env.ADMIN_SESSION_SECRET || 'dev-insecure-secret-change-me'
+  const secret = process.env.ADMIN_SESSION_SECRET
+  if (!secret) throw new Error('Falta la variable de entorno ADMIN_SESSION_SECRET')
+  return secret
 }
 
 function sign(value: string): string {

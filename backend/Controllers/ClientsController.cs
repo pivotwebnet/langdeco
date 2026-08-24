@@ -23,8 +23,9 @@ public class ClientsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<ClientDto>>> GetAll(
-        [FromQuery] bool includeInactive = false, [FromQuery] string? search = null)
+    public async Task<ActionResult> GetAll(
+        [FromQuery] bool includeInactive = false, [FromQuery] string? search = null,
+        [FromQuery] int? page = null, [FromQuery] int? pageSize = null)
     {
         var query = _db.Clients
             .Include(c => c.ContactPersons)
@@ -36,10 +37,18 @@ public class ClientsController : ControllerBase
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim().ToLower();
-            query = query.Where(c => c.CompanyOrFullName.ToLower().Contains(s) || (c.TaxId != null && c.TaxId.Contains(s)));
+            query = query.Where(c => c.CompanyOrFullName.ToLower().Contains(s) || (c.TaxId != null && c.TaxId.Contains(s)) || (c.Dni != null && c.Dni.Contains(s)));
         }
 
-        var clients = await query.OrderBy(c => c.CompanyOrFullName).ToListAsync();
+        query = query.OrderBy(c => c.CompanyOrFullName);
+
+        if (page is not null)
+        {
+            var paged = await Paging.ApplyAsync(query, page.Value, pageSize);
+            return Ok(new PagedResult<ClientDto>(paged.Items.Select(ToDto).ToList(), paged.Total, paged.Page, paged.PageSize));
+        }
+
+        var clients = await query.ToListAsync();
         return Ok(clients.Select(ToDto));
     }
 
@@ -156,6 +165,10 @@ public class ClientsController : ControllerBase
         var updated = 0;
         var errors = new List<ImportRowError>();
 
+        var lookup = await PartyImportMatcher.PrefetchAsync(
+            _db.Clients.Include(c => c.ContactPersons),
+            rows.Select(r => (r.TaxId, r.CompanyOrFullName)));
+
         foreach (var row in rows)
         {
             if (string.IsNullOrWhiteSpace(row.CompanyOrFullName))
@@ -170,13 +183,7 @@ public class ClientsController : ControllerBase
                 continue;
             }
 
-            Client? client = null;
-            if (!string.IsNullOrWhiteSpace(row.TaxId))
-                client = await _db.Clients.Include(c => c.ContactPersons).FirstOrDefaultAsync(c => c.TaxId == row.TaxId);
-            if (client is null)
-                client = await _db.Clients.Include(c => c.ContactPersons)
-                    .FirstOrDefaultAsync(c => c.CompanyOrFullName.ToLower() == row.CompanyOrFullName.ToLower());
-
+            var client = lookup.Find(row.TaxId, row.CompanyOrFullName);
             var isNew = client is null;
             client ??= new Client();
 
@@ -193,6 +200,7 @@ public class ClientsController : ControllerBase
             client.Locality = row.Locality;
             client.Note = row.Note;
             client.InitialBalance = row.InitialBalance;
+            client.Dni = row.Dni;
             client.NicknameML = row.NicknameML;
             client.SalesCategory = row.SalesCategory;
             client.SalesDiscountPercent = row.SalesDiscountPercent;
@@ -254,6 +262,7 @@ public class ClientsController : ControllerBase
         client.Locality = input.Locality;
         client.Note = input.Note;
         client.InitialBalance = input.InitialBalance;
+        client.Dni = input.Dni;
         client.NicknameML = input.NicknameML;
         client.SalesCategory = input.SalesCategory;
         client.SalesDiscountPercent = input.SalesDiscountPercent;
@@ -300,7 +309,7 @@ public class ClientsController : ControllerBase
         c.Id, c.CompanyOrFullName, c.FirstName, c.LastName, c.Cell, c.Phone,
         c.Email, c.WebPage, c.Address, c.Province, c.PostalCode,
         c.Locality, c.Note, c.InitialBalance,
-        c.NicknameML, c.SalesCategory, c.SalesDiscountPercent, c.NoteForClient,
+        c.Dni, c.NicknameML, c.SalesCategory, c.SalesDiscountPercent, c.NoteForClient,
         c.BillingCompanyOrFullName, c.TaxId, c.IvaCondition, c.DefaultReceiptType,
         c.BillingPhone, c.BillingCell, c.FiscalAddress, c.FiscalLocality,
         c.FiscalProvince, c.FiscalPostalCode, c.Active,

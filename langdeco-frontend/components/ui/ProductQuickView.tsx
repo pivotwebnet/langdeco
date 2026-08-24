@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { useEscapeKey } from '@/lib/useEscapeKey'
 import { formatPrice } from '@/lib/data'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
+import { Tooltip } from '@/components/ui/Tooltip'
 import * as Icon from '@/components/ui/Icon'
 import type { Product } from '@/lib/types'
 
@@ -75,18 +76,21 @@ export function ProductQuickView({ product, onClose, onAdd }: ProductQuickViewPr
           boxShadow: '0 40px 100px -20px rgba(0,0,0,0.4)',
         }}
       >
-        <button
-          onClick={onClose}
-          aria-label="Cerrar vista rápida"
-          style={{
-            position: 'absolute', top: 12, right: 12, zIndex: 2,
-            width: 34, height: 34, borderRadius: 999,
-            background: 'rgba(242,241,237,0.92)', border: 0, cursor: 'pointer',
-            display: 'grid', placeItems: 'center', color: 'var(--ink)',
-          }}
-        >
-          <Icon.Close />
-        </button>
+        <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 2 }}>
+          <Tooltip label="Cerrar">
+            <button
+              onClick={onClose}
+              aria-label="Cerrar vista rápida"
+              style={{
+                width: 34, height: 34, borderRadius: 999,
+                background: 'rgba(242,241,237,0.92)', border: 0, cursor: 'pointer',
+                display: 'grid', placeItems: 'center', color: 'var(--ink)',
+              }}
+            >
+              <Icon.Close />
+            </button>
+          </Tooltip>
+        </div>
 
         <div className="qv-image" style={{ position: 'relative', width: '100%', aspectRatio: '4/3', background: '#ECEAE4', flexShrink: 0 }}>
           {product.imageUrl ? (
@@ -179,19 +183,21 @@ export function ProductQuickView({ product, onClose, onAdd }: ProductQuickViewPr
             >
               {isOutOfStock ? 'Sin stock' : added ? <>✓&nbsp;Añadido</> : <><Icon.Plus />&nbsp;Añadir a la selección</>}
             </button>
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Consultar por ${product.name} en WhatsApp`}
-              style={{
-                width: 44, flexShrink: 0, borderRadius: 4,
-                border: '1px solid var(--line)', color: 'var(--whatsapp)',
-                display: 'grid', placeItems: 'center', textDecoration: 'none',
-              }}
-            >
-              <Icon.Whatsapp />
-            </a>
+            <Tooltip label="Consulta rápida">
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Consultar por ${product.name} en WhatsApp`}
+                style={{
+                  width: 44, flexShrink: 0, borderRadius: 4,
+                  border: '1px solid var(--line)', color: 'var(--whatsapp)',
+                  display: 'grid', placeItems: 'center', textDecoration: 'none',
+                }}
+              >
+                <Icon.Whatsapp />
+              </a>
+            </Tooltip>
           </div>
 
           <Link

@@ -4,7 +4,7 @@ import * as Icon from '@/components/ui/Icon'
 
 const LINKS = [
   { label: 'Catálogo completo', desc: 'Piezas Mayores y Pequeños Tesoros.', href: '/catalogo' },
-  { label: 'Inspiración', desc: 'Casas reales, compuestas con nuestras piezas.', href: '/inspiracion' },
+  { label: 'Inspiración', desc: 'Casas reales, compuestas con nuestras piezas.', href: '/#inspiracion' },
   { label: 'Nosotros', desc: 'Quiénes somos y qué buscamos en cada pieza.', href: '/nosotros' },
   { label: 'Contacto', desc: 'Showroom en Rafaela, Santa Fe.', href: '/contacto' },
 ]
@@ -20,14 +20,12 @@ export function Explorar() {
           <RevealOnScroll key={l.href} delay={i + 1}>
             <Link
               href={l.href}
+              className="explorar-link"
               style={{
                 display: 'flex', flexDirection: 'column', gap: 8,
-                padding: '28px 24px', background: 'var(--bg)', height: '100%',
+                padding: '28px 24px', height: '100%',
                 textDecoration: 'none', color: 'var(--ink)',
-                transition: 'background 0.2s',
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--bg-deep)' }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = 'var(--bg)' }}
             >
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontFamily: 'var(--font-ui)', fontSize: 16, fontWeight: 500 }}>
                 {l.label} <Icon.Arrow style={{ width: 14, height: 14 }} />

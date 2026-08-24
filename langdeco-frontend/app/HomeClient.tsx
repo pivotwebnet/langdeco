@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { Hero } from '@/components/sections/Hero'
@@ -8,21 +8,25 @@ import { Favoritos } from '@/components/sections/Favoritos'
 import { CatalogoRapido } from '@/components/sections/CatalogoRapido'
 import { Inspiracion } from '@/components/sections/Inspiracion'
 import { Visualizador } from '@/components/sections/Visualizador'
-import { Visita } from '@/components/sections/Visita'
-import { Explorar } from '@/components/sections/Explorar'
 import { ScrollAnimator } from '@/components/ui/ScrollAnimator'
 import { Marquee } from '@/components/ui/Marquee'
 import { PromoBar } from '@/components/ui/PromoBar'
 import type { Product } from '@/lib/types'
 import type { SiteContent } from '@/lib/site-content'
+import type { BackendCategory } from '@/lib/backend-types'
 
 interface HomeClientProps {
   products: Product[]
   featured: Product[]
   siteContent: SiteContent
+  categories: BackendCategory[]
+  // Server Components pasados como slots — así Visita/Explorar (sin interactividad propia)
+  // no se empaquetan al bundle de cliente solo por vivir dentro de este árbol 'use client'.
+  visita: ReactNode
+  explorar: ReactNode
 }
 
-export default function HomeClient({ products, featured, siteContent }: HomeClientProps) {
+export default function HomeClient({ products, featured, siteContent, categories, visita, explorar }: HomeClientProps) {
   const fillRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -57,20 +61,23 @@ export default function HomeClient({ products, featured, siteContent }: HomeClie
       <ScrollAnimator />
 
       <div className="stage">
-        {/* PromoBar/scroll-track/Header are sticky — kept outside .device because
-            its overflow:hidden (for the animated orbs) breaks position:sticky */}
-        <PromoBar text={siteContent.promoBar} />
-
-        {/* Scroll progress */}
-        <div className="scroll-track">
-          <div ref={fillRef} className="fill" />
-        </div>
-
-        <Header hasPromoBar={!!siteContent.promoBar} />
-
         <div className="device" id="device">
 
-          <Hero />
+          <PromoBar text={siteContent.promoBar} />
+
+          {/* Scroll progress */}
+          <div className="scroll-track">
+            <div ref={fillRef} className="fill" />
+          </div>
+
+          <Header hasPromo={Boolean(siteContent.promoBar)} />
+
+          <Hero
+            heroImageUrl={siteContent.heroImageUrl}
+            heroTitle={siteContent.heroTitle}
+            heroTitleEmphasis={siteContent.heroTitleEmphasis}
+            heroSubtitle={siteContent.heroSubtitle}
+          />
 
           <Favoritos showBadge items={featured} />
 
@@ -81,11 +88,11 @@ export default function HomeClient({ products, featured, siteContent }: HomeClie
 
           <Inspiracion items={siteContent.inspiracion} products={products} />
 
-          <Visualizador products={products} compact />
+          <Visualizador products={products} categories={categories} compact />
 
-          <Visita />
+          {visita}
 
-          <Explorar />
+          {explorar}
         </div>
 
         {/* Footer lives outside .device so its dark background is truly full-width */}

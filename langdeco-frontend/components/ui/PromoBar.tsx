@@ -33,7 +33,7 @@ export function PromoBar({ text }: { text: string }) {
     <div
       className="promo-bar"
       style={{
-        position: 'sticky', top: 0, zIndex: 41,
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 41,
         height: 'var(--promo-h)', overflow: 'hidden',
         background: 'var(--ink)', display: 'flex', alignItems: 'center',
         width: '100%',

@@ -2,21 +2,33 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import type { BackendInquiry, InquiryStatus } from '@/lib/backend-types'
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api/admin/backend${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  const data = res.status === 204 ? null : await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
-  return data as T
-}
+import { useAdminToast } from '@/components/admin/AdminToast'
+import { adminApi as api } from '@/lib/admin/api'
 
 const STATUS_LABEL: Record<InquiryStatus, string> = { Pending: 'Pendiente', Replied: 'Respondida', Closed: 'Cerrada' }
 const STATUS_BADGE: Record<InquiryStatus, string> = { Pending: 'warn', Replied: 'ok', Closed: 'neutral' }
 
+// El formulario público embebe el teléfono como primera línea del mensaje
+// ("Teléfono: ...\n\n...") porque el backend no tiene una columna propia para eso.
+function parseInquiryMessage(message: string): { phone: string | null; cleanMessage: string } {
+  const match = message.match(/^Teléfono:\s*(.+?)\s*\n\n([\s\S]*)$/)
+  if (!match) return { phone: null, cleanMessage: message }
+  return { phone: match[1], cleanMessage: match[2] }
+}
+
+// Heurística: el campo no tiene validación estricta de formato, así que asumimos
+// número argentino sin código de país (mismo esquema que el propio wa.me del negocio).
+function whatsappHrefForPhone(phone: string, clientName: string): string {
+  let digits = phone.replace(/\D/g, '')
+  if (!digits.startsWith('549')) {
+    digits = digits.startsWith('54') ? `549${digits.slice(2)}` : `549${digits}`
+  }
+  const text = `Hola ${clientName}, te escribimos desde LasLangDeco por tu consulta.`
+  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`
+}
+
 export default function ClientesAdmin() {
+  const toast = useAdminToast()
   const [inquiries, setInquiries] = useState<BackendInquiry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -42,9 +54,12 @@ export default function ClientesAdmin() {
     setError(null)
     try {
       await api(`/inquiries/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) })
+      toast.success(`Consulta marcada como ${STATUS_LABEL[status].toLowerCase()}.`)
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     }
   }
 
@@ -64,7 +79,9 @@ export default function ClientesAdmin() {
         <div className="adm-card">
           {loading && <div className="adm-loading">Cargando…</div>}
           {!loading && inquiries.length === 0 && <div className="adm-empty">Sin consultas todavía.</div>}
-          {!loading && inquiries.map((item, i) => (
+          {!loading && inquiries.map((item, i) => {
+            const { cleanMessage } = parseInquiryMessage(item.message)
+            return (
             <div
               key={item.id}
               onClick={() => setSelected(item.id === selected ? null : item.id)}
@@ -85,27 +102,31 @@ export default function ClientesAdmin() {
                   <span className={`adm-badge ${STATUS_BADGE[item.status]}`}>{STATUS_LABEL[item.status]}</span>
                 </div>
                 <p style={{ fontFamily: 'var(--font-edit)', fontStyle: 'italic', fontSize: 13, color: 'var(--ink-soft)', margin: '0 0 6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {item.message}
+                  {cleanMessage}
                 </p>
                 <div className="adm-table-sub">{new Date(item.createdAt).toLocaleString('es-AR')}</div>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Detail panel */}
-        {inquiry && (
+        {inquiry && (() => {
+          const { phone, cleanMessage } = parseInquiryMessage(inquiry.message)
+          return (
           <div className="adm-card" style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <h2 style={{ fontFamily: 'var(--font-ui)', fontWeight: 500, fontSize: 20, margin: 0, color: 'var(--ink)' }}>{inquiry.clientName}</h2>
                 <div className="adm-table-sub" style={{ marginTop: 4 }}>{inquiry.email}</div>
+                {phone && <div className="adm-table-sub" style={{ marginTop: 2 }}>{phone}</div>}
               </div>
               <span className={`adm-badge ${STATUS_BADGE[inquiry.status]}`}>{STATUS_LABEL[inquiry.status]}</span>
             </div>
 
             <div style={{ background: 'var(--bg-deep)', padding: 20 }}>
-              <p className="edit" style={{ fontSize: 16, lineHeight: 1.5, margin: 0, color: 'var(--ink-soft)' }}>&ldquo;{inquiry.message}&rdquo;</p>
+              <p className="edit" style={{ fontSize: 16, lineHeight: 1.5, margin: 0, color: 'var(--ink-soft)' }}>&ldquo;{cleanMessage}&rdquo;</p>
             </div>
 
             <div style={{ display: 'flex', gap: 10 }}>
@@ -116,6 +137,17 @@ export default function ClientesAdmin() {
               >
                 Responder por email
               </a>
+              {phone && (
+                <a
+                  href={whatsappHrefForPhone(phone, inquiry.clientName)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="adm-btn ghost"
+                  style={{ flex: 1, textDecoration: 'none', textAlign: 'center' }}
+                >
+                  Responder por WhatsApp
+                </a>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: 10, marginTop: 'auto' }}>
@@ -131,7 +163,8 @@ export default function ClientesAdmin() {
               )}
             </div>
           </div>
-        )}
+          )
+        })()}
       </div>
     </div>
   )

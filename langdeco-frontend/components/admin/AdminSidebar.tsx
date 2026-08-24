@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useAdminToast } from '@/components/admin/AdminToast'
 
 const NAV = [
   { group: 'General', items: [
@@ -25,10 +26,49 @@ const NAV = [
   ] },
 ]
 
+const PENDING_POLL_MS = 45000
+
+/* ── Consultas pendientes: pollea en segundo plano mientras el panel esté
+   abierto y avisa con un toast apenas detecta una consulta nueva. No sustituye
+   un aviso por email/WhatsApp fuera del panel — eso necesitaría un servicio
+   externo con credenciales que hoy no están configuradas. */
+function usePendingInquiries() {
+  const toast = useAdminToast()
+  const [pending, setPending] = useState(0)
+  const prevPending = useRef<number | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const poll = async () => {
+      try {
+        const res = await fetch('/api/admin/backend/inquiries')
+        if (!res.ok) return
+        const data: { status: string }[] = await res.json()
+        if (cancelled) return
+        const count = data.filter((i) => i.status === 'Pending').length
+        if (prevPending.current !== null && count > prevPending.current) {
+          toast.success(count - prevPending.current === 1 ? 'Llegó una consulta nueva.' : `Llegaron ${count - prevPending.current} consultas nuevas.`)
+        }
+        prevPending.current = count
+        setPending(count)
+      } catch { /* ignore */ }
+    }
+
+    poll()
+    const interval = setInterval(poll, PENDING_POLL_MS)
+    return () => { cancelled = true; clearInterval(interval) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return pending
+}
+
 export function AdminSidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const pendingInquiries = usePendingInquiries()
 
   useEffect(() => {
     const stored = window.localStorage.getItem('adm-sidebar-collapsed')
@@ -83,6 +123,9 @@ export function AdminSidebar() {
                   >
                     <span className="ic">{item.icon}</span>
                     <span className="label">{item.label}</span>
+                    {item.href === '/admin/clientes' && pendingInquiries > 0 && (
+                      <span className="adm-badge warn" style={{ marginLeft: 'auto' }}>{pendingInquiries}</span>
+                    )}
                   </Link>
                 )
               })}

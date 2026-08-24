@@ -3,12 +3,25 @@ import type { BackendCategory, BackendProduct } from './backend-types'
 const API_URL = process.env.API_URL || 'http://localhost:5279'
 const ADMIN_KEY = process.env.BACKEND_ADMIN_KEY || ''
 
+// Si el backend .NET no responde en este tiempo, se corta la espera en vez de
+// dejar colgada la página entera — ver app/error.tsx para lo que ve el visitante.
+const BACKEND_TIMEOUT_MS = 8000
+
 async function backendFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    cache: 'no-store',
-    headers: { ...init?.headers },
-  })
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      ...init,
+      cache: 'no-store',
+      headers: { ...init?.headers },
+      signal: AbortSignal.timeout(BACKEND_TIMEOUT_MS),
+    })
+  } catch (e) {
+    if (e instanceof Error && e.name === 'TimeoutError') {
+      throw new Error(`Backend no respondió en ${BACKEND_TIMEOUT_MS}ms en ${path}`)
+    }
+    throw e
+  }
 
   if (!res.ok) {
     const body = await res.text().catch(() => '')
@@ -28,7 +41,15 @@ export function getProducts(params?: { category?: string; featured?: boolean }):
 }
 
 export async function getProductById(id: string): Promise<BackendProduct | null> {
-  const res = await fetch(`${API_URL}/api/products/${id}`, { cache: 'no-store' })
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}/api/products/${id}`, { cache: 'no-store', signal: AbortSignal.timeout(BACKEND_TIMEOUT_MS) })
+  } catch (e) {
+    if (e instanceof Error && e.name === 'TimeoutError') {
+      throw new Error(`Backend no respondió en ${BACKEND_TIMEOUT_MS}ms en /api/products/${id}`)
+    }
+    throw e
+  }
   if (res.status === 404) return null
   if (!res.ok) throw new Error(`Backend ${res.status} en /api/products/${id}`)
   return res.json()

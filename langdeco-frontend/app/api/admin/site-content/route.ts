@@ -15,12 +15,42 @@ export async function PUT(request: NextRequest) {
 
   const body = await request.json().catch(() => null) as Partial<SiteContent> | null
 
+  const hasValidHotspots = (item: { hotspots?: unknown }) =>
+    item.hotspots === undefined ||
+    (Array.isArray(item.hotspots) && item.hotspots.every((h) =>
+      h && typeof h.x === 'number' && h.x >= 0 && h.x <= 100 &&
+      typeof h.y === 'number' && h.y >= 0 && h.y <= 100 &&
+      typeof h.productId === 'string' && h.productId.length > 0
+    ))
+
+  const isValidNosotros = (n: unknown): boolean => {
+    if (!n || typeof n !== 'object') return false
+    const v = n as Record<string, unknown>
+    const photos = v.photos as Record<string, unknown> | undefined
+    return (
+      typeof v.title === 'string' &&
+      typeof v.titleEmphasis === 'string' &&
+      typeof v.intro === 'string' &&
+      !!photos && typeof photos.showroom === 'string' && typeof photos.taller === 'string' && typeof photos.detalle === 'string' &&
+      Array.isArray(v.hitos) && v.hitos.length === 4 &&
+      v.hitos.every((h) => h && typeof h.year === 'string' && typeof h.label === 'string') &&
+      Array.isArray(v.pilares) && v.pilares.length === 3 &&
+      v.pilares.every((p) => p && typeof p.title === 'string' && typeof p.desc === 'string')
+    )
+  }
+
   if (
     !body ||
     typeof body.promoBar !== 'string' ||
     !Array.isArray(body.inspiracion) ||
-    body.inspiracion.length !== 3 ||
-    body.inspiracion.some((item) => !item || typeof item.name !== 'string')
+    body.inspiracion.length !== 4 ||
+    body.inspiracion.some((item) => !item || typeof item.name !== 'string' || !hasValidHotspots(item)) ||
+    typeof body.heroImageUrl !== 'string' ||
+    typeof body.heroTitle !== 'string' ||
+    typeof body.heroTitleEmphasis !== 'string' ||
+    typeof body.heroSubtitle !== 'string' ||
+    typeof body.logoUrl !== 'string' ||
+    !isValidNosotros(body.nosotros)
   ) {
     return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 })
   }

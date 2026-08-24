@@ -5,6 +5,9 @@ import type { BackendSupplier, DefaultReceiptType, IvaCondition } from '@/lib/ba
 import { isValidCuit } from '@/lib/cuit'
 import { IVA_CONDITION_LABEL, RECEIPT_TYPE_LABEL } from '@/lib/party-labels'
 import { useEscapeKey } from '@/lib/useEscapeKey'
+import { useAdminToast } from '@/components/admin/AdminToast'
+import { adminApi as api } from '@/lib/admin/api'
+import { Field } from '@/components/admin/Field'
 
 type ContactPersonForm = { name: string; role: string; cell: string; phone: string; email: string }
 type CustomFieldForm = { label: string; value: string }
@@ -50,17 +53,9 @@ const EMPTY_FORM: SupplierForm = {
   contactPersons: [], customFields: [],
 }
 
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api/admin/backend${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  const data = res.status === 204 ? null : await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
-  return data as T
-}
 
 export default function ProveedoresAdmin() {
+  const toast = useAdminToast()
   const [suppliers, setSuppliers] = useState<BackendSupplier[]>([])
   const [search, setSearch] = useState('')
   const [showInactive, setShowInactive] = useState(false)
@@ -129,14 +124,18 @@ export default function ProveedoresAdmin() {
 
       if (form.id) {
         await api(`/suppliers/${form.id}`, { method: 'PUT', body: JSON.stringify(payload) })
+        toast.success('Proveedor actualizado.')
       } else {
         await api(`/suppliers`, { method: 'POST', body: JSON.stringify(payload) })
+        toast.success('Proveedor creado.')
       }
 
       setForm(null)
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     } finally {
       setSaving(false)
     }
@@ -146,18 +145,24 @@ export default function ProveedoresAdmin() {
     if (!confirm(`¿Eliminar "${s.companyOrFullName}"?`)) return
     try {
       await api(`/suppliers/${s.id}`, { method: 'DELETE' })
+      toast.success('Proveedor eliminado.')
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     }
   }
 
   const onActivate = async (s: BackendSupplier) => {
     try {
       await api(`/suppliers/${s.id}/activate`, { method: 'POST' })
+      toast.success('Proveedor reactivado.')
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     }
   }
 
@@ -172,10 +177,14 @@ export default function ProveedoresAdmin() {
       const res = await fetch('/api/admin/backend/suppliers/import', { method: 'POST', body: formData })
       const data = await res.json().catch(() => null)
       if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
-      setImportMsg(`Importación completa: ${data.created} creados, ${data.updated} actualizados${data.errors?.length ? `, ${data.errors.length} con error` : ''}.`)
+      const msg = `Importación completa: ${data.created} creados, ${data.updated} actualizados${data.errors?.length ? `, ${data.errors.length} con error` : ''}.`
+      setImportMsg(msg)
+      toast.success(msg)
       await load()
     } catch (err) {
-      setError((err as Error).message)
+      const msg = (err as Error).message
+      setError(msg)
+      toast.error(msg)
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
@@ -412,11 +421,3 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="adm-field">
-      <label className="adm-field-label">{label}</label>
-      {children}
-    </div>
-  )
-}

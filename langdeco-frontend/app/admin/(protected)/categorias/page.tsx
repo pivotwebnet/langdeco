@@ -2,18 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import type { BackendCategory } from '@/lib/backend-types'
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api/admin/backend${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  const data = res.status === 204 ? null : await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
-  return data as T
-}
+import { useAdminToast } from '@/components/admin/AdminToast'
+import { adminApi as api } from '@/lib/admin/api'
 
 export default function CategoriasAdmin() {
+  const toast = useAdminToast()
   const [categories, setCategories] = useState<BackendCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -43,9 +36,12 @@ export default function CategoriasAdmin() {
       await api('/categories', { method: 'POST', body: JSON.stringify({ id: newId, name: newName }) })
       setNewId('')
       setNewName('')
+      toast.success('Categoría creada.')
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     }
   }
 
@@ -57,9 +53,12 @@ export default function CategoriasAdmin() {
     try {
       await api(`/categories/${editingId}`, { method: 'PUT', body: JSON.stringify({ id: editingId, name: editingName }) })
       setEditingId(null)
+      toast.success('Categoría actualizada.')
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     }
   }
 
@@ -68,9 +67,12 @@ export default function CategoriasAdmin() {
     setError(null)
     try {
       await api(`/categories/${c.id}`, { method: 'DELETE' })
+      toast.success('Categoría eliminada.')
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     }
   }
 
@@ -78,9 +80,12 @@ export default function CategoriasAdmin() {
     setError(null)
     try {
       await api(`/categories/${c.id}/activate`, { method: 'POST' })
+      toast.success('Categoría reactivada.')
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     }
   }
 

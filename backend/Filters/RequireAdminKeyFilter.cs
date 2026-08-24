@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using backend.Services;
 
 namespace backend.Filters;
 
@@ -9,17 +10,17 @@ public class RequireAdminKeyFilter : IAsyncActionFilter
 
     public RequireAdminKeyFilter(IConfiguration config) => _config = config;
 
+    // Falla CERRADO: si AdminApiKey no está configurada, ninguna request pasa.
+    // Antes, una AdminApiKey vacía dejaba todo el panel admin sin autenticación.
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         var configuredKey = _config["AdminApiKey"];
-        if (!string.IsNullOrEmpty(configuredKey))
+        var provided = context.HttpContext.Request.Headers["X-Admin-Key"].ToString();
+
+        if (!AdminKeyComparer.Matches(provided, configuredKey))
         {
-            var provided = context.HttpContext.Request.Headers["X-Admin-Key"].ToString();
-            if (provided != configuredKey)
-            {
-                context.Result = new UnauthorizedObjectResult(new { error = "Invalid or missing X-Admin-Key" });
-                return;
-            }
+            context.Result = new UnauthorizedObjectResult(new { error = "Invalid or missing X-Admin-Key" });
+            return;
         }
 
         await next();

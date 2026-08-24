@@ -39,8 +39,9 @@ Migraciones en `backend/Migrations/` (incluye `AddWholesalePricingAndBudgetConve
 - **Borrado de productos**: si el producto tiene ventas asociadas se **desactiva** (soft-delete, conserva historial); si no tiene ventas, se elimina de verdad.
 - **Categorías**: no se pueden eliminar si tienen productos asociados.
 - **Validaciones**: `Id` de producto/categoría debe ser un slug (`minúsculas-números-guiones`), precio y stock no negativos, `OriginalPrice > Price` y `WholesalePrice < Price` si están presentes, máximo 6 fotos por producto y ninguna vacía, CUIT con dígito verificador válido en Cliente/Proveedor.
-- **Seguridad `X-Admin-Key`**: filtro `RequireAdminKey` sobre los endpoints administrativos. El frontend agrega el header server-side. Si `AdminApiKey` está vacía en `appsettings.json` (modo dev), no se exige nada; en producción es obligatorio definirla — si queda vacía, cualquiera que llegue al backend puede leer/crear/borrar todo.
+- **Seguridad `X-Admin-Key`**: filtro `RequireAdminKey` sobre los endpoints administrativos. El frontend agrega el header server-side. La comparación es timing-safe (`AdminKeyComparer`) y **falla cerrada**: si `AdminApiKey` está vacía o no configurada, todo pedido admin se rechaza (antes se saltaba el chequeo con la clave vacía — corregido).
 - **Catálogo público**: `GET /api/products` y `GET /api/categories` no requieren clave y devuelven solo activos por defecto.
+- **Validación de producto**: `Name` y `Material` son obligatorios; antes faltaba y daba un 500 en vez de un 400 claro.
 
 ### Endpoints
 
@@ -59,6 +60,7 @@ Admin (requieren `X-Admin-Key`):
 - `GET /api/sales/summary` — ingresos (solo `Paid`), ticket promedio, ranking de productos, desglose minorista/mayorista, y productos con stock ≤ 3 para reposición (filtros opcionales `?from=`/`?to=`)
 - `POST /api/budgets`, `GET /api/budgets`, `GET /api/budgets/{id}`, `PUT /api/budgets/{id}`, `PATCH /api/budgets/{id}/status`, `POST /api/budgets/{id}/convert`, `GET /api/budgets/{id}/pdf`
 - `POST /api/clients`, `GET /api/clients`, `GET /api/clients/{id}`, `PUT /api/clients/{id}`, `DELETE /api/clients/{id}`, `POST /api/clients/{id}/activate`, `GET /api/clients/export`, `POST /api/clients/import` — mismo set para `/api/suppliers`
+- `POST /api/inquiries` (público, sin clave) — el formulario de contacto crea una consulta real; `GET /api/inquiries` (filtro `?status=`) y `PATCH /api/inquiries/{id}/status` (admin) alimentan la bandeja "Consultas" del panel.
 
 Documentación interactiva (solo en Development): **`/swagger`**.
 
@@ -106,7 +108,7 @@ ADMIN_SESSION_SECRET=...            # aleatorio y largo — firma la cookie de s
 - `getProducts()`, `getProductById()`, `getCategories()` — usados desde Server Components (home, página de producto) para leer el catálogo público directamente, sin pasar por una ruta propia.
 - `forwardToBackend()` — agrega `X-Admin-Key` desde `BACKEND_ADMIN_KEY` y reenvía al backend; lo usa el proxy admin.
 
-`lib/backend-types.ts` define los tipos que devuelve el backend (camelCase, coincide con el JSON de .NET) — incluye `BackendSale`/`BackendBudget`/`BackendClient`/`BackendSupplier`, pero **todavía no** los campos nuevos de precio mayorista (`wholesalePrice`, `priceType`, `discountType`, `discountFixedAmount`, `convertedSaleId`/`convertedAt`); eso sigue pendiente del bloque de Frontend de `specs/presupuestos-precio-mayorista/tasks.md`. `lib/product-mapper.ts` convierte un `BackendProduct` al `Product` (view model) que consumen los componentes de la home (`Productos.tsx`, `Favoritos.tsx`, `ProductoDetalle.tsx`), para no tener que reescribir esos componentes.
+`lib/backend-types.ts` define los tipos que devuelve el backend (camelCase, coincide con el JSON de .NET) — incluye `BackendSale`/`BackendBudget`/`BackendClient`/`BackendSupplier`, `wholesalePrice` y `ClientType` (Retail/Wholesale, a nivel documento). **Todavía no** refleja `priceType` por línea, `discountType`/`discountFixedAmount` (recargo), ni `convertedSaleId`/`convertedAt` — eso sigue pendiente del bloque de Frontend de `specs/presupuestos-precio-mayorista/tasks.md`. `lib/product-mapper.ts` convierte un `BackendProduct` al `Product` (view model) que consumen los componentes de la home (`Productos.tsx`, `Favoritos.tsx`, `ProductoDetalle.tsx`), para no tener que reescribir esos componentes.
 
 ### Autenticación del panel admin
 
@@ -137,13 +139,13 @@ Todas las páginas admin (`productos`, `categorias`, `ventas`, `presupuestos`, `
 El panel tiene su propio CSS (`app/admin/admin.css`, cargado desde `app/admin/layout.tsx`) separado de `globals.css` del sitio público.
 
 - **`(protected)/page.tsx`** — Dashboard: ingresos (solo ventas `Paid`), ticket promedio, ranking de productos más vendidos, desglose minorista/mayorista, alerta de reposición de stock, filtro de fecha (3/6/12 meses o rango libre).
-- **`(protected)/productos/page.tsx`** — ABM completo: alta/edición con specs y fotos (por URL — la subida real de archivos queda pendiente), filtro por categoría, soft-delete/reactivar. Todavía sin campo de precio mayorista en el formulario.
+- **`(protected)/productos/page.tsx`** — ABM completo: alta/edición con specs, precio mayorista y fotos (por URL — la subida real de archivos queda pendiente), filtro por categoría, soft-delete/reactivar.
 - **`(protected)/categorias/page.tsx`** — ABM de categorías.
-- **`(protected)/ventas/page.tsx`** — listado con filtro por estado, "Nueva venta manual" (elige productos + cantidad, tipo de cliente, medio de pago, estado inicial), cambio de estado, comprobante con PDF.
+- **`(protected)/ventas/page.tsx`** — listado con filtro por estado, "Nueva venta manual" (elige productos + cantidad, tipo de cliente Minorista/Mayorista con precio resuelto contra `wholesalePrice`, medio de pago, estado inicial), cambio de estado, comprobante con PDF.
 - **`(protected)/presupuestos/page.tsx`** — igual que Ventas pero sin tocar stock, con fecha de vencimiento. "Convertir en venta" abre un modal para elegir medio de pago y llama a `POST /api/budgets/{id}/convert` (descuenta stock real y abre el comprobante de la `Sale` generada).
 - **`(protected)/base-datos/clientes/page.tsx`** y **`(protected)/base-datos/proveedores/page.tsx`** — ABM completo con Personas de Contacto, Campos custom, datos de facturación, import/export Excel.
-- **`(protected)/clientes/page.tsx`** — "Consultas" (leads por WhatsApp/email); **sigue con datos mock**, es un módulo aparte de la Base de Datos de Clientes.
-- **`(protected)/contenido/page.tsx`** — contenido editable del sitio público (Inspiración, barra de promociones), storage en `DATA_DIR`.
+- **`(protected)/clientes/page.tsx`** — "Consultas": bandeja de leads reales del formulario de contacto público (`InquiriesController`, backend real — no mock), módulo aparte de la Base de Datos de Clientes.
+- **`(protected)/contenido/page.tsx`** — contenido editable del sitio público: Hero, logotipo, página "Nosotros" (fotos + título/intro/línea de tiempo/pilares, texto completo), Inspiración, barra de promociones. Storage en `DATA_DIR`.
 - **`(protected)/configuracion/page.tsx`** — cambio de contraseña, cerrar sesión.
 - **`setup/`**, **`login/`** — fuera del route group protegido, para no generar loops de redirect.
 
@@ -156,6 +158,17 @@ El panel tiene su propio CSS (`app/admin/admin.css`, cargado desde `app/admin/la
 - Ya no hay imágenes hardcodeadas de Unsplash en ningún lado (ni seed del backend ni `lib/data.ts`); un producto sin fotos reales muestra `components/ui/ImagePlaceholder.tsx`.
 - Animaciones con GSAP (`gsap`, `@gsap/react`) en el hero y demás secciones. Carrito, WhatsApp y botón de scroll-to-top persisten en toda la web vía contexto global (`lib/cart.tsx`, `CartDrawerHost.tsx`, `FloatingDock.tsx`).
 - `app/visualizador/` — feature nueva: el visitante sube una foto de su espacio y prueba superponer muebles del catálogo (`VisualizadorClient.tsx`), enlazado desde `Header.tsx`.
+- `components/sections/Nosotros.tsx` recibe `content?: NosotrosContent` (fotos, título, intro, línea de tiempo de 4 hitos, 3 pilares) editable desde `/admin/contenido`, igual patrón que Hero/Inspiración; `app/nosotros/page.tsx` lo lee de `getSiteContent()`.
+
+### Resiliencia y SEO
+
+- `app/error.tsx` / `app/not-found.tsx` — error boundary y 404 con la identidad visual del sitio en vez de la pantalla genérica de Next.
+- `lib/api.ts` — timeout de 8s (`AbortSignal.timeout`) en los fetches al backend.
+- `app/sitemap.ts` / `app/robots.ts`, `generateMetadata()` por producto (Open Graph/Twitter) + JSON-LD (`schema.org/Product`) en `app/producto/[id]/page.tsx`, `metadataBase` en `app/layout.tsx`. `lib/site-url.ts` expone `SITE_URL` (env `NEXT_PUBLIC_SITE_URL`).
+
+### Tests
+
+Cobertura chica pero real, no exhaustiva: backend (`backend.Tests/`, xUnit) cubre `PricingService`, `DocumentTotalsCalculator` y `StockService` (contra SQLite en memoria, no el proveedor InMemory de EF — no soporta `ExecuteUpdateAsync`); frontend (Vitest) cubre `formatPrice`/`normalize`/`isValidCuit`; e2e (Playwright, `e2e/*.spec.ts`) cubre catálogo + carrito y home, requiere backend y frontend ya corriendo.
 
 ### Requisitos para correr localmente
 
@@ -169,12 +182,13 @@ npm run dev     # necesita el backend corriendo en API_URL
 
 ## Pendiente (no incluido en esta iteración)
 
-1. **UI de precio mayorista y descuento con recargo**: el backend soporta `WholesalePrice`/`PriceType` por línea y `DiscountType` (con recargo) de punta a punta, pero el panel (`productos`, `presupuestos`, `ventas`) todavía no tiene los campos para usarlo, y `lib/backend-types.ts` no refleja esos campos. Ver `specs/presupuestos-precio-mayorista/tasks.md` (bloque "Frontend").
-2. **Subida real de fotos de producto**: hoy el ABM de productos guarda URLs escritas a mano. El patrón de upload (`DATA_DIR/uploads` + `GET /api/media/<archivo>`) ya existe en el repo (usado por Contenido/Inspiración) — falta aplicarlo también al formulario de productos.
+1. **UI de precio mayorista, completar**: ya existe el campo de precio mayorista en productos y el selector Minorista/Mayorista en Venta/Presupuesto (a nivel documento entero), pero falta: elegir Retail/Wholesale **por línea** (hoy es todo el documento), el toggle de `DiscountType` (%/monto fijo, con recargo — hoy solo hay `discountPercent`), mostrar en la Venta de qué Presupuesto salió (`convertedSaleId`/`convertedAt` no están en `lib/backend-types.ts`), y una tarjeta de presupuestos activos/por vencer en el dashboard. Ver `specs/presupuestos-precio-mayorista/tasks.md` (bloque "Frontend").
+2. **Subida real de fotos de producto**: hoy el ABM de productos guarda URLs escritas a mano. El patrón de upload (`DATA_DIR/uploads` + `GET /api/media/<archivo>`) ya existe en el repo (usado por Contenido/Inspiración/Nosotros) — falta aplicarlo también al formulario de productos.
 3. **Despliegue**: no se aprovisionó ninguna infraestructura real. Al desplegar (Coolify + Cloudflare o el esquema que se elija):
-   - Definir `AdminApiKey` (backend) = `BACKEND_ADMIN_KEY` (frontend) con un valor aleatorio largo — **si queda vacía, la API admin queda completamente abierta**.
+   - Definir `AdminApiKey` (backend) = `BACKEND_ADMIN_KEY` (frontend) con un valor aleatorio largo — la clave ya falla cerrada si queda vacía, pero sin una clave real el panel admin no funciona.
    - Definir `ADMIN_SESSION_SECRET` aleatorio y largo — si falta, la cookie de sesión sería falsificable.
    - El backend .NET debe quedar en red interna, accesible solo desde el contenedor del frontend (no exponer su puerto públicamente).
    - Persistir `DATA_DIR` (contraseña del panel, `site-content.json`, imágenes subidas) en un volumen — sin esto, cada redeploy borra `admin.json` y hay que rehacer el setup.
    - Postgres con su propio volumen persistente.
-4. **Consultas (leads)**: sigue siendo un módulo mock, sin backend propio.
+   - Definir `NEXT_PUBLIC_SITE_URL` con el dominio real — si no, sitemap/robots/Open Graph siguen apuntando a `localhost:3000`.
+4. **Tests**: hay cobertura chica y real (backend: `PricingService`/`DocumentTotalsCalculator`/`StockService`; frontend: `formatPrice`/`normalize`/`isValidCuit`; e2e: catálogo+carrito, home), pero no exhaustiva — la mayoría de controllers/componentes no tiene test propio.

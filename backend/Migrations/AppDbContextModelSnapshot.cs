@@ -101,6 +101,10 @@ namespace backend.Migrations
                     b.HasIndex("Number")
                         .IsUnique();
 
+                    b.HasIndex("Status");
+
+                    b.HasIndex("ValidUntil");
+
                     b.ToTable("Budgets");
                 });
 
@@ -153,6 +157,11 @@ namespace backend.Migrations
                     b.Property<bool>("Active")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("Group")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -204,6 +213,9 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Dni")
+                        .HasColumnType("text");
 
                     b.Property<string>("Email")
                         .HasMaxLength(200)
@@ -287,6 +299,8 @@ namespace backend.Migrations
                         .HasColumnType("character varying(300)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Active");
 
                     b.HasIndex("TaxId");
 
@@ -503,6 +517,8 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Active");
+
                     b.HasIndex("CategoryId");
 
                     b.ToTable("Products");
@@ -638,8 +654,12 @@ namespace backend.Migrations
 
                     b.HasIndex("ClientId");
 
+                    b.HasIndex("CreatedAt");
+
                     b.HasIndex("Number")
                         .IsUnique();
+
+                    b.HasIndex("Status");
 
                     b.ToTable("Sales");
                 });
@@ -804,6 +824,8 @@ namespace backend.Migrations
                         .HasColumnType("character varying(300)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Active");
 
                     b.HasIndex("TaxId");
 

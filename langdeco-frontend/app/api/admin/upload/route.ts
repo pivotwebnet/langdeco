@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isValidSessionToken, SESSION_COOKIE } from '@/lib/admin-session'
 import { saveUploadedImage } from '@/lib/media'
 
+// Endpoint único de upload de imágenes del panel admin — lo usan tanto el form
+// de producto (foto libre) como Contenido (Hero, logo, Nosotros, Inspiración).
 export async function POST(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value
   if (!isValidSessionToken(token)) {

@@ -14,7 +14,7 @@ public record ClientImportRow(
     string? BillingPhone, string? BillingCell, string? FiscalAddress, string? FiscalLocality,
     string? FiscalProvince, string? FiscalPostalCode,
     string? ContactName, string? ContactRole, string? ContactCell, string? ContactPhone, string? ContactEmail,
-    bool Active);
+    bool Active, string? Dni);
 
 public record SupplierImportRow(
     int RowNumber,

@@ -1,45 +1,68 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import type { BackendClient, BackendProduct, BackendSale, ClientType, PaymentMethod, SaleStatus } from '@/lib/backend-types'
+import type { BackendClient, BackendProduct, BackendSale, ClientType, PagedResult, PaymentMethod, SaleStatus } from '@/lib/backend-types'
 import { ReceiptView } from '@/components/admin/ReceiptView'
 import { useEscapeKey } from '@/lib/useEscapeKey'
+import { useAdminToast } from '@/components/admin/AdminToast'
+import { adminApi as api } from '@/lib/admin/api'
+import { Field } from '@/components/admin/Field'
 
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api/admin/backend${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  const data = res.status === 204 ? null : await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
-  return data as T
+/** Precio unitario según el tipo de cliente — mayorista si el producto tiene precio mayorista cargado, si no cae a minorista. */
+function resolvePrice(product: BackendProduct | undefined, clientType: ClientType): number {
+  if (!product) return 0
+  if (clientType === 'Wholesale' && product.wholesalePrice != null) return product.wholesalePrice
+  return product.price
 }
 
 const STATUS_LABEL: Record<SaleStatus, string> = { Pending: 'Pendiente', Paid: 'Pagada', Cancelled: 'Cancelada' }
 const STATUS_BADGE: Record<SaleStatus, string> = { Pending: 'warn', Paid: 'ok', Cancelled: 'neutral' }
 const CLIENT_TYPE_LABEL: Record<ClientType, string> = { Retail: 'Minorista', Wholesale: 'Mayorista' }
+const PAGE_SIZE = 50
 
 export default function VentasAdmin() {
+  const toast = useAdminToast()
   const [sales, setSales] = useState<BackendSale[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
   const [products, setProducts] = useState<BackendProduct[]>([])
   const [statusFilter, setStatusFilter] = useState<SaleStatus | 'all'>('all')
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [receiptSale, setReceiptSale] = useState<BackendSale | null>(null)
+
+  const statusQs = statusFilter !== 'all' ? `&status=${statusFilter}` : ''
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const qs = statusFilter !== 'all' ? `?status=${statusFilter}` : ''
-      setSales(await api<BackendSale[]>(`/sales${qs}`))
+      const result = await api<PagedResult<BackendSale>>(`/sales?page=1&pageSize=${PAGE_SIZE}${statusQs}`)
+      setSales(result.items)
+      setTotal(result.total)
+      setPage(1)
     } catch (e) {
       setError((e as Error).message)
     } finally {
       setLoading(false)
     }
-  }, [statusFilter])
+  }, [statusQs])
+
+  const loadMore = async () => {
+    setLoadingMore(true)
+    try {
+      const nextPage = page + 1
+      const result = await api<PagedResult<BackendSale>>(`/sales?page=${nextPage}&pageSize=${PAGE_SIZE}${statusQs}`)
+      setSales((prev) => [...prev, ...result.items])
+      setPage(nextPage)
+    } catch (e) {
+      toast.error((e as Error).message)
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   useEffect(() => { load() }, [load])
   useEffect(() => { api<BackendProduct[]>('/products').then(setProducts).catch(() => {}) }, [])
@@ -48,9 +71,12 @@ export default function VentasAdmin() {
     setError(null)
     try {
       await api(`/sales/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) })
+      toast.success(`Venta marcada como ${STATUS_LABEL[status].toLowerCase()}.`)
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     }
   }
 
@@ -59,7 +85,7 @@ export default function VentasAdmin() {
       <div className="adm-page-head">
         <div>
           <h1 className="adm-title">Ventas</h1>
-          <p className="adm-eyebrow">{sales.length} ventas</p>
+          <p className="adm-eyebrow">{sales.length} de {total} ventas</p>
         </div>
         <button className="adm-btn" onClick={() => setShowForm(true)}>+ Nueva venta manual</button>
       </div>
@@ -127,6 +153,14 @@ export default function VentasAdmin() {
         {!loading && sales.length === 0 && <div className="adm-empty">Sin ventas.</div>}
       </div>
 
+      {!loading && sales.length < total && (
+        <div className="adm-load-more">
+          <button className="adm-btn sm ghost" onClick={loadMore} disabled={loadingMore}>
+            {loadingMore ? 'Cargando…' : `Cargar más (${sales.length}/${total})`}
+          </button>
+        </div>
+      )}
+
       {showForm && (
         <NewSaleModal
           onClose={() => setShowForm(false)}
@@ -148,6 +182,7 @@ export default function VentasAdmin() {
 }
 
 function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: (sale: BackendSale) => void }) {
+  const toast = useAdminToast()
   const [products, setProducts] = useState<BackendProduct[]>([])
   const [clients, setClients] = useState<BackendClient[]>([])
   const [selectedClientId, setSelectedClientId] = useState<number | ''>('')
@@ -183,7 +218,7 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     }
   }
 
-  const addItem = () => setItems([...items, { productId: products[0]?.id || '', quantity: 1 }])
+  const addItem = () => { if (products.length > 0) setItems([...items, { productId: products[0].id, quantity: 1 }]) }
   const updateItem = (i: number, patch: Partial<{ productId: string; quantity: number }>) => {
     const next = [...items]
     next[i] = { ...next[i], ...patch }
@@ -193,8 +228,16 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 
   const estimatedTotal = items.reduce((sum, it) => {
     const product = products.find((p) => p.id === it.productId)
-    return sum + (product?.price || 0) * it.quantity
+    return sum + resolvePrice(product, clientType) * it.quantity
   }, 0)
+
+  // Si el cliente es mayorista, cualquier producto sin precio mayorista cargado
+  // se cobraría a precio minorista sin avisar — lo marcamos antes de guardar.
+  const missingWholesale = clientType === 'Wholesale'
+    ? items
+        .map((it) => products.find((p) => p.id === it.productId))
+        .filter((p): p is BackendProduct => !!p && p.wholesalePrice == null)
+    : []
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -213,12 +256,15 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
           clientId: selectedClientId || null,
           customer: { name: clientName, contact: clientContact || null, taxId: clientTaxId || null, address: clientAddress || null },
           clientType, paymentMethod, status, discountPercent, taxRatePercent,
-          items: items.map((it) => ({ productId: it.productId, quantity: it.quantity })),
+          items: items.map((it) => ({ productId: it.productId, quantity: it.quantity, priceType: clientType })),
         }),
       })
+      toast.success(`Venta #${sale.number} registrada.`)
       onCreated(sale)
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     } finally {
       setSaving(false)
     }
@@ -273,23 +319,29 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         <div style={{ marginTop: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span className="mono">Productos</span>
-            <button type="button" className="adm-btn ghost sm" onClick={addItem}>+ Agregar</button>
+            <button type="button" className="adm-btn ghost sm" onClick={addItem} disabled={products.length === 0}>+ Agregar</button>
           </div>
           {items.map((it, i) => {
             const product = products.find((p) => p.id === it.productId)
+            const noWholesale = clientType === 'Wholesale' && !!product && product.wholesalePrice == null
             return (
               <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
                 <select className="adm-select" value={it.productId} onChange={(e) => updateItem(i, { productId: e.target.value })} style={{ flex: 1 }}>
                   {products.map((p) => <option key={p.id} value={p.id}>{p.name} (stock: {p.stock})</option>)}
                 </select>
                 <input className="adm-input" type="number" min={1} value={it.quantity} onChange={(e) => updateItem(i, { quantity: Number(e.target.value) })} style={{ width: 70 }} />
-                <span className="mono" style={{ fontSize: 11, width: 90, textAlign: 'right' }}>
-                  {product ? `$ ${(product.price * it.quantity).toLocaleString('de-DE')}` : ''}
+                <span className="mono" style={{ fontSize: 11, width: 90, textAlign: 'right', color: noWholesale ? 'var(--adm-danger)' : undefined }}>
+                  {product ? `$ ${(resolvePrice(product, clientType) * it.quantity).toLocaleString('de-DE')}` : ''}
                 </span>
                 <button type="button" className="adm-btn ghost sm" onClick={() => removeItem(i)}>✕</button>
               </div>
             )
           })}
+          {missingWholesale.length > 0 && (
+            <div className="adm-alert error" style={{ marginTop: 8, marginBottom: 0 }}>
+              Sin precio mayorista cargado: {missingWholesale.map((p) => p.name).join(', ')}. No vas a poder guardar la venta hasta cargarles precio mayorista en Productos, o cambiar el tipo de cliente a minorista.
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--adm-border)' }}>
@@ -298,7 +350,7 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         </div>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-          <button className="adm-btn" type="submit" disabled={saving} style={{ flex: 1 }}>
+          <button className="adm-btn" type="submit" disabled={saving || missingWholesale.length > 0} style={{ flex: 1 }}>
             {saving ? 'Guardando...' : 'Registrar venta'}
           </button>
           <button className="adm-btn ghost" type="button" onClick={onClose} style={{ flex: 1 }}>Cancelar</button>
@@ -308,11 +360,3 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="adm-field">
-      <label className="adm-field-label">{label}</label>
-      {children}
-    </div>
-  )
-}

@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
+import { Underline } from '@/components/ui/Underline'
 
 export function Consultas() {
   const [clientName, setClientName] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [message, setMessage] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -16,10 +18,11 @@ export function Consultas() {
     setError(null)
     setSending(true)
     try {
+      const fullMessage = `Teléfono: ${phone}\n\n${message}`
       const res = await fetch('/api/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientName, email, message }),
+        body: JSON.stringify({ clientName, email, message: fullMessage }),
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) throw new Error(data?.error || 'No se pudo enviar la consulta')
@@ -27,6 +30,7 @@ export function Consultas() {
       setSent(true)
       setClientName('')
       setEmail('')
+      setPhone('')
       setMessage('')
     } catch (e) {
       setError((e as Error).message)
@@ -40,12 +44,14 @@ export function Consultas() {
       <RevealOnScroll>
         <span className="kicker" style={{ display: 'block', marginBottom: 14 }}>¿Tenés una consulta?</span>
         <h2 className="display" style={{ fontSize: 32, margin: '0 0 12px' }}>
-          Escribinos, <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>te respondemos</em>.
+          Escribinos, <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline>te respondemos</Underline></em>.
         </h2>
-        <p className="edit" style={{ fontSize: 16, lineHeight: 1.5, color: 'var(--ink-soft)', margin: '0 0 32px', maxWidth: 460 }}>
+      </RevealOnScroll>
+      <div className="subtitle-connector" data-reveal="up" data-delay="0.15" style={{ marginBottom: 32 }}>
+        <p className="edit" style={{ fontSize: 16, lineHeight: 1.5, color: 'var(--ink-soft)', margin: 0, maxWidth: 460 }}>
           Contanos qué estás buscando y te contestamos por mail.
         </p>
-      </RevealOnScroll>
+      </div>
 
       {sent ? (
         <RevealOnScroll>
@@ -75,6 +81,15 @@ export function Consultas() {
               placeholder="Correo"
               required
               maxLength={200}
+              style={inputStyle}
+            />
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Celular"
+              required
+              maxLength={40}
               style={inputStyle}
             />
             <textarea

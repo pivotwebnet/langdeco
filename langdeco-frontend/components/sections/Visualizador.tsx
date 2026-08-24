@@ -1,12 +1,20 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import Link from 'next/link'
 import * as Icon from '@/components/ui/Icon'
-import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
+import { Underline } from '@/components/ui/Underline'
+import { SplitChars } from '@/components/ui/SplitChars'
+import { Tooltip } from '@/components/ui/Tooltip'
+import { useCart } from '@/lib/cart'
 import type { Product } from '@/lib/types'
+import type { BackendCategory } from '@/lib/backend-types'
+
+const SIDEBAR_PAGE_SIZE = 10
 
 interface Props {
   products: Product[]
+  categories?: BackendCategory[]
   compact?: boolean
 }
 
@@ -23,18 +31,39 @@ interface PlacedItem {
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n))
 
-export function Visualizador({ products, compact = false }: Props) {
+export function Visualizador({ products, categories = [], compact = false }: Props) {
+  const cart = useCart()
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoSize, setPhotoSize] = useState<{ w: number; h: number } | null>(null)
   const [items, setItems] = useState<PlacedItem[]>([])
   const [selectedUid, setSelectedUid] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState(false)
+  const [addedId, setAddedId] = useState<string | null>(null)
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
+  const [sidebarPage, setSidebarPage] = useState(0)
+
+  const changeCategoryFilter = (id: string | null) => {
+    setCategoryFilter(id)
+    setSidebarPage(0)
+  }
+
+  function addToCart(product: Product) {
+    cart.add(product)
+    setAddedId(product.id)
+    setTimeout(() => setAddedId((v) => (v === product.id ? null : v)), 1200)
+  }
 
   const wrapperRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const zCounter = useRef(1)
 
   const withImage = products.filter((p) => p.imageUrl)
+  const filteredProducts = categoryFilter ? withImage.filter((p) => p.category === categoryFilter) : withImage
+  const sidebarTotalPages = Math.ceil(filteredProducts.length / SIDEBAR_PAGE_SIZE)
+  const sidebarPageItems = filteredProducts.slice(
+    sidebarPage * SIDEBAR_PAGE_SIZE,
+    (sidebarPage + 1) * SIDEBAR_PAGE_SIZE
+  )
 
   function handlePhotoFile(file?: File) {
     if (!file || !file.type.startsWith('image/')) return
@@ -214,22 +243,26 @@ export function Visualizador({ products, compact = false }: Props) {
   }
 
   return (
-    <section data-dt="visualizador-embed" data-size={compact ? 'compact' : undefined} style={{ position: 'relative', padding: '32px 24px 72px' }}>
-      <RevealOnScroll style={{ marginBottom: 20 }}>
-        <div className="kicker" style={{ marginBottom: 10 }}>Probalo en tu casa</div>
-        <h2 className="display" style={{ fontSize: compact ? 'clamp(24px, 4.5vw, 34px)' : 'clamp(28px, 5vw, 40px)', margin: '0 0 10px' }}>
-          Visualizador de{' '}
-          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>espacios</em>
-        </h2>
-        <p style={{ maxWidth: 560, fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.6 }}>
-          Subí una foto de tu ambiente y arrastrá piezas del catálogo encima para imaginar cómo quedan
-          antes de comprar. Podés moverlas, cambiarlas de tamaño y descargar el resultado.
-        </p>
-      </RevealOnScroll>
+    <section id="visualizador" data-dt="visualizador-embed" data-size={compact ? 'compact' : undefined} style={{ position: 'relative', padding: '32px 24px 72px' }}>
+      <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 24 }}>
+        <div>
+          <div className="kicker" data-reveal="up" style={{ marginBottom: 10 }}>Probalo en tu casa</div>
+          <h2 className="display" data-reveal="headline" style={{ fontSize: compact ? 'clamp(24px, 4.5vw, 34px)' : 'clamp(28px, 5vw, 40px)', margin: 0 }}>
+            <SplitChars text="Visualizador de" />{' '}
+            <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline><SplitChars text="espacios" /></Underline></em>
+          </h2>
+        </div>
+        <div className="subtitle-connector" data-reveal="up" data-delay="0.15" style={{ maxWidth: 400, marginTop: 0 }}>
+          <p style={{ margin: 0, fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.6 }}>
+            Subí una foto de tu ambiente y arrastrá piezas del catálogo encima para imaginar cómo quedan
+            antes de comprar. Podés moverlas, cambiarlas de tamaño y descargar el resultado.
+          </p>
+        </div>
+      </div>
 
       <div className="viz-layout">
         {/* ── Canvas ─────────────────────────────────────────── */}
-        <RevealOnScroll delay={1} className="viz-canvas-col">
+        <div className="viz-canvas-col">
           {!photoUrl ? (
             <div
               className={`viz-dropzone${dragOver ? ' over' : ''}`}
@@ -274,14 +307,16 @@ export function Visualizador({ products, compact = false }: Props) {
                     <img src={item.imageUrl} alt={item.name} draggable={false} />
                     {selectedUid === item.uid && (
                       <>
-                        <button
-                          className="viz-item-remove"
-                          aria-label={`Quitar ${item.name}`}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onClick={() => removeItem(item.uid)}
-                        >
-                          <Icon.Close style={{ width: 11, height: 11 }} />
-                        </button>
+                        <Tooltip label="Quitar">
+                          <button
+                            className="viz-item-remove"
+                            aria-label={`Quitar ${item.name}`}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={() => removeItem(item.uid)}
+                          >
+                            <Icon.Close style={{ width: 11, height: 11 }} />
+                          </button>
+                        </Tooltip>
                         <div
                           className="viz-item-resize"
                           onPointerDown={(e) => handleResizePointerDown(e, item.uid)}
@@ -309,33 +344,108 @@ export function Visualizador({ products, compact = false }: Props) {
             style={{ display: 'none' }}
             onChange={(e) => handlePhotoFile(e.target.files?.[0])}
           />
-        </RevealOnScroll>
+        </div>
 
         {/* ── Catálogo lateral ───────────────────────────────── */}
-        <RevealOnScroll delay={2} as="aside" className="viz-sidebar">
+        <aside className="viz-sidebar">
           <div className="mono" style={{ marginBottom: 12, fontSize: 9, letterSpacing: '0.18em' }}>
             Arrastrá un mueble a la foto
           </div>
-          <div className="viz-sidebar-grid">
-            {withImage.map((p) => (
+
+          {categories.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
               <button
-                key={p.id}
-                className="viz-thumb"
-                draggable
-                onDragStart={(e) => handleThumbDragStart(e, p)}
-                onClick={() => addItem(p)}
-                disabled={!photoUrl}
-                title={photoUrl ? `Arrastrar o tocar para colocar «${p.name}»` : 'Subí una foto primero'}
+                type="button"
+                onClick={() => changeCategoryFilter(null)}
+                className="viz-cat-chip"
+                data-active={categoryFilter === null}
               >
-                <div className="viz-thumb-img">
+                Todas
+              </button>
+              {categories.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => changeCategoryFilter(c.id)}
+                  className="viz-cat-chip"
+                  data-active={categoryFilter === c.id}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="viz-sidebar-grid">
+            {sidebarPageItems.map((p) => (
+              <div key={p.id} className="viz-thumb">
+                <div
+                  className="viz-thumb-img"
+                  draggable={!!photoUrl}
+                  onDragStart={(e) => handleThumbDragStart(e, p)}
+                  onClick={() => photoUrl && addItem(p)}
+                  role="button"
+                  tabIndex={photoUrl ? 0 : -1}
+                  aria-disabled={!photoUrl}
+                  title={photoUrl ? `Arrastrar o tocar para colocar «${p.name}»` : 'Subí una foto primero'}
+                  style={!photoUrl ? { cursor: 'default', opacity: 0.5 } : undefined}
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.imageUrl} alt={p.name} draggable={false} />
+                  <div className="viz-thumb-actions">
+                    <Tooltip label="Agregar al carrito">
+                      <button
+                        type="button"
+                        className="viz-thumb-action"
+                        onClick={(e) => { e.stopPropagation(); addToCart(p) }}
+                        aria-label={`Agregar ${p.name} al carrito`}
+                      >
+                        {addedId === p.id ? '✓' : <Icon.Cart style={{ width: 13, height: 13 }} />}
+                      </button>
+                    </Tooltip>
+                    <Tooltip label="Ver detalle">
+                      <Link
+                        href={`/producto/${p.id}`}
+                        className="viz-thumb-action"
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Ver detalle de ${p.name}`}
+                      >
+                        <Icon.Eye style={{ width: 13, height: 13 }} />
+                      </Link>
+                    </Tooltip>
+                  </div>
                 </div>
                 <span className="viz-thumb-name">{p.name}</span>
-              </button>
+              </div>
             ))}
           </div>
-        </RevealOnScroll>
+
+          {sidebarTotalPages > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+              <button
+                type="button"
+                className="viz-page-btn"
+                onClick={() => setSidebarPage((p) => p - 1)}
+                disabled={sidebarPage === 0}
+                aria-label="Página anterior"
+              >
+                <Icon.Arrow style={{ transform: 'rotate(180deg)', width: 13, height: 13 }} />
+              </button>
+              <span className="mono" style={{ fontSize: 9 }}>
+                {sidebarPage + 1} / {sidebarTotalPages}
+              </span>
+              <button
+                type="button"
+                className="viz-page-btn"
+                onClick={() => setSidebarPage((p) => p + 1)}
+                disabled={sidebarPage >= sidebarTotalPages - 1}
+                aria-label="Página siguiente"
+              >
+                <Icon.Arrow style={{ width: 13, height: 13 }} />
+              </button>
+            </div>
+          )}
+        </aside>
       </div>
     </section>
   )

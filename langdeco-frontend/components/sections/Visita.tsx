@@ -1,4 +1,6 @@
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
+import { Underline } from '@/components/ui/Underline'
+import { SplitChars } from '@/components/ui/SplitChars'
 import { Consultas } from '@/components/sections/Consultas'
 import * as Icon from '@/components/ui/Icon'
 
@@ -40,15 +42,16 @@ export function Visita() {
           <span className="kicker" style={{ display: 'block', marginBottom: 14 }}>Rafaela · Santa Fe</span>
         </RevealOnScroll>
         <h2 className="display visita-h2" data-reveal="headline">
-          El showroom<br />está siempre{' '}
-          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}>abierto</em>.
+          <SplitChars text="El showroom" /><br />
+          <SplitChars text="está siempre" />{' '}
+          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline><SplitChars text="abierto" /></Underline></em>.
         </h2>
 
         <RevealOnScroll delay={2}>
           <div className="visita-info-grid">
             {INFO.map((item) => (
               <div key={item.label} className="visita-info-item">
-                <div className="mono" style={{ marginBottom: 6 }}>{item.label}</div>
+                <div className="mono visita-info-label" style={{ marginBottom: 6 }}>{item.label}</div>
                 <div style={{ lineHeight: 1.4 }}>{item.value}</div>
               </div>
             ))}
@@ -57,7 +60,7 @@ export function Visita() {
 
         <RevealOnScroll delay={3}>
           <div className="visita-socials">
-            <div className="mono" style={{ marginBottom: 16, fontSize: 9, letterSpacing: '0.22em' }}>Seguinos en redes</div>
+            <div className="mono visita-info-label" style={{ marginBottom: 16, fontSize: 9, letterSpacing: '0.22em' }}>Seguinos en redes</div>
             <div style={{ display: 'flex', gap: 16 }}>
               {SOCIALS.map((s, i) => (
                 <a

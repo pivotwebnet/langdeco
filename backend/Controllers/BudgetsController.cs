@@ -164,11 +164,13 @@ public class BudgetsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<BudgetDto>>> GetAll(
+    public async Task<ActionResult> GetAll(
         [FromQuery] BudgetStatus? status = null,
         [FromQuery] ClientType? clientType = null,
         [FromQuery] DateTime? from = null,
-        [FromQuery] DateTime? to = null)
+        [FromQuery] DateTime? to = null,
+        [FromQuery] int? page = null,
+        [FromQuery] int? pageSize = null)
     {
         var query = _db.Budgets.Include(b => b.Items).AsQueryable();
 
@@ -179,8 +181,43 @@ public class BudgetsController : ControllerBase
         var budgets = await query.OrderByDescending(b => b.CreatedAt).ToListAsync();
         await _lifecycle.ExpireIfNeededAsync(budgets);
 
-        var result = status is not null ? budgets.Where(b => b.Status == status) : budgets;
-        return Ok(result.Select(ToDto));
+        // El filtro de status va después de ExpireIfNeededAsync porque puede cambiar el status
+        // (Open -> Expired) — por eso la paginación acá es en memoria, no via Skip/Take en SQL.
+        var filtered = (status is not null ? budgets.Where(b => b.Status == status) : budgets).ToList();
+
+        if (page is not null)
+        {
+            var size = Math.Clamp(pageSize ?? Paging.DefaultPageSize, 1, Paging.MaxPageSize);
+            var pageNum = Math.Max(page.Value, 1);
+            var pageItems = filtered.Skip((pageNum - 1) * size).Take(size).Select(ToDto).ToList();
+            return Ok(new PagedResult<BudgetDto>(pageItems, filtered.Count, pageNum, size));
+        }
+
+        return Ok(filtered.Select(ToDto));
+    }
+
+    [HttpGet("summary")]
+    public async Task<ActionResult<BudgetsSummaryDto>> Summary()
+    {
+        var budgets = await _db.Budgets.ToListAsync();
+        await _lifecycle.ExpireIfNeededAsync(budgets);
+
+        var openBudgets = budgets.Where(b => b.Status == BudgetStatus.Open).ToList();
+        var convertedCount = budgets.Count(b => b.Status == BudgetStatus.Converted);
+        var expiredCount = budgets.Count(b => b.Status == BudgetStatus.Expired);
+        var cancelledCount = budgets.Count(b => b.Status == BudgetStatus.Cancelled);
+        var decidedCount = convertedCount + expiredCount + cancelledCount;
+        var conversionRate = decidedCount > 0 ? (int)Math.Round(convertedCount * 100m / decidedCount) : 0;
+
+        var soonThreshold = DateTime.UtcNow.AddDays(7);
+        var expiringSoon = openBudgets
+            .Where(b => b.ValidUntil is not null && b.ValidUntil <= soonThreshold)
+            .OrderBy(b => b.ValidUntil)
+            .Select(b => new ExpiringBudgetDto(b.Id, b.Number, b.Customer.Name, b.ValidUntil!.Value, b.Total))
+            .Take(10)
+            .ToList();
+
+        return Ok(new BudgetsSummaryDto(openBudgets.Count, expiringSoon.Count, convertedCount, conversionRate, expiringSoon));
     }
 
     [HttpGet("{id}")]
@@ -318,13 +355,15 @@ public class BudgetsController : ControllerBase
     {
         decimal subtotal = 0;
 
+        var productIds = inputs.Select(i => i.ProductId).Distinct().ToList();
+        var products = await _db.Products.Where(p => productIds.Contains(p.Id) && p.Active).ToDictionaryAsync(p => p.Id);
+
         foreach (var itemInput in inputs)
         {
             if (itemInput.Quantity <= 0)
                 throw new ItemValidationException("La cantidad debe ser mayor a 0");
 
-            var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == itemInput.ProductId && p.Active);
-            if (product is null)
+            if (!products.TryGetValue(itemInput.ProductId, out var product))
                 throw new ItemValidationException($"Producto '{itemInput.ProductId}' no existe o está inactivo");
 
             var unitPrice = PricingService.ResolveUnitPrice(product, itemInput.PriceType);

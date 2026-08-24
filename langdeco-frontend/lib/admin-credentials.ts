@@ -45,7 +45,10 @@ export async function saveAdminPassword(password: string): Promise<void> {
 
 export async function verifyAdminPassword(password: string): Promise<boolean> {
   if (process.env.ADMIN_PASSWORD) {
-    return password === process.env.ADMIN_PASSWORD
+    const a = Buffer.from(password)
+    const b = Buffer.from(process.env.ADMIN_PASSWORD)
+    if (a.length !== b.length) return false
+    return timingSafeEqual(a, b)
   }
 
   try {

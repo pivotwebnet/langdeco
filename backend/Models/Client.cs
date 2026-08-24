@@ -2,6 +2,7 @@ namespace backend.Models;
 
 public class Client : PartyBase
 {
+    public string? Dni { get; set; }
     public string? NicknameML { get; set; }
     public string? SalesCategory { get; set; }
     public decimal SalesDiscountPercent { get; set; }

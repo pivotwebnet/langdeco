@@ -2,8 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAdminToast } from '@/components/admin/AdminToast'
+import { Field } from '@/components/admin/Field'
 
 export default function ConfiguracionAdmin() {
+  const toast = useAdminToast()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -31,10 +34,13 @@ export default function ConfiguracionAdmin() {
       })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error || 'No se pudo cambiar la contraseña')
+        const msg = data.error || 'No se pudo cambiar la contraseña'
+        setError(msg)
+        toast.error(msg)
         return
       }
       setSuccess(true)
+      toast.success('Contraseña actualizada.')
       setCurrentPassword('')
       setNewPassword('')
       setConfirm('')
@@ -61,15 +67,15 @@ export default function ConfiguracionAdmin() {
         <h2 className="adm-card-title" style={{ marginBottom: 20 }}>Cambiar contraseña</h2>
 
         <form onSubmit={onSubmit}>
-          <Field label="Contraseña actual">
+          <Field label="Contraseña actual" style={{ marginBottom: 16 }}>
             <input className="adm-input" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required style={{ width: '100%' }} />
           </Field>
 
-          <Field label="Nueva contraseña">
+          <Field label="Nueva contraseña" style={{ marginBottom: 16 }}>
             <input className="adm-input" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8} style={{ width: '100%' }} />
           </Field>
 
-          <Field label="Confirmar nueva contraseña">
+          <Field label="Confirmar nueva contraseña" style={{ marginBottom: 16 }}>
             <input className="adm-input" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={8} style={{ width: '100%' }} />
           </Field>
 
@@ -87,11 +93,3 @@ export default function ConfiguracionAdmin() {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="adm-field" style={{ marginBottom: 16 }}>
-      <label className="adm-field-label">{label}</label>
-      {children}
-    </div>
-  )
-}

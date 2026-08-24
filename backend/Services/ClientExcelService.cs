@@ -14,7 +14,7 @@ public class ClientExcelService
         "BillingCompanyOrFullName", "TaxId", "IvaCondition", "DefaultReceiptType",
         "BillingPhone", "BillingCell", "FiscalAddress", "FiscalLocality", "FiscalProvince", "FiscalPostalCode",
         "ContactoPrincipal_Nombre", "ContactoPrincipal_Cargo", "ContactoPrincipal_Cel", "ContactoPrincipal_Telefono", "ContactoPrincipal_Email",
-        "Active",
+        "Active", "Dni",
     };
 
     public byte[] Export(List<Client> clients)
@@ -64,6 +64,7 @@ public class ClientExcelService
             sheet.Cell(row, col++).Value = contact?.Phone;
             sheet.Cell(row, col++).Value = contact?.Email;
             sheet.Cell(row, col++).Value = c.Active;
+            sheet.Cell(row, col++).Value = c.Dni;
             row++;
         }
 
@@ -101,7 +102,7 @@ public class ClientExcelService
                 BillingPhone: S(23), BillingCell: S(24), FiscalAddress: S(25), FiscalLocality: S(26),
                 FiscalProvince: S(27), FiscalPostalCode: S(28),
                 ContactName: S(29), ContactRole: S(30), ContactCell: S(31), ContactPhone: S(32), ContactEmail: S(33),
-                Active: B(34)));
+                Active: B(34), Dni: S(35)));
         }
 
         return rows;

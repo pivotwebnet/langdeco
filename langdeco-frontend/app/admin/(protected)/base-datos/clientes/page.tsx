@@ -4,7 +4,11 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import type { BackendClient, DefaultReceiptType, IvaCondition } from '@/lib/backend-types'
 import { isValidCuit } from '@/lib/cuit'
 import { IVA_CONDITION_LABEL, RECEIPT_TYPE_LABEL } from '@/lib/party-labels'
+import { formatPrice } from '@/lib/data'
 import { useEscapeKey } from '@/lib/useEscapeKey'
+import { useAdminToast } from '@/components/admin/AdminToast'
+import { adminApi as api } from '@/lib/admin/api'
+import { Field } from '@/components/admin/Field'
 
 type ContactPersonForm = { name: string; role: string; cell: string; phone: string; email: string }
 type CustomFieldForm = { label: string; value: string }
@@ -17,14 +21,13 @@ type ClientForm = {
   cell: string
   phone: string
   email: string
-  webPage: string
   address: string
   province: string
   postalCode: string
   locality: string
   note: string
   initialBalance: string
-  nicknameML: string
+  dni: string
   salesCategory: string
   salesDiscountPercent: string
   noteForClient: string
@@ -43,25 +46,17 @@ type ClientForm = {
 }
 
 const EMPTY_FORM: ClientForm = {
-  id: null, companyOrFullName: '', firstName: '', lastName: '', cell: '', phone: '', email: '', webPage: '',
+  id: null, companyOrFullName: '', firstName: '', lastName: '', cell: '', phone: '', email: '',
   address: '', province: '', postalCode: '', locality: '', note: '', initialBalance: '0',
-  nicknameML: '', salesCategory: '', salesDiscountPercent: '0', noteForClient: '',
+  dni: '', salesCategory: '', salesDiscountPercent: '0', noteForClient: '',
   billingCompanyOrFullName: '', taxId: '', ivaCondition: 'ConsumidorFinal', defaultReceiptType: 'FacturaB',
   billingPhone: '', billingCell: '', fiscalAddress: '', fiscalLocality: '', fiscalProvince: '', fiscalPostalCode: '',
   contactPersons: [], customFields: [],
 }
 
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api/admin/backend${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  const data = res.status === 204 ? null : await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
-  return data as T
-}
 
 export default function ClientesAdmin() {
+  const toast = useAdminToast()
   const [clients, setClients] = useState<BackendClient[]>([])
   const [search, setSearch] = useState('')
   const [showInactive, setShowInactive] = useState(false)
@@ -93,10 +88,10 @@ export default function ClientesAdmin() {
 
   const openEdit = (c: BackendClient) => setForm({
     id: c.id, companyOrFullName: c.companyOrFullName, firstName: c.firstName || '', lastName: c.lastName || '',
-    cell: c.cell || '', phone: c.phone || '', email: c.email || '', webPage: c.webPage || '',
+    cell: c.cell || '', phone: c.phone || '', email: c.email || '',
     address: c.address || '', province: c.province || '', postalCode: c.postalCode || '', locality: c.locality || '',
     note: c.note || '', initialBalance: String(c.initialBalance),
-    nicknameML: c.nicknameML || '', salesCategory: c.salesCategory || '', salesDiscountPercent: String(c.salesDiscountPercent),
+    dni: c.dni || '', salesCategory: c.salesCategory || '', salesDiscountPercent: String(c.salesDiscountPercent),
     noteForClient: c.noteForClient || '',
     billingCompanyOrFullName: c.billingCompanyOrFullName, taxId: c.taxId || '',
     ivaCondition: c.ivaCondition, defaultReceiptType: c.defaultReceiptType,
@@ -114,10 +109,10 @@ export default function ClientesAdmin() {
     try {
       const payload = {
         companyOrFullName: form.companyOrFullName, firstName: form.firstName || null, lastName: form.lastName || null,
-        cell: form.cell || null, phone: form.phone || null, email: form.email || null, webPage: form.webPage || null,
+        cell: form.cell || null, phone: form.phone || null, email: form.email || null,
         address: form.address || null, province: form.province || null, postalCode: form.postalCode || null,
         locality: form.locality || null, note: form.note || null, initialBalance: Number(form.initialBalance) || 0,
-        nicknameML: form.nicknameML || null, salesCategory: form.salesCategory || null,
+        dni: form.dni || null, salesCategory: form.salesCategory || null,
         salesDiscountPercent: Number(form.salesDiscountPercent) || 0, noteForClient: form.noteForClient || null,
         billingCompanyOrFullName: form.billingCompanyOrFullName || form.companyOrFullName, taxId: form.taxId || null,
         ivaCondition: form.ivaCondition, defaultReceiptType: form.defaultReceiptType,
@@ -130,14 +125,18 @@ export default function ClientesAdmin() {
 
       if (form.id) {
         await api(`/clients/${form.id}`, { method: 'PUT', body: JSON.stringify(payload) })
+        toast.success('Cliente actualizado.')
       } else {
         await api(`/clients`, { method: 'POST', body: JSON.stringify(payload) })
+        toast.success('Cliente creado.')
       }
 
       setForm(null)
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     } finally {
       setSaving(false)
     }
@@ -147,18 +146,24 @@ export default function ClientesAdmin() {
     if (!confirm(`¿Eliminar/desactivar "${c.companyOrFullName}"?`)) return
     try {
       await api(`/clients/${c.id}`, { method: 'DELETE' })
+      toast.success('Cliente eliminado o desactivado.')
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     }
   }
 
   const onActivate = async (c: BackendClient) => {
     try {
       await api(`/clients/${c.id}/activate`, { method: 'POST' })
+      toast.success('Cliente reactivado.')
       await load()
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
     }
   }
 
@@ -173,10 +178,14 @@ export default function ClientesAdmin() {
       const res = await fetch('/api/admin/backend/clients/import', { method: 'POST', body: formData })
       const data = await res.json().catch(() => null)
       if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
-      setImportMsg(`Importación completa: ${data.created} creados, ${data.updated} actualizados${data.errors?.length ? `, ${data.errors.length} con error` : ''}.`)
+      const msg = `Importación completa: ${data.created} creados, ${data.updated} actualizados${data.errors?.length ? `, ${data.errors.length} con error` : ''}.`
+      setImportMsg(msg)
+      toast.success(msg)
       await load()
     } catch (err) {
-      setError((err as Error).message)
+      const msg = (err as Error).message
+      setError(msg)
+      toast.error(msg)
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
@@ -219,15 +228,16 @@ export default function ClientesAdmin() {
           <thead>
             <tr>
               <th>Nombre</th>
-              <th>CUIT</th>
+              <th>CUIT/DNI</th>
               <th>Contacto</th>
               <th>Estado</th>
+              <th>Saldo</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={5}><div className="adm-loading">Cargando…</div></td></tr>
+              <tr><td colSpan={6}><div className="adm-loading">Cargando…</div></td></tr>
             )}
             {!loading && clients.map((c) => (
               <tr key={c.id} className={c.active ? '' : 'inactive'}>
@@ -235,9 +245,10 @@ export default function ClientesAdmin() {
                   <div className="adm-table-name">{c.companyOrFullName}</div>
                   <div className="adm-table-sub">{IVA_CONDITION_LABEL[c.ivaCondition]}</div>
                 </td>
-                <td>{c.taxId || '-'}</td>
+                <td>{c.taxId ? `CUIT ${c.taxId}` : c.dni ? `DNI ${c.dni}` : '-'}</td>
                 <td>{c.phone || c.cell || c.email || '-'}</td>
                 <td><span className={`adm-badge ${c.active ? 'ok' : 'danger'}`}>{c.active ? 'Activo' : 'Inactivo'}</span></td>
+                <td>{c.initialBalance ? formatPrice(c.initialBalance) : '-'}</td>
                 <td>
                   <div className="adm-table-actions">
                     <button className="adm-link-btn" onClick={() => openEdit(c)}>Editar</button>
@@ -313,8 +324,6 @@ function ClientFormModal({ form, isNew, saving, onChange, onCancel, onSave }: {
           <Field label="Cel."><input className="adm-input" value={form.cell} onChange={(e) => set('cell', e.target.value)} placeholder="+54 9 11 2345-678" style={{ width: '100%' }} /></Field>
           <Field label="Teléfono"><input className="adm-input" value={form.phone} onChange={(e) => set('phone', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Email"><input className="adm-input" value={form.email} onChange={(e) => set('email', e.target.value)} style={{ width: '100%' }} /></Field>
-          <Field label="Apodo ML"><input className="adm-input" value={form.nicknameML} onChange={(e) => set('nicknameML', e.target.value)} style={{ width: '100%' }} /></Field>
-          <Field label="Página Web"><input className="adm-input" value={form.webPage} onChange={(e) => set('webPage', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Domicilio"><input className="adm-input" value={form.address} onChange={(e) => set('address', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Provincia"><input className="adm-input" value={form.province} onChange={(e) => set('province', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Localidad"><input className="adm-input" value={form.locality} onChange={(e) => set('locality', e.target.value)} style={{ width: '100%' }} /></Field>
@@ -377,6 +386,7 @@ function ClientFormModal({ form, isNew, saving, onChange, onCancel, onSave }: {
             {cuitCheck === 'valid' && <span className="adm-badge ok" style={{ marginTop: 6 }}>✓ CUIT válido</span>}
             {cuitCheck === 'invalid' && <span className="adm-badge danger" style={{ marginTop: 6 }}>✗ CUIT inválido</span>}
           </Field>
+          <Field label="DNI"><input className="adm-input" value={form.dni} onChange={(e) => set('dni', e.target.value)} placeholder="12345678" style={{ width: '100%' }} /></Field>
           <Field label="Condición de IVA">
             <select className="adm-select" value={form.ivaCondition} onChange={(e) => set('ivaCondition', e.target.value as IvaCondition)} style={{ width: '100%' }}>
               {Object.entries(IVA_CONDITION_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -414,11 +424,3 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="adm-field">
-      <label className="adm-field-label">{label}</label>
-      {children}
-    </div>
-  )
-}

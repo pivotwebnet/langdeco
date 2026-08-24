@@ -1,15 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { SalesSummary } from '@/lib/backend-types'
+import type { BudgetsSummary, SalesSummary } from '@/lib/backend-types'
 import MonthlyRevenueChart from '@/components/admin/MonthlyRevenueChart'
-
-async function api<T>(path: string): Promise<T> {
-  const res = await fetch(`/api/admin/backend${path}`)
-  const data = await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
-  return data as T
-}
+import { adminApi as api } from '@/lib/admin/api'
 
 type RangePreset = 3 | 6 | 12 | 'custom'
 
@@ -19,6 +13,7 @@ function toDateInputValue(d: Date): string {
 
 export default function AdminDashboard() {
   const [summary, setSummary] = useState<SalesSummary | null>(null)
+  const [budgetsSummary, setBudgetsSummary] = useState<BudgetsSummary | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -50,6 +45,10 @@ export default function AdminDashboard() {
       .catch((e) => setError((e as Error).message))
       .finally(() => setLoading(false))
   }, [preset, customFrom, customTo])
+
+  useEffect(() => {
+    api<BudgetsSummary>('/budgets/summary').then(setBudgetsSummary).catch(() => {})
+  }, [])
 
   const revenueChange = summary?.revenueChangePercent ?? null
   const deltaDirection = revenueChange === null ? 'flat' : revenueChange > 0 ? 'up' : revenueChange < 0 ? 'down' : 'flat'
@@ -190,6 +189,34 @@ export default function AdminDashboard() {
               ))
             ) : (
               <div className="adm-empty">Todo con stock suficiente.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Presupuestos por vencer */}
+        <div>
+          <h2 className="adm-section-title">Presupuestos por vencer (próx. 7 días)</h2>
+          <div className="adm-card">
+            {!budgetsSummary ? (
+              <div className="adm-loading">Cargando…</div>
+            ) : budgetsSummary.expiringSoon.length ? (
+              budgetsSummary.expiringSoon.map((b, i) => (
+                <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 22px', borderBottom: i < budgetsSummary.expiringSoon.length - 1 ? '1px solid var(--adm-border)' : 'none' }}>
+                  <div>
+                    <div className="adm-table-name">#{b.number} · {b.customerName}</div>
+                    <div className="adm-table-sub">Vence {new Date(b.validUntil).toLocaleDateString('es-AR')}</div>
+                  </div>
+                  <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>$ {b.total.toLocaleString('de-DE')}</div>
+                </div>
+              ))
+            ) : (
+              <div className="adm-empty">Ningún presupuesto abierto vence pronto.</div>
+            )}
+            {budgetsSummary && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 22px', borderTop: '1px solid var(--adm-border)', fontSize: 12, color: 'var(--ink-soft)' }}>
+                <span>{budgetsSummary.openCount} abiertos</span>
+                <span>Tasa de conversión: {budgetsSummary.conversionRatePercent}%</span>
+              </div>
             )}
           </div>
         </div>

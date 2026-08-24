@@ -23,8 +23,9 @@ public class SuppliersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<SupplierDto>>> GetAll(
-        [FromQuery] bool includeInactive = false, [FromQuery] string? search = null)
+    public async Task<ActionResult> GetAll(
+        [FromQuery] bool includeInactive = false, [FromQuery] string? search = null,
+        [FromQuery] int? page = null, [FromQuery] int? pageSize = null)
     {
         var query = _db.Suppliers
             .Include(s => s.ContactPersons)
@@ -39,7 +40,15 @@ public class SuppliersController : ControllerBase
             query = query.Where(s => s.CompanyOrFullName.ToLower().Contains(q) || (s.TaxId != null && s.TaxId.Contains(q)));
         }
 
-        var suppliers = await query.OrderBy(s => s.CompanyOrFullName).ToListAsync();
+        query = query.OrderBy(s => s.CompanyOrFullName);
+
+        if (page is not null)
+        {
+            var paged = await Paging.ApplyAsync(query, page.Value, pageSize);
+            return Ok(new PagedResult<SupplierDto>(paged.Items.Select(ToDto).ToList(), paged.Total, paged.Page, paged.PageSize));
+        }
+
+        var suppliers = await query.ToListAsync();
         return Ok(suppliers.Select(ToDto));
     }
 
@@ -148,6 +157,10 @@ public class SuppliersController : ControllerBase
         var updated = 0;
         var errors = new List<ImportRowError>();
 
+        var lookup = await PartyImportMatcher.PrefetchAsync(
+            _db.Suppliers.Include(s => s.ContactPersons),
+            rows.Select(r => (r.TaxId, r.CompanyOrFullName)));
+
         foreach (var row in rows)
         {
             if (string.IsNullOrWhiteSpace(row.CompanyOrFullName))
@@ -162,13 +175,7 @@ public class SuppliersController : ControllerBase
                 continue;
             }
 
-            Supplier? supplier = null;
-            if (!string.IsNullOrWhiteSpace(row.TaxId))
-                supplier = await _db.Suppliers.Include(s => s.ContactPersons).FirstOrDefaultAsync(s => s.TaxId == row.TaxId);
-            if (supplier is null)
-                supplier = await _db.Suppliers.Include(s => s.ContactPersons)
-                    .FirstOrDefaultAsync(s => s.CompanyOrFullName.ToLower() == row.CompanyOrFullName.ToLower());
-
+            var supplier = lookup.Find(row.TaxId, row.CompanyOrFullName);
             var isNew = supplier is null;
             supplier ??= new Supplier();
 

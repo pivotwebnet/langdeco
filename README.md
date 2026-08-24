@@ -36,8 +36,10 @@ Migraciones en `backend/Migrations/`, aplicadas automáticamente al arrancar el 
 - **CUIT**: se valida formato (11 dígitos) + dígito verificador (algoritmo módulo 11 argentino) tanto al guardar un Cliente/Proveedor como en el botón "Verificar" del formulario (este último corre 100% en el navegador, sin llamada al backend).
 - **Borrado con integridad referencial**: un Cliente/Proveedor con ventas o presupuestos asociados se desactiva en vez de borrarse (soft-delete); si no tiene ninguno, se elimina de verdad. Borrar un Cliente nunca rompe una venta ya emitida (el comprobante conserva su propia copia de los datos en `CustomerInfo`).
 - **Import de Excel sin duplicar**: al reimportar una planilla, matchea filas existentes primero por CUIT y si no hay CUIT por nombre exacto — actualiza en vez de crear un registro nuevo.
-- **Seguridad `X-Admin-Key`**: filtro `RequireAdminKey` sobre los endpoints administrativos. Se configura con `AdminApiKey` (backend), que debe coincidir con `BACKEND_ADMIN_KEY` (frontend). **Si `AdminApiKey` está vacía no se exige nada** (solo pensado para desarrollo local); en producción es obligatorio definirla.
+- **Seguridad `X-Admin-Key`**: filtro `RequireAdminKey` sobre los endpoints administrativos. Se configura con `AdminApiKey` (backend), que debe coincidir con `BACKEND_ADMIN_KEY` (frontend). La comparación es timing-safe (`AdminKeyComparer`, `CryptographicOperations.FixedTimeEquals`) y **falla cerrada**: si `AdminApiKey` está vacía o no configurada, todo pedido admin se rechaza (antes se saltaba el chequeo por completo con la clave vacía — ya no).
 - **Catálogo público** (`GET /api/products`, `GET /api/categories`): sin clave, devuelve solo activos.
+- **Validación de producto**: `Name` y `Material` son obligatorios al crear/editar — antes faltaba esta validación puntual y tirar un producto sin esos campos daba un 500 en vez de un 400 con mensaje claro.
+- **Consultas** (`InquiriesController`, `POST /api/inquiries`): endpoint público real (sin clave) donde el formulario de contacto del sitio público guarda leads; el panel admin los lee vía `/admin/clientes` — no es un dato de muestra, es el mismo flujo end-to-end.
 
 ### Comprobantes en PDF
 
@@ -59,6 +61,7 @@ Este comprobante **no tiene validez fiscal** (no emite CAE ni se integra con ARC
 
 Públicos (sin clave):
 - `GET /api/products`, `GET /api/products/{id}`, `GET /api/categories`
+- `POST /api/inquiries` — el formulario de contacto del sitio público crea una consulta real (nombre, email, mensaje).
 
 Admin (requieren header `X-Admin-Key`):
 - Productos/Categorías: CRUD completo + `activate`/`deactivate`.
@@ -66,6 +69,7 @@ Admin (requieren header `X-Admin-Key`):
 - `POST /api/budgets`, `GET /api/budgets`, `GET /api/budgets/{id}`, `PUT /api/budgets/{id}`, `PATCH /api/budgets/{id}/status`, `POST /api/budgets/{id}/convert`, `GET /api/budgets/{id}/pdf`.
 - `POST /api/clients`, `GET /api/clients`, `GET /api/clients/{id}`, `PUT /api/clients/{id}`, `DELETE /api/clients/{id}`, `POST /api/clients/{id}/activate`, `GET /api/clients/export`, `POST /api/clients/import`.
 - Mismo set para `/api/suppliers`.
+- `GET /api/inquiries` (filtro `?status=`), `PATCH /api/inquiries/{id}/status` — bandeja de "Consultas" del panel (`POST /api/inquiries` es público, ver más abajo).
 
 Documentación interactiva (solo en `Development`): **`/swagger`**.
 
@@ -119,7 +123,7 @@ Vive enteramente en el frontend, es solo por contraseña (sin usuario):
 
 La conversión real de un Presupuesto en Venta es `POST /api/budgets/{id}/convert` (`BudgetConvertDto { PaymentMethod }`): valida que el presupuesto siga `Open` (venciéndolo primero si corresponde), descuenta stock por ítem con rollback si falta alguno, crea la `Sale` con numeración propia y `BudgetId`, y marca el `Budget` como `Converted` con `ConvertedSaleId`/`ConvertedAt`. Si esa `Sale` generada se cancela después, `BudgetLifecycleService.ReopenIfConvertedAsync` reabre el `Budget` a `Open` (salvo que ya haya vencido, en cuyo caso queda `Expired`).
 
-**Nota:** por ahora el toggle Retail/Wholesale por línea y el selector de tipo de descuento (%/monto con recargo) **no están en la UI del panel** — `NewBudgetModal`/`NewSaleModal` solo arman ítems `Retail` con descuento en %. `lib/backend-types.ts` tampoco refleja todavía `wholesalePrice`, `priceType`, `discountType`, `discountFixedAmount`, `convertedSaleId`/`convertedAt`. El backend soporta todo esto de punta a punta (ver spec en `specs/presupuestos-precio-mayorista/`), falta construir esa parte del frontend.
+**Estado real de la UI mayorista** (corrige documentación previa desactualizada): el panel **sí** tiene UI mayorista parcial — el formulario de producto tiene el campo "Precio mayorista", y el alta de Venta/Presupuesto tiene un selector Minorista/Mayorista (`ClientType`) que resuelve el precio de todos los ítems del comprobante contra `wholesalePrice` cuando corresponde. `lib/backend-types.ts` refleja `wholesalePrice` y `clientType`/`ClientType`. Lo que **sigue faltando**: el selector es **por documento entero**, no por línea (no se puede mezclar Retail y Wholesale en el mismo comprobante); el descuento solo tiene el campo `discountPercent` (%), sin el toggle de `discountType`/`discountFixedAmount` (monto fijo o recargo) que el backend ya soporta; y no hay ningún indicador visual en la UI de que una Venta viene de un Presupuesto convertido (`convertedSaleId`/`convertedAt` no están en `lib/backend-types.ts` ni se muestran).
 
 ### Panel de administración (`app/admin/(protected)/`)
 
@@ -134,8 +138,8 @@ El panel fue rediseñado (CSS propio en `app/admin/admin.css`, cargado desde `ap
 | `/admin/presupuestos` | Igual que Ventas pero sin tocar stock, con fecha de vencimiento. "Convertir en venta" abre un modal para elegir medio de pago y llama a `POST /convert` (descuenta stock de verdad y abre el comprobante de la `Sale` generada). |
 | `/admin/base-datos/clientes` | ABM de Clientes (todos los campos de contacto y facturación, Personas de Contacto, Campos custom), import/export Excel. |
 | `/admin/base-datos/proveedores` | Igual que Clientes, con sección "Compras" en vez de "Ventas". |
-| `/admin/clientes` | "Consultas" — bandeja de leads de contacto (WhatsApp/email), módulo aparte, con datos de muestra. |
-| `/admin/contenido` | Contenido editable del sitio público: "Inspiración" (ex-Lookbook), barra de promociones scrolleable, imágenes propias. Storage en `DATA_DIR/site-content.json` + `DATA_DIR/uploads` (ver sección **Storage de contenido e imágenes**). |
+| `/admin/clientes` | "Consultas" — bandeja de leads reales del formulario de contacto del sitio público (`Inquiry`/`InquiriesController`, backend real, no datos de muestra), módulo aparte de la Base de Datos de Clientes. |
+| `/admin/contenido` | Contenido editable del sitio público: Hero, logotipo, página "Nosotros" (fotos + todos los textos: título, intro, línea de tiempo de 4 hitos, 3 pilares), "Inspiración" (ex-Lookbook), barra de promociones scrolleable. Storage en `DATA_DIR/site-content.json` + `DATA_DIR/uploads` (ver sección **Storage de contenido e imágenes**). |
 | `/admin/configuracion` | Cambio de contraseña del panel. |
 
 ### Visualizador de espacios (`app/visualizador/`)
@@ -172,20 +176,42 @@ npm run dev     # necesita el backend corriendo en API_URL
 
 ---
 
+## Resiliencia del frontend
+
+- `app/error.tsx` — error boundary de nivel raíz con la identidad visual del sitio (Header/Footer, botones "Reintentar"/"Volver al inicio") en vez de la pantalla de error genérica de Next si el backend está caído o tira una excepción.
+- `app/not-found.tsx` — 404 con la misma identidad visual.
+- `lib/api.ts` tiene timeout (`AbortSignal.timeout`, 8s) en los fetches al backend — si el backend .NET no responde, la página falla rápido con un mensaje claro en vez de colgarse.
+
+## SEO
+
+- `app/sitemap.ts` / `app/robots.ts` — generados dinámicamente (rutas estáticas + productos del catálogo).
+- `app/producto/[id]/page.tsx` tiene `generateMetadata()` por producto (título, descripción, Open Graph, Twitter card) en vez de compartir el metadata genérico del sitio, más JSON-LD (`schema.org/Product`) inline.
+- `app/layout.tsx` define `metadataBase` (necesario para que las URLs relativas de OG resuelvan bien) y el Open Graph/Twitter por defecto del sitio.
+- `lib/site-url.ts` expone `SITE_URL` (env `NEXT_PUBLIC_SITE_URL`, con fallback a `localhost:3000`) — configurar esa variable en producción para que sitemap/OG/JSON-LD usen el dominio real.
+
+## Tests
+
+Cobertura chica pero real de la lógica más riesgosa (precios, stock, conversión), no cobertura exhaustiva de cada controller/componente:
+
+- **Backend** (`backend.Tests/`, xUnit): `PricingServiceTests`, `DocumentTotalsCalculatorTests` (matemática de precio/descuento/IVA, sin DB), `StockServiceTests` (descuento atómico de stock, contra SQLite en memoria real — no el proveedor InMemory de EF, que no soporta `ExecuteUpdateAsync`). Correr con `cd backend.Tests && dotnet test`.
+- **Frontend** (Vitest, `lib/**/*.test.ts`): `formatPrice`, `normalize`, `isValidCuit`. Correr con `npm run test`.
+- **E2E** (Playwright, `e2e/*.spec.ts`): catálogo + agregar al carrito, home. Requiere el backend y `npm run dev` ya corriendo (no levanta servidores solo). Correr con `npm run test:e2e`.
+
 ## Alcance y limitaciones conocidas
 
 - Los comprobantes de Venta/Presupuesto **no son facturas fiscales** (no hay integración con el web service de Factura Electrónica de ARCA/AFIP, no emiten CAE) — son respaldo interno para facturar manualmente después.
 - El botón "Verificar" CUIT valida formato y dígito verificador localmente; no consulta el padrón real de ARCA/AFIP.
 - "Saldo Inicial" de Cliente/Proveedor es un campo informativo — no hay libro de movimientos ni cuenta corriente.
 - El export de Excel solo incluye la primera Persona de Contacto por fila; los Campos custom no se exportan (sí se pueden seguir editando desde el panel).
-- La sección "Consultas" (`/admin/clientes`) sigue con datos de muestra, sin conectar a un backend real — es un módulo aparte de la Base de Datos de Clientes.
-- Subida de fotos de producto: hoy son URLs escritas a mano, no hay upload de archivos desde la PC.
-- El precio mayorista/`PriceType` por línea está completo en el backend pero **no tiene UI en el panel** todavía (ver sección **Precio mayorista y conversión Presupuesto → Venta**) — falta el bloque de Frontend de `specs/presupuestos-precio-mayorista/tasks.md`.
+- Subida de fotos de producto: hoy son URLs escritas a mano, no hay upload de archivos desde la PC (el mecanismo de upload ya existe y se usa en Contenido, solo falta conectarlo al formulario de productos).
+- El precio mayorista/`ClientType` está parcialmente en la UI del panel (ver sección **Precio mayorista y conversión Presupuesto → Venta**): falta el toggle por línea, el tipo de descuento con recargo, y mostrar de qué presupuesto salió una venta.
 - El "Visualizador de espacios" (`/visualizador`) es una prueba de superposición de muebles sobre una foto subida por el visitante, sin guardado ni backend propio más allá de leer el catálogo.
+- Tests: cobertura chica (ver sección **Tests**), no exhaustiva — la mayoría de los controllers/componentes no tienen test propio todavía.
 
 ## Seguridad — checklist para producción
 
-1. **`AdminApiKey` (backend) = `BACKEND_ADMIN_KEY` (frontend)**, con un valor aleatorio largo. Si queda vacía, cualquiera que llegue al backend puede leer y modificar todo (ventas, clientes, datos fiscales).
+1. **`AdminApiKey` (backend) = `BACKEND_ADMIN_KEY` (frontend)**, con un valor aleatorio largo. Ya falla cerrada si queda vacía (ver **Reglas de negocio**), pero sin una clave real el panel admin no es utilizable — igual hay que definirla.
 2. **`ADMIN_SESSION_SECRET`** aleatorio y largo — si falta, se usa un valor por defecto inseguro y la cookie de sesión sería falsificable.
 3. **Backend en red interna**: exponer públicamente solo el frontend Next.js; el backend .NET debe ser accesible solo desde el contenedor del frontend.
 4. Persistir el volumen de Postgres y el directorio `data/` del frontend (contraseña del panel) — sin esto, cada redeploy pierde la base o la contraseña configurada.
+5. **`NEXT_PUBLIC_SITE_URL`** con el dominio real de producción — sin esto, sitemap/robots/Open Graph siguen apuntando a `localhost:3000`.

@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
-import { getProducts } from '@/lib/api'
+import { getProducts, getCategories } from '@/lib/api'
 import { toProduct } from '@/lib/product-mapper'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Productos } from '@/components/sections/Productos'
 import { ScrollAnimator } from '@/components/ui/ScrollAnimator'
 
@@ -14,16 +15,19 @@ export const metadata: Metadata = {
 export default async function CatalogoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cat?: string }>
+  searchParams: Promise<{ cat?: string; q?: string }>
 }) {
-  const [products, { cat }] = await Promise.all([getProducts(), searchParams])
+  const [products, categories, { cat, q }] = await Promise.all([getProducts(), getCategories(), searchParams])
   const initialCategory = cat === 'mayor' || cat === 'tesoro' ? cat : undefined
 
   return (
     <>
       <ScrollAnimator />
       <Header />
-      <Productos products={products.map(toProduct)} initialCategory={initialCategory} />
+      <main className="pd-page">
+        <PageHeader label="Catálogo" />
+        <Productos products={products.map(toProduct)} categories={categories} initialCategory={initialCategory} initialQuery={q} />
+      </main>
       <Footer />
     </>
   )

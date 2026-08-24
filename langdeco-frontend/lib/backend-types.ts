@@ -1,6 +1,9 @@
+export type CategoryGroup = 'Mayor' | 'Tesoro'
+
 export interface BackendCategory {
   id: string
   name: string
+  group: CategoryGroup
   active: boolean
 }
 
@@ -20,6 +23,7 @@ export interface BackendProduct {
   roomTags: string[]
   price: number
   originalPrice: number | null
+  wholesalePrice: number | null
   stock: number
   note: string | null
   aspect: string | null
@@ -138,6 +142,7 @@ interface BackendPartyBase {
 }
 
 export interface BackendClient extends BackendPartyBase {
+  dni: string | null
   nicknameML: string | null
   salesCategory: string | null
   salesDiscountPercent: number
@@ -191,4 +196,27 @@ export interface BackendInquiry {
   message: string
   status: InquiryStatus
   createdAt: string
+}
+
+export interface PagedResult<T> {
+  items: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export interface ExpiringBudget {
+  id: number
+  number: number
+  customerName: string
+  validUntil: string
+  total: number
+}
+
+export interface BudgetsSummary {
+  openCount: number
+  expiringSoonCount: number
+  convertedCount: number
+  conversionRatePercent: number
+  expiringSoon: ExpiringBudget[]
 }
