@@ -1485,7 +1485,7 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
   }
   [data-dt="lookbook"] .look-item-wrap { flex: none !important; scroll-snap-align: none !important; }
 
-  [data-dt="productos"] { padding: 120px 64px 96px !important; }
+  [data-dt="productos"] { padding: 48px 64px 96px !important; }
   [data-dt="productos"] .prod-header { padding: 0 !important; margin-bottom: 56px !important; }
   [data-dt="productos"] .prod-h2 { font-size: 88px !important; }
   [data-dt="productos"] .cat-layout { padding: 0 !important; }

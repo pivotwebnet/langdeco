@@ -108,7 +108,7 @@ export function Productos({ products, categories, initialCategory, initialQuery 
   const pageItems  = items.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
   return (
-    <section data-dt="productos" id="catalogo" style={{ position: 'relative', padding: '88px 0 80px', overflow: 'hidden' }}>
+    <section data-dt="productos" id="catalogo" style={{ position: 'relative', padding: '48px 0 80px', overflow: 'hidden' }}>
 
         {/* ── Header ───────────────────────────────────────────── */}
         <div className="prod-header" style={{ padding: '0 24px', marginBottom: 32 }}>
