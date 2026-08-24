@@ -188,6 +188,7 @@ export function Header({ hasPromo = false }: HeaderProps) {
             className="logo-img"
             width={150}
             height={150}
+            unoptimized
             priority
           />
         </Link>
@@ -358,7 +359,7 @@ export function Header({ hasPromo = false }: HeaderProps) {
             flexShrink: 0,
           }}>
             <Link href="/" onClick={closeAll} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-              <Image src={logoUrl} alt="LasLangDeco" width={150} height={150} style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
+              <Image src={logoUrl} alt="LasLangDeco" width={150} height={150} unoptimized style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
             </Link>
             <button
               className="icon-btn"

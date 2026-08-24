@@ -13,6 +13,7 @@ import { useEscapeKey } from '@/lib/useEscapeKey'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
+import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { ProductCard } from '@/components/ui/ProductCard'
 import * as Icon from '@/components/ui/Icon'
@@ -110,7 +111,7 @@ export function ProductoDetalle({ product, related }: Props) {
         <div className="pd-body">
 
           {/* Gallery */}
-          <div className="pd-gallery">
+          <RevealOnScroll className="pd-gallery">
             <div
               className="pd-main-wrap"
               onClick={() => showMainImage && setZoomOpen(true)}
@@ -162,10 +163,10 @@ export function ProductoDetalle({ product, related }: Props) {
                 ))}
               </div>
             )}
-          </div>
+          </RevealOnScroll>
 
           {/* Info */}
-          <div className="pd-info">
+          <RevealOnScroll delay={1} className="pd-info">
             {(product.tag || isLowStock || isOutOfStock) && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
                 {product.tag && (
@@ -296,7 +297,7 @@ export function ProductoDetalle({ product, related }: Props) {
               Consultas por WhatsApp · Envíos a todo el país<br />
               Pago en cuotas · Coordinar entrega
             </div>
-          </div>
+          </RevealOnScroll>
         </div>
 
         {/* ── Related ──────────────────────────────────────── */}
@@ -308,8 +309,8 @@ export function ProductoDetalle({ product, related }: Props) {
                 También te puede gustar
               </div>
               <div className="pd-related-track">
-                {related.map((p) => (
-                  <div key={p.id} className="pd-related-item">
+                {related.map((p, i) => (
+                  <RevealOnScroll key={p.id} delay={Math.min(i, 3)} className="pd-related-item">
                     <ProductCard
                       p={p}
                       variant="grid"
@@ -317,7 +318,7 @@ export function ProductoDetalle({ product, related }: Props) {
                       onAdd={onAddRelated}
                       onSelect={(prod) => router.push(`/producto/${prod.id}`)}
                     />
-                  </div>
+                  </RevealOnScroll>
                 ))}
               </div>
             </div>
@@ -332,8 +333,8 @@ export function ProductoDetalle({ product, related }: Props) {
                 Vistos recientemente
               </div>
               <div className="pd-related-track">
-                {recentlyViewed.map((p) => (
-                  <div key={p.id} className="pd-related-item">
+                {recentlyViewed.map((p, i) => (
+                  <RevealOnScroll key={p.id} delay={Math.min(i, 3)} className="pd-related-item">
                     <ProductCard
                       p={p}
                       variant="grid"
@@ -341,7 +342,7 @@ export function ProductoDetalle({ product, related }: Props) {
                       onAdd={onAddRelated}
                       onSelect={(prod) => router.push(`/producto/${prod.id}`)}
                     />
-                  </div>
+                  </RevealOnScroll>
                 ))}
               </div>
             </div>
