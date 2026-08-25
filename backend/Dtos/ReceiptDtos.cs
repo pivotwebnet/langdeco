@@ -25,5 +25,5 @@ public record ReceiptData(
     decimal DiscountAmount,
     decimal TaxRatePercent,
     decimal TaxAmount,
-    decimal NetExemptAmount,
+    decimal NetAmount,
     decimal Total);

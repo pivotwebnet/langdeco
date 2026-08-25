@@ -144,7 +144,7 @@ export function Inspiracion({ items, products }: InspiracionProps) {
                           <div
                             className={`look-hotspot-card${openUp ? ' up' : ''}${alignLeft ? ' left' : alignRight ? ' right' : ''}`}
                           >
-                            <Link href={`/producto/${product.id}`} className="look-hotspot-thumb">
+                            <Link href={`/producto/${product.id}`} className="look-hotspot-thumb" aria-label={product.name}>
                               {product.imageUrl && (
                                 <Image src={product.imageUrl} alt="" fill unoptimized sizes="52px" style={{ objectFit: 'cover' }} />
                               )}

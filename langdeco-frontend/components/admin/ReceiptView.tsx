@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { BackendBudget, BackendProduct, BackendSale, BackendCustomer, ClientType } from '@/lib/backend-types'
 import { useEscapeKey } from '@/lib/useEscapeKey'
 import { useAdminToast } from '@/components/admin/AdminToast'
+import { adminApi as api } from '@/lib/admin/api'
 
 /** Precio unitario según el tipo de cliente — mayorista si el producto tiene precio mayorista cargado, si no cae a minorista. */
 function resolvePrice(product: BackendProduct | null | undefined, clientType: ClientType): number {
@@ -14,16 +15,6 @@ function resolvePrice(product: BackendProduct | null | undefined, clientType: Cl
 
 type ReceiptKind = 'sale' | 'budget'
 type ReceiptRecord = BackendSale | BackendBudget
-
-async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`/api/admin/backend${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  })
-  const data = res.status === 204 ? null : await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
-  return data as T
-}
 
 function formatMoney(value: number) {
   return `$ ${value.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`

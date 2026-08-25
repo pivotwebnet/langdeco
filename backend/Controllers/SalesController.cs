@@ -95,6 +95,14 @@ public class SalesController : ControllerBase
 
         var totals = DocumentTotalsCalculator.Compute(
             subtotal, input.DiscountType, input.DiscountPercent, input.DiscountFixedAmount, input.TaxRatePercent);
+
+        var validationError = DocumentTotalsCalculator.Validate(input.DiscountType, input.DiscountPercent, input.TaxRatePercent, totals);
+        if (validationError is not null)
+        {
+            await tx.RollbackAsync();
+            return BadRequest(new { error = validationError });
+        }
+
         sale.Subtotal = totals.Subtotal;
         sale.DiscountAmount = totals.DiscountAmount;
         sale.TaxAmount = totals.TaxAmount;
@@ -166,6 +174,14 @@ public class SalesController : ControllerBase
 
         var totals = DocumentTotalsCalculator.Compute(
             subtotal, input.DiscountType, input.DiscountPercent, input.DiscountFixedAmount, input.TaxRatePercent);
+
+        var validationError = DocumentTotalsCalculator.Validate(input.DiscountType, input.DiscountPercent, input.TaxRatePercent, totals);
+        if (validationError is not null)
+        {
+            await tx.RollbackAsync();
+            return BadRequest(new { error = validationError });
+        }
+
         sale.Subtotal = totals.Subtotal;
         sale.DiscountAmount = totals.DiscountAmount;
         sale.TaxAmount = totals.TaxAmount;
@@ -216,11 +232,26 @@ public class SalesController : ControllerBase
     [HttpPatch("{id}/status")]
     public async Task<ActionResult<SaleDto>> UpdateStatus(int id, SaleStatusUpdateDto input)
     {
+        await using var tx = await _db.Database.BeginTransactionAsync();
+
         var sale = await _db.Sales.Include(s => s.Items).FirstOrDefaultAsync(s => s.Id == id);
         if (sale is null) return NotFound();
 
         if (!ValidTransitions[sale.Status].Contains(input.Status))
             return BadRequest(new { error = $"Transición inválida de {sale.Status} a {input.Status}" });
+
+        // Transición atómica guardada por el estado leído recién: si otra request ya cambió el
+        // estado entre el SELECT de arriba y este UPDATE (doble click, retry), acá da 0 filas y
+        // evitamos reponer stock dos veces para la misma cancelación.
+        var updatedRows = await _db.Sales
+            .Where(s => s.Id == id && s.Status == sale.Status)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.Status, input.Status));
+
+        if (updatedRows == 0)
+        {
+            await tx.RollbackAsync();
+            return Conflict(new { error = "La venta ya fue actualizada por otra operación. Recargá e intentá de nuevo." });
+        }
 
         if (input.Status == SaleStatus.Cancelled)
         {
@@ -229,7 +260,7 @@ public class SalesController : ControllerBase
         }
 
         sale.Status = input.Status;
-        await _db.SaveChangesAsync();
+        await tx.CommitAsync();
 
         if (input.Status == SaleStatus.Cancelled && sale.BudgetId is not null)
             await _lifecycle.ReopenIfConvertedAsync(sale.BudgetId.Value);
@@ -245,7 +276,7 @@ public class SalesController : ControllerBase
 
         var company = await _db.CompanySettings.AsNoTracking().FirstOrDefaultAsync() ?? new CompanySettings();
 
-        var netExempt = sale.TaxRatePercent == 0 ? sale.Subtotal - sale.DiscountAmount : 0;
+        var netAmount = sale.Subtotal - sale.DiscountAmount;
         var receipt = new Dtos.ReceiptData(
             "VENTA", sale.Number, sale.CreatedAt, null,
             sale.Customer.Name, sale.Customer.TaxId, sale.Customer.Address, sale.Customer.Contact,
@@ -254,7 +285,7 @@ public class SalesController : ControllerBase
                 i.Quantity * i.UnitPrice, sale.TaxRatePercent,
                 i.Quantity * i.UnitPrice * (1 + sale.TaxRatePercent / 100m))).ToList(),
             sale.Subtotal, sale.DiscountPercent, sale.DiscountAmount,
-            sale.TaxRatePercent, sale.TaxAmount, netExempt, sale.Total);
+            sale.TaxRatePercent, sale.TaxAmount, netAmount, sale.Total);
 
         var bytes = _pdf.Generate(receipt, company);
         return File(bytes, "application/pdf", $"venta-{sale.Number}.pdf");

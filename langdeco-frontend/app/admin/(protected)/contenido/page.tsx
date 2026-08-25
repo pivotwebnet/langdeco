@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { SiteContent } from '@/lib/site-content'
 import type { BackendProduct } from '@/lib/backend-types'
-import type { LookbookHotspot, NosotrosHito, NosotrosPilar } from '@/lib/types'
+import type { LookbookHotspot, NosotrosHito, NosotrosPilar, NosotrosTeamMember } from '@/lib/types'
 import { formatPrice } from '@/lib/data'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { useEscapeKey } from '@/lib/useEscapeKey'
@@ -13,6 +13,14 @@ import { Field } from '@/components/admin/Field'
 
 type InspiracionForm = SiteContent['inspiracion'][number]
 
+type ContentTab = 'general' | 'nosotros' | 'legal' | 'inspiracion'
+const TABS: { id: ContentTab; label: string }[] = [
+  { id: 'general', label: 'General' },
+  { id: 'nosotros', label: 'Nosotros' },
+  { id: 'legal', label: 'Legal' },
+  { id: 'inspiracion', label: 'Inspiración' },
+]
+
 export default function ContenidoAdmin() {
   const toast = useAdminToast()
   const [content, setContent] = useState<SiteContent | null>(null)
@@ -20,10 +28,13 @@ export default function ContenidoAdmin() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [tab, setTab] = useState<ContentTab>('general')
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null)
   const [uploadingHero, setUploadingHero] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [uploadingNosotrosPhoto, setUploadingNosotrosPhoto] = useState<'showroom' | 'taller' | 'detalle' | null>(null)
+  const [uploadingHitoImage, setUploadingHitoImage] = useState<number | null>(null)
+  const [uploadingTeamPhoto, setUploadingTeamPhoto] = useState<number | null>(null)
   const [products, setProducts] = useState<BackendProduct[]>([])
 
   useEffect(() => {
@@ -83,6 +94,21 @@ export default function ContenidoAdmin() {
       return { ...c, nosotros: { ...c.nosotros, pilares } }
     })
   }
+
+  const setTeamMember = (index: number, patch: Partial<NosotrosTeamMember>) => {
+    setContent((c) => {
+      if (!c) return c
+      const team = [...c.nosotros.team]
+      team[index] = { ...team[index], ...patch }
+      return { ...c, nosotros: { ...c.nosotros, team } }
+    })
+  }
+
+  const addTeamMember = () =>
+    setContent((c) => c && { ...c, nosotros: { ...c.nosotros, team: [...c.nosotros.team, { name: '', role: '', photo: '' }] } })
+
+  const removeTeamMember = (index: number) =>
+    setContent((c) => c && { ...c, nosotros: { ...c.nosotros, team: c.nosotros.team.filter((_, i) => i !== index) } })
 
   const setLegal = <K extends keyof SiteContent['legal']>(section: K, patch: Partial<SiteContent['legal'][K]>) =>
     setContent((c) => c && { ...c, legal: { ...c.legal, [section]: { ...c.legal[section], ...patch } } })
@@ -148,6 +174,44 @@ export default function ContenidoAdmin() {
     }
   }
 
+  const uploadHitoImage = async (index: number, file: globalThis.File) => {
+    setUploadingHitoImage(index)
+    setError(null)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
+      setHito(index, { imageUrl: data.url })
+    } catch (e) {
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
+    } finally {
+      setUploadingHitoImage(null)
+    }
+  }
+
+  const uploadTeamPhoto = async (index: number, file: globalThis.File) => {
+    setUploadingTeamPhoto(index)
+    setError(null)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
+      setTeamMember(index, { photo: data.url })
+    } catch (e) {
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
+    } finally {
+      setUploadingTeamPhoto(null)
+    }
+  }
+
   const onSave = async () => {
     if (!content) return
     setSaving(true)
@@ -181,6 +245,22 @@ export default function ContenidoAdmin() {
 
       {error && <div className="adm-alert error">{error}</div>}
 
+      <div className="adm-toolbar" role="tablist">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={tab === t.id}
+            className={`adm-btn sm ${tab === t.id ? '' : 'ghost'}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'general' && (
+      <>
       <section style={{ marginBottom: 36 }}>
         <Field label="Barra de promociones (arriba del header)">
           <input
@@ -236,7 +316,10 @@ export default function ContenidoAdmin() {
           <p className="adm-eyebrow" style={{ margin: 0 }}>Se usa en el header y el pie de página de todo el sitio.</p>
         </div>
       </section>
+      </>
+      )}
 
+      {tab === 'nosotros' && (
       <section className="adm-card" style={{ padding: 16, marginBottom: 36 }}>
         <h2 className="adm-section-title" style={{ margin: '0 0 12px' }}>Nosotros</h2>
 
@@ -248,6 +331,11 @@ export default function ContenidoAdmin() {
             <input className="adm-input" value={content.nosotros.titleEmphasis} onChange={(e) => setNosotros({ titleEmphasis: e.target.value })} style={{ width: '100%' }} />
           </Field>
           <div style={{ gridColumn: '1 / -1' }}>
+            <Field label="Subtítulo (línea corta debajo del título)">
+              <input className="adm-input" value={content.nosotros.subtitle} onChange={(e) => setNosotros({ subtitle: e.target.value })} style={{ width: '100%' }} />
+            </Field>
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
             <Field label="Texto introductorio">
               <textarea className="adm-textarea" value={content.nosotros.intro} onChange={(e) => setNosotros({ intro: e.target.value })} rows={3} />
             </Field>
@@ -257,7 +345,7 @@ export default function ContenidoAdmin() {
         <h3 className="adm-eyebrow" style={{ margin: '0 0 8px' }}>Fotos (franja + pilares)</h3>
         <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
           {(['showroom', 'taller', 'detalle'] as const).map((key) => (
-            <div key={key} style={{ width: 120 }}>
+            <div key={key} style={{ flexShrink: 0, width: 120 }}>
               <div style={{ width: 120, height: 150, background: 'var(--adm-surface-2)', overflow: 'hidden', marginBottom: 8, position: 'relative' }}>
                 {content.nosotros.photos[key] && (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -272,13 +360,24 @@ export default function ContenidoAdmin() {
 
         <h3 className="adm-eyebrow" style={{ margin: '0 0 8px' }}>Línea de tiempo (4 hitos)</h3>
         {content.nosotros.hitos.map((h, i) => (
-          <div key={i} className="adm-grid-2" style={{ gap: 10, marginBottom: 10 }}>
-            <Field label={`Año ${i + 1}`}>
-              <input className="adm-input" value={h.year} onChange={(e) => setHito(i, { year: e.target.value })} style={{ width: '100%' }} />
-            </Field>
-            <Field label={`Texto ${i + 1}`}>
-              <input className="adm-input" value={h.label} onChange={(e) => setHito(i, { label: e.target.value })} style={{ width: '100%' }} />
-            </Field>
+          <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+            <div style={{ flexShrink: 0, width: 84 }}>
+              <div style={{ width: 84, height: 84, background: 'var(--adm-surface-2)', overflow: 'hidden', marginBottom: 6, position: 'relative' }}>
+                {h.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={h.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                )}
+              </div>
+              <HiddenFileInput uploading={uploadingHitoImage === i} onUpload={(f) => uploadHitoImage(i, f)} />
+            </div>
+            <div className="adm-grid-2" style={{ gap: 10, flex: 1 }}>
+              <Field label={`Año ${i + 1}`}>
+                <input className="adm-input" value={h.year} onChange={(e) => setHito(i, { year: e.target.value })} style={{ width: '100%' }} />
+              </Field>
+              <Field label={`Texto ${i + 1}`}>
+                <input className="adm-input" value={h.label} onChange={(e) => setHito(i, { label: e.target.value })} style={{ width: '100%' }} />
+              </Field>
+            </div>
           </div>
         ))}
 
@@ -295,8 +394,40 @@ export default function ContenidoAdmin() {
             </div>
           </div>
         ))}
-      </section>
 
+        <h3 className="adm-eyebrow" style={{ margin: '24px 0 4px' }}>Equipo (opcional)</h3>
+        <p className="adm-eyebrow" style={{ margin: '0 0 12px' }}>
+          Si no cargás a nadie, esta sección no se muestra en el sitio.
+        </p>
+        {content.nosotros.team.map((m, i) => (
+          <div key={i} style={{ display: 'flex', gap: 12, marginBottom: 14, alignItems: 'flex-start' }}>
+            <div style={{ flexShrink: 0, width: 84 }}>
+              <div style={{ width: 84, height: 84, background: 'var(--adm-surface-2)', overflow: 'hidden', marginBottom: 6, position: 'relative', borderRadius: '50%' }}>
+                {m.photo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={m.photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                )}
+              </div>
+              <HiddenFileInput uploading={uploadingTeamPhoto === i} onUpload={(f) => uploadTeamPhoto(i, f)} />
+            </div>
+            <div className="adm-grid-2" style={{ gap: 10, flex: 1 }}>
+              <Field label="Nombre">
+                <input className="adm-input" value={m.name} onChange={(e) => setTeamMember(i, { name: e.target.value })} style={{ width: '100%' }} />
+              </Field>
+              <Field label="Rol">
+                <input className="adm-input" value={m.role} onChange={(e) => setTeamMember(i, { role: e.target.value })} style={{ width: '100%' }} />
+              </Field>
+            </div>
+            <button type="button" className="adm-link-btn danger" onClick={() => removeTeamMember(i)} style={{ marginTop: 24 }}>
+              Quitar
+            </button>
+          </div>
+        ))}
+        <button type="button" className="adm-btn ghost sm" onClick={addTeamMember}>+ Agregar integrante</button>
+      </section>
+      )}
+
+      {tab === 'legal' && (
       <section className="adm-card" style={{ padding: 16, marginBottom: 36 }}>
         <h2 className="adm-section-title" style={{ margin: '0 0 12px' }}>Legal</h2>
         <p className="adm-eyebrow" style={{ margin: '0 0 16px' }}>
@@ -363,7 +494,9 @@ export default function ContenidoAdmin() {
           </div>
         </div>
       </section>
+      )}
 
+      {tab === 'inspiracion' && (
       <section>
         <h2 className="adm-section-title">Inspiración</h2>
         {content.inspiracion.map((item, i) => (
@@ -378,8 +511,9 @@ export default function ContenidoAdmin() {
           />
         ))}
       </section>
+      )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 24 }}>
+      <div className="adm-savebar">
         <button className="adm-btn" onClick={onSave} disabled={saving}>
           {saving ? 'Guardando...' : 'Guardar cambios'}
         </button>

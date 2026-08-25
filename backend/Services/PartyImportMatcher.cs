@@ -43,4 +43,14 @@ public class PartyLookup<TParty> where TParty : PartyBase
             return byTax;
         return _byName.TryGetValue(companyOrFullName.ToLower(), out var byName) ? byName : null;
     }
+
+    // Registra un alta recién creada dentro del mismo loop de import — sin esto, dos filas
+    // nuevas idénticas en el mismo Excel (mismo TaxId o nombre) no se ven entre sí y cada una
+    // crea un registro separado en vez de fusionarse en el segundo pase.
+    public void Register(TParty party)
+    {
+        if (!string.IsNullOrWhiteSpace(party.TaxId))
+            _byTaxId[party.TaxId] = party;
+        _byName[party.CompanyOrFullName.ToLower()] = party;
+    }
 }

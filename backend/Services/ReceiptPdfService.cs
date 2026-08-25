@@ -161,20 +161,26 @@ public class ReceiptPdfService
 
             column.Item().PaddingTop(14).AlignRight().Width(280).Column(col =>
             {
-                col.Item().Background(Colors.BlueGrey.Darken3).Padding(6).Row(r =>
-                {
-                    r.RelativeItem().Text(data.TaxRatePercent == 0 ? "Importe Neto Exento" : "Importe Neto").FontColor(Colors.White);
-                    r.AutoItem().Text(FormatMoney(data.NetExemptAmount)).FontColor(Colors.White);
-                });
-
                 if (data.DiscountAmount > 0)
                 {
+                    col.Item().Background(Colors.BlueGrey.Lighten2).Padding(6).Row(r =>
+                    {
+                        r.RelativeItem().Text("Subtotal").FontColor(Colors.White);
+                        r.AutoItem().Text(FormatMoney(data.Subtotal)).FontColor(Colors.White);
+                    });
+
                     col.Item().Background(Colors.BlueGrey.Darken2).Padding(6).Row(r =>
                     {
                         r.RelativeItem().Text("Descuento").FontColor(Colors.White);
                         r.AutoItem().Text($"-{FormatMoney(data.DiscountAmount)}").FontColor(Colors.White);
                     });
                 }
+
+                col.Item().Background(Colors.BlueGrey.Darken3).Padding(6).Row(r =>
+                {
+                    r.RelativeItem().Text(data.TaxRatePercent == 0 ? "Importe Neto Exento" : "Importe Neto").FontColor(Colors.White);
+                    r.AutoItem().Text(FormatMoney(data.NetAmount)).FontColor(Colors.White);
+                });
 
                 if (data.TaxAmount > 0)
                 {

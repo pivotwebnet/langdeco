@@ -69,9 +69,8 @@ export function Hero({
   return (
     <section data-dt="hero-editorial" style={{ position: 'relative', padding: 'calc(var(--promo-h) + var(--header-h) + 20px) 24px 72px', overflow: 'hidden' }}>
       <RevealOnScroll>
-        <div className="hero-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 24 }}>
-          <span className="kicker" />
-          <span className="kicker mb-only">Rafaela · Santa Fe</span>
+        <div className="hero-top mb-only" style={{ marginBottom: 24 }}>
+          <span className="kicker">Rafaela · Santa Fe</span>
         </div>
       </RevealOnScroll>
 

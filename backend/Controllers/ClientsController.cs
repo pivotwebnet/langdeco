@@ -228,7 +228,7 @@ public class ClientsController : ControllerBase
                 });
             }
 
-            if (isNew) { _db.Clients.Add(client); created++; }
+            if (isNew) { _db.Clients.Add(client); lookup.Register(client); created++; }
             else updated++;
         }
 

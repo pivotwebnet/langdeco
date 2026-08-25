@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import type { BudgetsSummary, SalesSummary } from '@/lib/backend-types'
 import MonthlyRevenueChart from '@/components/admin/MonthlyRevenueChart'
 import { adminApi as api } from '@/lib/admin/api'
+import { formatPrice } from '@/lib/data'
 
 type RangePreset = 3 | 6 | 12 | 'custom'
 
@@ -14,6 +15,7 @@ function toDateInputValue(d: Date): string {
 export default function AdminDashboard() {
   const [summary, setSummary] = useState<SalesSummary | null>(null)
   const [budgetsSummary, setBudgetsSummary] = useState<BudgetsSummary | null>(null)
+  const [budgetsSummaryError, setBudgetsSummaryError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -47,7 +49,10 @@ export default function AdminDashboard() {
   }, [preset, customFrom, customTo])
 
   useEffect(() => {
-    api<BudgetsSummary>('/budgets/summary').then(setBudgetsSummary).catch(() => {})
+    setBudgetsSummaryError(null)
+    api<BudgetsSummary>('/budgets/summary')
+      .then(setBudgetsSummary)
+      .catch((e) => setBudgetsSummaryError((e as Error).message))
   }, [])
 
   const revenueChange = summary?.revenueChangePercent ?? null
@@ -57,7 +62,7 @@ export default function AdminDashboard() {
   const stats = summary ? [
     {
       label: 'Ingresos (cobrados)',
-      value: `$ ${summary.revenue.toLocaleString('de-DE')}`,
+      value: formatPrice(summary.revenue),
       delta: revenueChange !== null ? (
         <span className={`adm-stat-delta ${deltaDirection}`}>
           {deltaArrow} {Math.abs(revenueChange).toFixed(1)}%
@@ -65,7 +70,7 @@ export default function AdminDashboard() {
         </span>
       ) : null,
     },
-    { label: 'Ticket promedio', value: `$ ${Math.round(summary.averageTicket).toLocaleString('de-DE')}`, delta: null },
+    { label: 'Ticket promedio', value: formatPrice(summary.averageTicket), delta: null },
     { label: 'Ventas cobradas', value: summary.salesCount, delta: null },
     { label: 'Mayorista / Minorista', value: `$${(summary.wholesaleRevenue / 1000).toFixed(0)}k / $${(summary.retailRevenue / 1000).toFixed(0)}k`, delta: null },
   ] : []
@@ -163,7 +168,7 @@ export default function AdminDashboard() {
                     <div className="adm-table-name">{r.productName}</div>
                     <div className="adm-table-sub">{r.quantitySold} unidades vendidas</div>
                   </div>
-                  <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>$ {r.revenue.toLocaleString('de-DE')}</div>
+                  <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>{formatPrice(r.revenue)}</div>
                 </div>
               ))
             ) : (
@@ -197,7 +202,9 @@ export default function AdminDashboard() {
         <div>
           <h2 className="adm-section-title">Presupuestos por vencer (próx. 7 días)</h2>
           <div className="adm-card">
-            {!budgetsSummary ? (
+            {budgetsSummaryError ? (
+              <div className="adm-alert error" style={{ margin: 16 }}>{budgetsSummaryError}</div>
+            ) : !budgetsSummary ? (
               <div className="adm-loading">Cargando…</div>
             ) : budgetsSummary.expiringSoon.length ? (
               budgetsSummary.expiringSoon.map((b, i) => (
@@ -206,11 +213,16 @@ export default function AdminDashboard() {
                     <div className="adm-table-name">#{b.number} · {b.customerName}</div>
                     <div className="adm-table-sub">Vence {new Date(b.validUntil).toLocaleDateString('es-AR')}</div>
                   </div>
-                  <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>$ {b.total.toLocaleString('de-DE')}</div>
+                  <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12 }}>{formatPrice(b.total)}</div>
                 </div>
               ))
             ) : (
               <div className="adm-empty">Ningún presupuesto abierto vence pronto.</div>
+            )}
+            {budgetsSummary && budgetsSummary.expiringSoonCount > budgetsSummary.expiringSoon.length && (
+              <div style={{ padding: '10px 22px', fontSize: 12, color: 'var(--ink-soft)', borderBottom: '1px solid var(--adm-border)' }}>
+                +{budgetsSummary.expiringSoonCount - budgetsSummary.expiringSoon.length} más por vencer
+              </div>
             )}
             {budgetsSummary && (
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '14px 22px', borderTop: '1px solid var(--adm-border)', fontSize: 12, color: 'var(--ink-soft)' }}>

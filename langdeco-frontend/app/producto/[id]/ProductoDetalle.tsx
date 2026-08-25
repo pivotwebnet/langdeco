@@ -30,7 +30,9 @@ interface Props {
 
 export function ProductoDetalle({ product, related }: Props) {
   const [imgIdx, setImgIdx]   = useState(0)
-  const [imgError, setImgError] = useState(false)
+  // Set de índices rotos en vez de un solo boolean: con varias fotos, que la primera falle
+  // no debe hacer que las demás se muestren como rotas, ni viceversa.
+  const [brokenImages, setBrokenImages] = useState<Set<number>>(new Set())
   const [added, setAdded]     = useState(false)
   const [addedRelatedId, setAddedRelatedId] = useState<string | null>(null)
   const [qty, setQty] = useState(1)
@@ -59,7 +61,9 @@ export function ProductoDetalle({ product, related }: Props) {
   }
 
   const allImages = [product.imageUrl, ...(product.extraImages ?? [])].filter(Boolean) as string[]
-  const showMainImage = !!allImages[imgIdx] && !imgError
+  const showMainImage = !!allImages[imgIdx] && !brokenImages.has(imgIdx)
+  const markBroken = (i: number) => setBrokenImages((prev) => new Set(prev).add(i))
+  const goToImage = (i: number) => setImgIdx((i + allImages.length) % allImages.length)
   const hasDiscount = !!product.originalPriceNum && product.originalPriceNum > product.priceNum
   const discountPercent = hasDiscount ? Math.round((1 - product.priceNum / product.originalPriceNum!) * 100) : null
   const isOutOfStock = product.stock !== undefined && product.stock <= 0
@@ -120,7 +124,7 @@ export function ProductoDetalle({ product, related }: Props) {
                   unoptimized
                   sizes="(min-width: 900px) 50vw, 100vw"
                   priority={imgIdx === 0}
-                  onError={() => setImgError(true)}
+                  onError={() => markBroken(imgIdx)}
                   style={hoverZoom
                     ? { transform: 'scale(1.8)', transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`, transition: 'transform 0.05s linear, opacity 0.35s ease' }
                     : { transition: 'transform 0.25s ease, opacity 0.35s ease' }}
@@ -133,6 +137,27 @@ export function ProductoDetalle({ product, related }: Props) {
                   <Icon.Search style={{ width: 14, height: 14 }} />
                 </div>
               )}
+              {allImages.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    className="pd-nav-btn pd-nav-prev"
+                    aria-label="Foto anterior"
+                    onClick={(e) => { e.stopPropagation(); goToImage(imgIdx - 1) }}
+                  >
+                    <Icon.Arrow style={{ transform: 'rotate(180deg)' }} />
+                  </button>
+                  <button
+                    type="button"
+                    className="pd-nav-btn pd-nav-next"
+                    aria-label="Foto siguiente"
+                    onClick={(e) => { e.stopPropagation(); goToImage(imgIdx + 1) }}
+                  >
+                    <Icon.Arrow />
+                  </button>
+                  <span className="pd-img-counter">{imgIdx + 1} / {allImages.length}</span>
+                </>
+              )}
             </div>
             {allImages.length > 1 && (
               <div className="pd-thumbs">
@@ -140,12 +165,23 @@ export function ProductoDetalle({ product, related }: Props) {
                   <button
                     key={i}
                     className={`pd-thumb${i === imgIdx ? ' active' : ''}`}
-                    onClick={() => { setImgIdx(i); setImgError(false) }}
+                    onClick={() => setImgIdx(i)}
                     aria-label={`Imagen ${i + 1}`}
                   >
-                    <Image src={url} alt="" width={56} height={56} unoptimized />
+                    {brokenImages.has(i) ? (
+                      <ImagePlaceholder size={18} />
+                    ) : (
+                      <Image src={url} alt="" width={56} height={56} unoptimized onError={() => markBroken(i)} />
+                    )}
                   </button>
                 ))}
+              </div>
+            )}
+
+            {product.note && (
+              <div className="pd-description">
+                <div className="mono pd-specs-label">Descripción</div>
+                <p>{product.note}</p>
               </div>
             )}
           </RevealOnScroll>
@@ -202,24 +238,8 @@ export function ProductoDetalle({ product, related }: Props) {
               ))}
             </div>
 
-            {/* Ficha técnica */}
-            {product.specs && product.specs.length > 0 && (
-              <div className="pd-specs">
-                <div style={{ height: 1, background: 'var(--line)', margin: '28px 0 20px' }} />
-                <div className="mono" style={{ marginBottom: 16, fontSize: 9, letterSpacing: '0.22em', color: 'var(--ink-soft)' }}>
-                  Ficha Técnica
-                </div>
-                {product.specs.map(spec => (
-                  <div key={spec.label} className="pd-spec-row">
-                    <span className="mono" style={{ color: 'var(--ink-soft)' }}>{spec.label}</span>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: 13 }}>{spec.value}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {!isOutOfStock && (
-              <div className="pd-qty-stepper" style={{ marginTop: product.specs?.length ? 20 : 24 }}>
+              <div className="pd-qty-stepper" style={{ marginTop: 24 }}>
                 <button
                   type="button"
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -240,7 +260,7 @@ export function ProductoDetalle({ product, related }: Props) {
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: 10, marginTop: isOutOfStock ? (product.specs?.length ? 0 : 24) : 10 }}>
+            <div style={{ display: 'flex', gap: 10, marginTop: isOutOfStock ? 24 : 10 }}>
               <button
                 ref={ctaRef}
                 className={`btn pd-cta${added ? ' added' : ''}`}
@@ -277,6 +297,22 @@ export function ProductoDetalle({ product, related }: Props) {
                 </button>
               </Tooltip>
             </div>
+
+            {/* Ficha técnica — debajo de los botones de acción, no antes */}
+            {product.specs && product.specs.length > 0 && (
+              <div className="pd-specs">
+                <div style={{ height: 1, background: 'var(--line)', margin: '28px 0 20px' }} />
+                <div className="mono" style={{ marginBottom: 16, fontSize: 9, letterSpacing: '0.22em', color: 'var(--ink-soft)' }}>
+                  Ficha Técnica
+                </div>
+                {product.specs.map(spec => (
+                  <div key={spec.label} className="pd-spec-row">
+                    <span className="mono" style={{ color: 'var(--ink-soft)' }}>{spec.label}</span>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: 13 }}>{spec.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="mono" style={{ marginTop: 16, fontSize: 9, color: 'var(--ink-soft)', lineHeight: 1.7 }}>
               Consultas por WhatsApp · Envíos a todo el país<br />
@@ -335,7 +371,9 @@ export function ProductoDetalle({ product, related }: Props) {
         )}
       </main>
 
-      {zoomOpen && showMainImage && (
+      {/* No condiciona a showMainImage: si navegás dentro del lightbox a una foto rota,
+          debe mostrar un placeholder ahí adentro, no cerrar todo el modal de golpe. */}
+      {zoomOpen && allImages.length > 0 && (
         <div
           role="dialog"
           aria-modal="true"
@@ -352,15 +390,20 @@ export function ProductoDetalle({ product, related }: Props) {
           </button>
 
           <div className="pd-lightbox-frame" onClick={(e) => e.stopPropagation()}>
-            <Image
-              key={allImages[imgIdx]}
-              src={allImages[imgIdx]}
-              alt={product.name}
-              fill
-              unoptimized
-              sizes="90vw"
-              style={{ objectFit: 'contain' }}
-            />
+            {brokenImages.has(imgIdx) ? (
+              <ImagePlaceholder size={48} />
+            ) : (
+              <Image
+                key={allImages[imgIdx]}
+                src={allImages[imgIdx]}
+                alt={product.name}
+                fill
+                unoptimized
+                sizes="90vw"
+                style={{ objectFit: 'contain' }}
+                onError={() => markBroken(imgIdx)}
+              />
+            )}
           </div>
 
           {allImages.length > 1 && (
@@ -368,14 +411,14 @@ export function ProductoDetalle({ product, related }: Props) {
               <button
                 className="pd-lightbox-nav pd-lightbox-prev"
                 aria-label="Foto anterior"
-                onClick={(e) => { e.stopPropagation(); setImgIdx((i) => (i - 1 + allImages.length) % allImages.length) }}
+                onClick={(e) => { e.stopPropagation(); goToImage(imgIdx - 1) }}
               >
                 <Icon.Arrow style={{ transform: 'rotate(180deg)' }} />
               </button>
               <button
                 className="pd-lightbox-nav pd-lightbox-next"
                 aria-label="Foto siguiente"
-                onClick={(e) => { e.stopPropagation(); setImgIdx((i) => (i + 1) % allImages.length) }}
+                onClick={(e) => { e.stopPropagation(); goToImage(imgIdx + 1) }}
               >
                 <Icon.Arrow />
               </button>

@@ -7,6 +7,9 @@ import { useEscapeKey } from '@/lib/useEscapeKey'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 import { Field } from '@/components/admin/Field'
+import { formatPrice } from '@/lib/data'
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
+import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
 
 /** Precio unitario según el tipo de cliente — mayorista si el producto tiene precio mayorista cargado, si no cae a minorista. */
 function resolvePrice(product: BackendProduct | undefined, clientType: ClientType): number {
@@ -67,8 +70,11 @@ export default function VentasAdmin() {
   useEffect(() => { load() }, [load])
   useEffect(() => { api<BackendProduct[]>('/products').then(setProducts).catch(() => {}) }, [])
 
+  const [confirmCancel, setConfirmCancel] = useState<BackendSale | null>(null)
+
   const changeStatus = async (id: number, status: SaleStatus) => {
     setError(null)
+    setConfirmCancel(null)
     try {
       await api(`/sales/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) })
       toast.success(`Venta marcada como ${STATUS_LABEL[status].toLowerCase()}.`)
@@ -119,7 +125,7 @@ export default function VentasAdmin() {
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={7}><div className="adm-loading">Cargando…</div></td></tr>
+              <TableSkeletonRows columns={7} />
             )}
             {!loading && sales.map((s) => (
               <tr key={s.id}>
@@ -130,7 +136,7 @@ export default function VentasAdmin() {
                 </td>
                 <td>{s.items.map((it) => `${it.quantity}× ${it.productName}`).join(', ')}</td>
                 <td className="mono">{new Date(s.createdAt).toLocaleString('es-AR')}</td>
-                <td className="mono">$ {s.total.toLocaleString('de-DE')}</td>
+                <td className="mono">{formatPrice(s.total)}</td>
                 <td><span className={`adm-badge ${STATUS_BADGE[s.status]}`}>{STATUS_LABEL[s.status]}</span></td>
                 <td>
                   <div className="adm-table-actions">
@@ -138,11 +144,11 @@ export default function VentasAdmin() {
                     {s.status === 'Pending' && (
                       <>
                         <button className="adm-link-btn success" onClick={() => changeStatus(s.id, 'Paid')}>Marcar pagada</button>
-                        <button className="adm-link-btn danger" onClick={() => changeStatus(s.id, 'Cancelled')}>Cancelar</button>
+                        <button className="adm-link-btn danger" onClick={() => setConfirmCancel(s)}>Cancelar</button>
                       </>
                     )}
                     {s.status === 'Paid' && (
-                      <button className="adm-link-btn danger" onClick={() => changeStatus(s.id, 'Cancelled')}>Cancelar</button>
+                      <button className="adm-link-btn danger" onClick={() => setConfirmCancel(s)}>Cancelar</button>
                     )}
                   </div>
                 </td>
@@ -175,6 +181,17 @@ export default function VentasAdmin() {
           products={products}
           onClose={() => setReceiptSale(null)}
           onUpdated={(updated) => { setReceiptSale(updated as BackendSale); load() }}
+        />
+      )}
+
+      {confirmCancel && (
+        <ConfirmDialog
+          title="Cancelar venta"
+          message={`¿Cancelar la venta #${confirmCancel.number}? ${confirmCancel.status === 'Paid' ? 'Se repone el stock de los productos vendidos.' : ''}`}
+          confirmLabel="Cancelar venta"
+          danger
+          onConfirm={() => changeStatus(confirmCancel.id, 'Cancelled')}
+          onCancel={() => setConfirmCancel(null)}
         />
       )}
     </div>
@@ -331,7 +348,7 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
                 </select>
                 <input className="adm-input" type="number" min={1} value={it.quantity} onChange={(e) => updateItem(i, { quantity: Number(e.target.value) })} style={{ width: 70 }} />
                 <span className="mono" style={{ fontSize: 11, width: 90, textAlign: 'right', color: noWholesale ? 'var(--adm-danger)' : undefined }}>
-                  {product ? `$ ${(resolvePrice(product, clientType) * it.quantity).toLocaleString('de-DE')}` : ''}
+                  {product ? formatPrice(resolvePrice(product, clientType) * it.quantity) : ''}
                 </span>
                 <button type="button" className="adm-btn ghost sm" onClick={() => removeItem(i)}>✕</button>
               </div>
@@ -346,7 +363,7 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--adm-border)' }}>
           <span className="mono">Total estimado</span>
-          <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 14, fontWeight: 500 }}>$ {estimatedTotal.toLocaleString('de-DE')}</span>
+          <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 14, fontWeight: 500 }}>{formatPrice(estimatedTotal)}</span>
         </div>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>

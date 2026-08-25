@@ -9,6 +9,8 @@ import { useEscapeKey } from '@/lib/useEscapeKey'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 import { Field } from '@/components/admin/Field'
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
+import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
 
 type ContactPersonForm = { name: string; role: string; cell: string; phone: string; email: string }
 type CustomFieldForm = { label: string; value: string }
@@ -142,8 +144,10 @@ export default function ClientesAdmin() {
     }
   }
 
+  const [confirmDelete, setConfirmDelete] = useState<BackendClient | null>(null)
+
   const onDelete = async (c: BackendClient) => {
-    if (!confirm(`¿Eliminar/desactivar "${c.companyOrFullName}"?`)) return
+    setConfirmDelete(null)
     try {
       await api(`/clients/${c.id}`, { method: 'DELETE' })
       toast.success('Cliente eliminado o desactivado.')
@@ -237,7 +241,7 @@ export default function ClientesAdmin() {
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={6}><div className="adm-loading">Cargando…</div></td></tr>
+              <TableSkeletonRows columns={6} />
             )}
             {!loading && clients.map((c) => (
               <tr key={c.id} className={c.active ? '' : 'inactive'}>
@@ -253,7 +257,7 @@ export default function ClientesAdmin() {
                   <div className="adm-table-actions">
                     <button className="adm-link-btn" onClick={() => openEdit(c)}>Editar</button>
                     {c.active ? (
-                      <button className="adm-link-btn danger" onClick={() => onDelete(c)}>Eliminar</button>
+                      <button className="adm-link-btn danger" onClick={() => setConfirmDelete(c)}>Eliminar</button>
                     ) : (
                       <button className="adm-link-btn success" onClick={() => onActivate(c)}>Reactivar</button>
                     )}
@@ -274,6 +278,17 @@ export default function ClientesAdmin() {
           onChange={setForm}
           onCancel={() => setForm(null)}
           onSave={onSave}
+        />
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Eliminar cliente"
+          message={`¿Eliminar "${confirmDelete.companyOrFullName}"? Si tiene ventas o presupuestos asociados, se desactiva en vez de borrarse.`}
+          confirmLabel="Eliminar"
+          danger
+          onConfirm={() => onDelete(confirmDelete)}
+          onCancel={() => setConfirmDelete(null)}
         />
       )}
     </div>

@@ -8,6 +8,8 @@ import { useEscapeKey } from '@/lib/useEscapeKey'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 import { Field } from '@/components/admin/Field'
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
+import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
 
 type ContactPersonForm = { name: string; role: string; cell: string; phone: string; email: string }
 type CustomFieldForm = { label: string; value: string }
@@ -141,8 +143,10 @@ export default function ProveedoresAdmin() {
     }
   }
 
+  const [confirmDelete, setConfirmDelete] = useState<BackendSupplier | null>(null)
+
   const onDelete = async (s: BackendSupplier) => {
-    if (!confirm(`¿Eliminar "${s.companyOrFullName}"?`)) return
+    setConfirmDelete(null)
     try {
       await api(`/suppliers/${s.id}`, { method: 'DELETE' })
       toast.success('Proveedor eliminado.')
@@ -235,7 +239,7 @@ export default function ProveedoresAdmin() {
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={5}><div className="adm-loading">Cargando…</div></td></tr>
+              <TableSkeletonRows columns={5} />
             )}
             {!loading && suppliers.map((s) => (
               <tr key={s.id} className={s.active ? '' : 'inactive'}>
@@ -250,7 +254,7 @@ export default function ProveedoresAdmin() {
                   <div className="adm-table-actions">
                     <button className="adm-link-btn" onClick={() => openEdit(s)}>Editar</button>
                     {s.active ? (
-                      <button className="adm-link-btn danger" onClick={() => onDelete(s)}>Eliminar</button>
+                      <button className="adm-link-btn danger" onClick={() => setConfirmDelete(s)}>Eliminar</button>
                     ) : (
                       <button className="adm-link-btn success" onClick={() => onActivate(s)}>Reactivar</button>
                     )}
@@ -271,6 +275,17 @@ export default function ProveedoresAdmin() {
           onChange={setForm}
           onCancel={() => setForm(null)}
           onSave={onSave}
+        />
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Eliminar proveedor"
+          message={`¿Eliminar "${confirmDelete.companyOrFullName}"?`}
+          confirmLabel="Eliminar"
+          danger
+          onConfirm={() => onDelete(confirmDelete)}
+          onCancel={() => setConfirmDelete(null)}
         />
       )}
     </div>

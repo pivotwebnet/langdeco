@@ -218,7 +218,7 @@ public class SuppliersController : ControllerBase
                 });
             }
 
-            if (isNew) { _db.Suppliers.Add(supplier); created++; }
+            if (isNew) { _db.Suppliers.Add(supplier); lookup.Register(supplier); created++; }
             else updated++;
         }
 

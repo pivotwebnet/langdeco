@@ -5,6 +5,9 @@ import type { BackendCategory, BackendProduct } from '@/lib/backend-types'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 import { Field } from '@/components/admin/Field'
+import { formatPrice } from '@/lib/data'
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
+import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
 
 type ProductForm = {
   id: string
@@ -133,8 +136,10 @@ export default function ProductosAdmin() {
     }
   }
 
+  const [confirmDelete, setConfirmDelete] = useState<BackendProduct | null>(null)
+
   const onDelete = async (p: BackendProduct) => {
-    if (!confirm(`¿Eliminar/desactivar "${p.name}"?`)) return
+    setConfirmDelete(null)
     try {
       await api(`/products/${p.id}`, { method: 'DELETE' })
       toast.success('Pieza eliminada o desactivada.')
@@ -209,7 +214,7 @@ export default function ProductosAdmin() {
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={6}><div className="adm-loading">Cargando…</div></td></tr>
+              <TableSkeletonRows columns={6} />
             )}
             {!loading && filtered.map((p) => (
               <tr key={p.id} className={p.active ? '' : 'inactive'}>
@@ -218,7 +223,7 @@ export default function ProductosAdmin() {
                   <div className="adm-table-sub">{p.tag || '—'}</div>
                 </td>
                 <td>{p.categoryName}</td>
-                <td className="mono">$ {p.price.toLocaleString('de-DE')}</td>
+                <td className="mono">{formatPrice(p.price)}</td>
                 <td className="mono">
                   {p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD ? (
                     <span className="adm-badge warn">{p.stock}</span>
@@ -231,7 +236,7 @@ export default function ProductosAdmin() {
                   <div className="adm-table-actions">
                     <button className="adm-link-btn" onClick={() => openEdit(p)}>Editar</button>
                     {p.active ? (
-                      <button className="adm-link-btn danger" onClick={() => onDelete(p)}>Eliminar</button>
+                      <button className="adm-link-btn danger" onClick={() => setConfirmDelete(p)}>Eliminar</button>
                     ) : (
                       <button className="adm-link-btn success" onClick={() => onActivate(p)}>Reactivar</button>
                     )}
@@ -253,6 +258,17 @@ export default function ProductosAdmin() {
           onChange={setForm}
           onCancel={() => setForm(null)}
           onSave={onSave}
+        />
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Eliminar pieza"
+          message={`¿Eliminar "${confirmDelete.name}"? Si tiene ventas o presupuestos asociados, se desactiva en vez de borrarse.`}
+          confirmLabel="Eliminar"
+          danger
+          onConfirm={() => onDelete(confirmDelete)}
+          onCancel={() => setConfirmDelete(null)}
         />
       )}
     </div>

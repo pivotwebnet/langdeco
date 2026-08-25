@@ -10,6 +10,7 @@ import { useCart, useCartUI } from '@/lib/cart'
 import { useWishlist } from '@/lib/wishlist'
 import { normalize } from '@/lib/normalize'
 import { useSiteLogo } from '@/lib/useSiteLogo'
+import { getLenisInstance } from '@/lib/lenis'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Magnetic } from '@/components/ui/Magnetic'
 import * as Icon from '@/components/ui/Icon'
@@ -150,6 +151,22 @@ export function Header({ hasPromo = false }: HeaderProps) {
 
   const closeAll = () => { setMenuOpen(false); setSearchOpen(false) }
 
+  // Los links a "/#seccion" solo funcionan bien si ya estamos en home: Lenis intercepta el
+  // scroll con rueda/touch, y un salto nativo de ancla (comportamiento por defecto de <Link>)
+  // mueve la ventana sin que Lenis se entere — en el próximo scroll "tira" de vuelta a donde
+  // Lenis creía que estabas, dando la sensación de que el link no llevó a ningún lado.
+  const onHashNavClick = (e: React.MouseEvent, href: string) => {
+    const hashIndex = href.indexOf('#')
+    if (hashIndex === -1 || window.location.pathname !== '/') return
+    const id = href.slice(hashIndex + 1)
+    const el = document.getElementById(id)
+    if (!el) return
+    e.preventDefault()
+    const lenis = getLenisInstance()
+    if (lenis) lenis.scrollTo(el)
+    else el.scrollIntoView({ behavior: 'smooth' })
+  }
+
   const searchPanelProps = {
     query, results, totalResults: allResults.length, catalog, catalogError,
     onSelect: goToProduct, onViewAll: viewAllResults,
@@ -196,7 +213,7 @@ export function Header({ hasPromo = false }: HeaderProps) {
         {/* Desktop: nav — todos los links en una sola fila centrada, separados a distancia pareja */}
         <nav className="nav-links dt-only" aria-label="Navegación principal">
           {NAV_LINKS.map((l) => (
-            <Link key={l.href} href={l.href} className="nav-link">{l.label}</Link>
+            <Link key={l.href} href={l.href} className="nav-link" onClick={(e) => onHashNavClick(e, l.href)}>{l.label}</Link>
           ))}
         </nav>
 
@@ -212,6 +229,7 @@ export function Header({ hasPromo = false }: HeaderProps) {
               placeholder="Buscar…"
               aria-label="Buscar en la colección"
               className={`nav-search-input${searchOpen ? ' open' : ''}`}
+              tabIndex={searchOpen ? 0 : -1}
             />
             {searchOpen && <SearchPanel {...searchPanelProps} />}
           </div>
@@ -377,7 +395,7 @@ export function Header({ hasPromo = false }: HeaderProps) {
               <Link
                 key={label}
                 href={href}
-                onClick={closeAll}
+                onClick={(e) => { onHashNavClick(e, href); closeAll() }}
                 style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   padding: '16px 20px',

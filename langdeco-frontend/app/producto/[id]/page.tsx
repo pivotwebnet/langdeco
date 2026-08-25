@@ -63,7 +63,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
-      <ProductoDetalle product={product} related={related} />
+      {/* key={product.id}: sin esto, navegar de un producto a otro (ej. desde "También te
+          puede gustar") reutiliza la misma instancia del componente vía client-side routing —
+          imgIdx/qty/etc. quedaban pegados del producto anterior en vez de resetear. */}
+      <ProductoDetalle key={product.id} product={product} related={related} />
     </>
   )
 }

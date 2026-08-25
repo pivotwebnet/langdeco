@@ -94,7 +94,9 @@ export function Productos({ products, categories, initialCategory, initialQuery 
   const max = priceMax !== '' ? Number(priceMax) : null
   const filteredItems = categoryItems.filter(p =>
     (min === null || p.priceNum >= min) && (max === null || p.priceNum <= max) &&
-    (subcategory === 'all' || p.category === subcategory)
+    // El selector de categoría se oculta durante la búsqueda (más abajo), así que el filtro
+    // tampoco debe aplicarse ahí — si no, quedaba "fantasma" escondiendo resultados sin aviso.
+    (searchActive || subcategory === 'all' || p.category === subcategory)
   )
 
   const items = [...filteredItems].sort((a, b) => {

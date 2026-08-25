@@ -59,4 +59,59 @@ public class DocumentTotalsCalculatorTests
 
         Assert.Equal(42_000m, totals.Total);
     }
+
+    [Fact]
+    public void Validate_RejectsFixedDiscountLargerThanSubtotal_NegativeNetAmount()
+    {
+        var totals = DocumentTotalsCalculator.Compute(
+            subtotal: 100m, discountType: DiscountType.Fixed, discountPercent: 0m, discountFixedAmount: 500m, taxRatePercent: 21m);
+
+        var error = DocumentTotalsCalculator.Validate(DiscountType.Fixed, 0m, 21m, totals);
+
+        Assert.NotNull(error);
+    }
+
+    [Fact]
+    public void Validate_RejectsDiscountPercentOver100()
+    {
+        var totals = DocumentTotalsCalculator.Compute(
+            subtotal: 100_000m, discountType: DiscountType.Percent, discountPercent: 150m, discountFixedAmount: 0m, taxRatePercent: 21m);
+
+        var error = DocumentTotalsCalculator.Validate(DiscountType.Percent, 150m, 21m, totals);
+
+        Assert.NotNull(error);
+    }
+
+    [Fact]
+    public void Validate_RejectsTaxRateOver100()
+    {
+        var totals = DocumentTotalsCalculator.Compute(
+            subtotal: 100_000m, discountType: DiscountType.Percent, discountPercent: 0m, discountFixedAmount: 0m, taxRatePercent: 500m);
+
+        var error = DocumentTotalsCalculator.Validate(DiscountType.Percent, 0m, 500m, totals);
+
+        Assert.NotNull(error);
+    }
+
+    [Fact]
+    public void Validate_AllowsNegativePercent_AsRecargoWithinRange()
+    {
+        var totals = DocumentTotalsCalculator.Compute(
+            subtotal: 100_000m, discountType: DiscountType.Percent, discountPercent: -20m, discountFixedAmount: 0m, taxRatePercent: 21m);
+
+        var error = DocumentTotalsCalculator.Validate(DiscountType.Percent, -20m, 21m, totals);
+
+        Assert.Null(error);
+    }
+
+    [Fact]
+    public void Validate_AcceptsNormalSale()
+    {
+        var totals = DocumentTotalsCalculator.Compute(
+            subtotal: 100_000m, discountType: DiscountType.Percent, discountPercent: 10m, discountFixedAmount: 0m, taxRatePercent: 21m);
+
+        var error = DocumentTotalsCalculator.Validate(DiscountType.Percent, 10m, 21m, totals);
+
+        Assert.Null(error);
+    }
 }

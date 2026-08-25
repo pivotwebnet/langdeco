@@ -48,6 +48,8 @@ export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProp
     stripRef.current?.scrollTo({ left: i * cardStep(), behavior: 'smooth' })
   }
 
+  if (SELECCION.length === 0) return null
+
   return (
     <section id="seleccion" data-dt="seleccion" style={{ position: 'relative', padding: '80px 0 64px', overflow: 'hidden', background: 'var(--bg-deep)' }}>
       <div className="sel-header" style={{ padding: '0 24px', marginBottom: 28 }}>

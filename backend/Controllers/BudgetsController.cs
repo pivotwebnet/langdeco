@@ -88,6 +88,14 @@ public class BudgetsController : ControllerBase
 
         var totals = DocumentTotalsCalculator.Compute(
             subtotal, input.DiscountType, input.DiscountPercent, input.DiscountFixedAmount, input.TaxRatePercent);
+
+        var validationError = DocumentTotalsCalculator.Validate(input.DiscountType, input.DiscountPercent, input.TaxRatePercent, totals);
+        if (validationError is not null)
+        {
+            await tx.RollbackAsync();
+            return BadRequest(new { error = validationError });
+        }
+
         budget.Subtotal = totals.Subtotal;
         budget.DiscountAmount = totals.DiscountAmount;
         budget.TaxAmount = totals.TaxAmount;
@@ -153,6 +161,11 @@ public class BudgetsController : ControllerBase
 
         var totals = DocumentTotalsCalculator.Compute(
             subtotal, input.DiscountType, input.DiscountPercent, input.DiscountFixedAmount, input.TaxRatePercent);
+
+        var validationError = DocumentTotalsCalculator.Validate(input.DiscountType, input.DiscountPercent, input.TaxRatePercent, totals);
+        if (validationError is not null)
+            return BadRequest(new { error = validationError });
+
         budget.Subtotal = totals.Subtotal;
         budget.DiscountAmount = totals.DiscountAmount;
         budget.TaxAmount = totals.TaxAmount;
@@ -175,8 +188,8 @@ public class BudgetsController : ControllerBase
         var query = _db.Budgets.Include(b => b.Items).AsQueryable();
 
         if (clientType is not null) query = query.Where(b => b.ClientType == clientType);
-        if (from is not null) query = query.Where(b => b.CreatedAt >= from);
-        if (to is not null) query = query.Where(b => b.CreatedAt <= to);
+        if (from is not null) query = query.Where(b => b.CreatedAt >= DateTime.SpecifyKind(from.Value, DateTimeKind.Utc));
+        if (to is not null) query = query.Where(b => b.CreatedAt <= DateTime.SpecifyKind(to.Value, DateTimeKind.Utc));
 
         var budgets = await query.OrderByDescending(b => b.CreatedAt).ToListAsync();
         await _lifecycle.ExpireIfNeededAsync(budgets);
@@ -210,14 +223,16 @@ public class BudgetsController : ControllerBase
         var conversionRate = decidedCount > 0 ? (int)Math.Round(convertedCount * 100m / decidedCount) : 0;
 
         var soonThreshold = DateTime.UtcNow.AddDays(7);
-        var expiringSoon = openBudgets
+        var expiringSoonAll = openBudgets
             .Where(b => b.ValidUntil is not null && b.ValidUntil <= soonThreshold)
             .OrderBy(b => b.ValidUntil)
-            .Select(b => new ExpiringBudgetDto(b.Id, b.Number, b.Customer.Name, b.ValidUntil!.Value, b.Total))
+            .ToList();
+        var expiringSoon = expiringSoonAll
             .Take(10)
+            .Select(b => new ExpiringBudgetDto(b.Id, b.Number, b.Customer.Name, b.ValidUntil!.Value, b.Total))
             .ToList();
 
-        return Ok(new BudgetsSummaryDto(openBudgets.Count, expiringSoon.Count, convertedCount, conversionRate, expiringSoon));
+        return Ok(new BudgetsSummaryDto(openBudgets.Count, expiringSoonAll.Count, convertedCount, conversionRate, expiringSoon));
     }
 
     [HttpGet("{id}")]
@@ -260,6 +275,21 @@ public class BudgetsController : ControllerBase
 
         if (budget.Status != BudgetStatus.Open)
             return BadRequest(new { error = "Solo se pueden convertir presupuestos abiertos" });
+
+        // Transición atómica guardada por estado: si otra request ya convirtió (o canceló) este
+        // mismo presupuesto entre el SELECT de arriba y este UPDATE, acá da 0 filas y frenamos
+        // antes de decrementar stock o crear una segunda venta para el mismo presupuesto.
+        var claimedRows = await _db.Budgets
+            .Where(b => b.Id == id && b.Status == BudgetStatus.Open)
+            .ExecuteUpdateAsync(b => b.SetProperty(x => x.Status, BudgetStatus.Converted));
+
+        if (claimedRows == 0)
+        {
+            await tx.RollbackAsync();
+            return Conflict(new { error = "El presupuesto ya fue convertido o modificado por otra operación. Recargá e intentá de nuevo." });
+        }
+
+        budget.Status = BudgetStatus.Converted;
 
         var sale = new Sale
         {
@@ -311,7 +341,6 @@ public class BudgetsController : ControllerBase
 
         _db.Sales.Add(sale);
 
-        budget.Status = BudgetStatus.Converted;
         budget.ConvertedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
@@ -332,7 +361,7 @@ public class BudgetsController : ControllerBase
 
         var company = await _db.CompanySettings.AsNoTracking().FirstOrDefaultAsync() ?? new CompanySettings();
 
-        var netExempt = budget.TaxRatePercent == 0 ? budget.Subtotal - budget.DiscountAmount : 0;
+        var netAmount = budget.Subtotal - budget.DiscountAmount;
         var receipt = new Dtos.ReceiptData(
             "PRESUPUESTO", budget.Number, budget.CreatedAt, budget.ValidUntil,
             budget.Customer.Name, budget.Customer.TaxId, budget.Customer.Address, budget.Customer.Contact,
@@ -341,7 +370,7 @@ public class BudgetsController : ControllerBase
                 i.Quantity * i.UnitPrice, budget.TaxRatePercent,
                 i.Quantity * i.UnitPrice * (1 + budget.TaxRatePercent / 100m))).ToList(),
             budget.Subtotal, budget.DiscountPercent, budget.DiscountAmount,
-            budget.TaxRatePercent, budget.TaxAmount, netExempt, budget.Total);
+            budget.TaxRatePercent, budget.TaxAmount, netAmount, budget.Total);
 
         var bytes = _pdf.Generate(receipt, company);
         return File(bytes, "application/pdf", $"presupuesto-{budget.Number}.pdf");

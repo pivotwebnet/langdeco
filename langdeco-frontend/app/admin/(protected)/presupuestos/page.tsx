@@ -7,6 +7,9 @@ import { useEscapeKey } from '@/lib/useEscapeKey'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 import { Field } from '@/components/admin/Field'
+import { formatPrice } from '@/lib/data'
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
+import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
 
 /** Precio unitario según el tipo de cliente — mayorista si el producto tiene precio mayorista cargado, si no cae a minorista. */
 function resolvePrice(product: BackendProduct | undefined, clientType: ClientType): number {
@@ -69,8 +72,11 @@ export default function PresupuestosAdmin() {
   useEffect(() => { load() }, [load])
   useEffect(() => { api<BackendProduct[]>('/products').then(setProducts).catch(() => {}) }, [])
 
+  const [confirmCancel, setConfirmCancel] = useState<BackendBudget | null>(null)
+
   const changeStatus = async (id: number, status: BudgetStatus) => {
     setError(null)
+    setConfirmCancel(null)
     try {
       await api(`/budgets/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) })
       toast.success(`Presupuesto marcado como ${STATUS_LABEL[status].toLowerCase()}.`)
@@ -121,7 +127,7 @@ export default function PresupuestosAdmin() {
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={7}><div className="adm-loading">Cargando…</div></td></tr>
+              <TableSkeletonRows columns={7} />
             )}
             {!loading && budgets.map((b) => (
               <tr key={b.id}>
@@ -132,7 +138,7 @@ export default function PresupuestosAdmin() {
                 </td>
                 <td>{b.items.map((it) => `${it.quantity}× ${it.productName}`).join(', ')}</td>
                 <td className="mono">{b.validUntil ? new Date(b.validUntil).toLocaleDateString('es-AR') : '-'}</td>
-                <td className="mono">$ {b.total.toLocaleString('de-DE')}</td>
+                <td className="mono">{formatPrice(b.total)}</td>
                 <td><span className={`adm-badge ${STATUS_BADGE[b.status]}`}>{STATUS_LABEL[b.status]}</span></td>
                 <td>
                   <div className="adm-table-actions">
@@ -140,7 +146,7 @@ export default function PresupuestosAdmin() {
                     {b.status === 'Open' && (
                       <>
                         <button className="adm-link-btn success" onClick={() => setConvertingBudget(b)}>Convertir en venta</button>
-                        <button className="adm-link-btn danger" onClick={() => changeStatus(b.id, 'Cancelled')}>Cancelar</button>
+                        <button className="adm-link-btn danger" onClick={() => setConfirmCancel(b)}>Cancelar</button>
                       </>
                     )}
                   </div>
@@ -192,6 +198,17 @@ export default function PresupuestosAdmin() {
           budget={convertingBudget}
           onClose={() => setConvertingBudget(null)}
           onConverted={(sale) => { setConvertingBudget(null); load(); setReceiptSale(sale) }}
+        />
+      )}
+
+      {confirmCancel && (
+        <ConfirmDialog
+          title="Cancelar presupuesto"
+          message={`¿Cancelar el presupuesto #${confirmCancel.number}?`}
+          confirmLabel="Cancelar presupuesto"
+          danger
+          onConfirm={() => changeStatus(confirmCancel.id, 'Cancelled')}
+          onCancel={() => setConfirmCancel(null)}
         />
       )}
     </div>
@@ -391,7 +408,7 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
                 </select>
                 <input className="adm-input" type="number" min={1} value={it.quantity} onChange={(e) => updateItem(i, { quantity: Number(e.target.value) })} style={{ width: 70 }} />
                 <span className="mono" style={{ fontSize: 11, width: 90, textAlign: 'right', color: noWholesale ? 'var(--adm-danger)' : undefined }}>
-                  {product ? `$ ${(resolvePrice(product, clientType) * it.quantity).toLocaleString('de-DE')}` : ''}
+                  {product ? formatPrice(resolvePrice(product, clientType) * it.quantity) : ''}
                 </span>
                 <button type="button" className="adm-btn ghost sm" onClick={() => removeItem(i)}>✕</button>
               </div>
@@ -406,7 +423,7 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--adm-border)' }}>
           <span className="mono">Total estimado</span>
-          <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 14, fontWeight: 500 }}>$ {estimatedTotal.toLocaleString('de-DE')}</span>
+          <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 14, fontWeight: 500 }}>{formatPrice(estimatedTotal)}</span>
         </div>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>

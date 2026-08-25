@@ -28,6 +28,7 @@ export interface Product {
 export interface NosotrosHito {
   year: string
   label: string
+  imageUrl?: string
 }
 
 export interface NosotrosPilar {
@@ -35,13 +36,21 @@ export interface NosotrosPilar {
   desc: string
 }
 
+export interface NosotrosTeamMember {
+  name: string
+  role: string
+  photo: string
+}
+
 export interface NosotrosContent {
   title: string
   titleEmphasis: string
+  subtitle: string
   intro: string
   photos: { showroom: string; taller: string; detalle: string }
   hitos: [NosotrosHito, NosotrosHito, NosotrosHito, NosotrosHito]
   pilares: [NosotrosPilar, NosotrosPilar, NosotrosPilar]
+  team: NosotrosTeamMember[]
 }
 
 export interface LegalContent {

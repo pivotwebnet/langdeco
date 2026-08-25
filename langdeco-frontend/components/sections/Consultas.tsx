@@ -63,7 +63,7 @@ export function Consultas() {
         <RevealOnScroll delay={1}>
           <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {error && (
-              <div style={{ color: 'var(--ink)', background: '#f3d9d9', padding: '10px 14px', fontSize: 13 }}>{error}</div>
+              <div style={{ color: 'var(--ink)', background: 'var(--rust-bg)', padding: '10px 14px', fontSize: 13 }}>{error}</div>
             )}
 
             <input

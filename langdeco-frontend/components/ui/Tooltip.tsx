@@ -29,17 +29,34 @@ export function Tooltip({ label, children, side = 'top' }: TooltipProps) {
   // se haya desplazado para entrar en pantalla.
   useLayoutEffect(() => {
     if (!show || !anchorRef.current || !bubbleRef.current) { setPos(null); return }
-    const a = anchorRef.current.getBoundingClientRect()
-    const b = bubbleRef.current.getBoundingClientRect()
-    const anchorCenter = a.left + a.width / 2
 
-    let left = anchorCenter - b.width / 2
-    left = Math.min(Math.max(left, EDGE_MARGIN), window.innerWidth - b.width - EDGE_MARGIN)
+    const recompute = () => {
+      if (!anchorRef.current || !bubbleRef.current) return
+      const a = anchorRef.current.getBoundingClientRect()
+      const b = bubbleRef.current.getBoundingClientRect()
+      const anchorCenter = a.left + a.width / 2
 
-    const top = side === 'top' ? a.top - b.height - GAP : a.bottom + GAP
-    const arrow = Math.min(Math.max(anchorCenter - left, ARROW_MARGIN), b.width - ARROW_MARGIN)
+      let left = anchorCenter - b.width / 2
+      left = Math.min(Math.max(left, EDGE_MARGIN), window.innerWidth - b.width - EDGE_MARGIN)
 
-    setPos({ top, left, arrow })
+      const top = side === 'top' ? a.top - b.height - GAP : a.bottom + GAP
+      const arrow = Math.min(Math.max(anchorCenter - left, ARROW_MARGIN), b.width - ARROW_MARGIN)
+
+      setPos({ top, left, arrow })
+    }
+
+    recompute()
+    // El disparador puede estar terminando una animación de entrada (GSAP/RevealOnScroll)
+    // cuando arranca el hover — un frame después ya está en su posición final.
+    const raf = requestAnimationFrame(recompute)
+    window.addEventListener('scroll', recompute, { passive: true, capture: true })
+    window.addEventListener('resize', recompute)
+
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('scroll', recompute, true)
+      window.removeEventListener('resize', recompute)
+    }
   }, [show, side, label])
 
   return (

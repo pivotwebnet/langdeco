@@ -5,6 +5,7 @@ import Lenis from 'lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { prefersReducedMotion } from '@/lib/gsap'
+import { setLenisInstance } from '@/lib/lenis'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -18,6 +19,7 @@ export function SmoothScroll() {
       smoothWheel: true,
     })
 
+    setLenisInstance(lenis)
     lenis.on('scroll', ScrollTrigger.update)
 
     const onTick = (time: number) => lenis.raf(time * 1000)
@@ -26,6 +28,7 @@ export function SmoothScroll() {
 
     return () => {
       gsap.ticker.remove(onTick)
+      setLenisInstance(null)
       lenis.destroy()
     }
   }, [])
