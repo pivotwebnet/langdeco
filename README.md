@@ -110,6 +110,8 @@ ADMIN_SESSION_SECRET=...            # aleatorio y largo — firma la cookie de s
 # ADMIN_PASSWORD=...                # opcional: si se define, se salta /admin/setup
 ```
 
+Reglas de la contraseña del panel (`/admin/setup` y cambio de contraseña): mínimo 10 caracteres, con al menos una letra y un número (`lib/password-policy.ts`).
+
 ### Autenticación del panel
 
 Vive enteramente en el frontend, es solo por contraseña (sin usuario):
