@@ -20,7 +20,7 @@ function hashPassword(password: string, salt: string): string {
   return pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST).toString('hex')
 }
 
-export async function hasAdminCredentials(): Promise<boolean> {
+async function hasAdminCredentials(): Promise<boolean> {
   try {
     await readFile(credentialsPath(), 'utf-8')
     return true

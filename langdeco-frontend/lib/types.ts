@@ -1,6 +1,3 @@
-export type Palette = 'bone' | 'cream' | 'stone'
-export type AnimIntensity = 'off' | 'subtle' | 'bold'
-
 export interface ProductSpec {
   label: string
   value: string
@@ -92,17 +89,6 @@ export interface LookbookEntry {
   hotspots?: LookbookHotspot[]
 }
 
-export interface SeleccionItem extends Product {
-  note: string
-  aspect: string
-}
-
 export interface CartItem extends Product {
   qty: number
-}
-
-export interface AdminUser {
-  id: string
-  email: string
-  role: 'admin' | 'editor'
 }

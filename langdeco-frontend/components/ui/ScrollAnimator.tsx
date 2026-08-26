@@ -31,7 +31,7 @@ export function ScrollAnimator() {
       })
 
       /* ── Slide-up with blur ─────────────────────────────────────────── */
-      document.querySelectorAll<HTMLElement>('[data-reveal="up"]').forEach((el, i) => {
+      document.querySelectorAll<HTMLElement>('[data-reveal="up"]').forEach((el) => {
         const delay = parseFloat(el.dataset.delay ?? '0')
         gsap.fromTo(el,
           { opacity: 0, y: 36, filter: 'blur(4px)' },
