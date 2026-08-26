@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
+import { CoverflowCarousel } from '@/components/ui/CoverflowCarousel'
 import { ScrollFillDot } from '@/components/ui/ScrollFillDot'
 import { Underline } from '@/components/ui/Underline'
 import * as Icon from '@/components/ui/Icon'
@@ -11,11 +12,11 @@ const DEFAULT_NOSOTROS: NosotrosContent = {
   titleEmphasis: 'Se compone.',
   subtitle: 'Nuestro viaje, paso a paso',
   intro: 'Desde 2014 elegimos, a mano, mobiliario y objetos para hogares que no tienen apuro. En Rafaela, Santa Fe, armamos un showroom con piezas que acompañan una casa durante años, no una temporada.',
-  photos: {
-    showroom: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1000&q=80',
-    taller: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=700&q=80',
-    detalle: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=700&q=80',
-  },
+  photos: [
+    'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1000&q=80',
+    'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=700&q=80',
+    'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=700&q=80',
+  ],
   hitos: [
     { year: '2014', label: 'Abrimos las puertas en Rafaela, con un puñado de piezas elegidas a mano.' },
     { year: '2017', label: 'Mudamos el showroom a Sgto. Cabral, para tener más lugar para curar.' },
@@ -36,45 +37,37 @@ interface NosotrosProps {
 
 export function Nosotros({ content = DEFAULT_NOSOTROS }: NosotrosProps) {
   const { title, titleEmphasis, subtitle, intro, photos, hitos, pilares, team = [] } = content
-  // Cada pilar reutiliza una de las 3 fotos de la franja (mismo orden que antes:
-  // taller, detalle, showroom) para no duplicar la carga de imágenes en el admin.
-  const pilarImages = [photos.taller, photos.detalle, photos.showroom]
+  // Cada pilar reutiliza una foto del carrusel (con módulo, por si hay menos fotos
+  // que pilares) para no duplicar la carga de imágenes en el admin.
+  const pilarImages = photos.length > 0 ? pilares.map((_, i) => photos[i % photos.length]) : []
 
   return (
     <section data-dt="nosotros" style={{ position: 'relative', padding: '56px 24px 80px', overflow: 'hidden' }}>
-      <RevealOnScroll>
-        <span className="kicker" style={{ display: 'block', marginBottom: 14 }}>Nosotros · desde 2014</span>
-        <h1 className="display" style={{ fontSize: 44, margin: '0 0 16px', maxWidth: 640 }}>
-          {title}<br />
-          <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline>{titleEmphasis}</Underline></em>
-        </h1>
-      </RevealOnScroll>
-
-      {subtitle && (
-        <RevealOnScroll delay={1}>
-          <p className="mono nosotros-subtitle">{subtitle}</p>
+      <div style={{ maxWidth: 820, margin: '0 auto', textAlign: 'center' }}>
+        <RevealOnScroll>
+          <span className="kicker" style={{ display: 'block', marginBottom: 14 }}>Nosotros · desde 2014</span>
+          <h1 className="display" style={{ fontSize: 'clamp(40px, 6.5vw, 88px)', margin: '0 0 16px' }}>
+            {title}<br />
+            <em style={{ fontFamily: 'var(--font-edit)', fontWeight: 400, fontStyle: 'italic' }}><Underline>{titleEmphasis}</Underline></em>
+          </h1>
         </RevealOnScroll>
-      )}
 
-      <RevealOnScroll delay={2} className="subtitle-connector" style={{ marginBottom: 40 }}>
-        <p className="edit" style={{ fontSize: 19, lineHeight: 1.5, maxWidth: 560, color: 'var(--ink-soft)', margin: 0 }}>
-          {intro}
-        </p>
-      </RevealOnScroll>
+        {subtitle && (
+          <RevealOnScroll delay={1}>
+            <p className="mono nosotros-subtitle">{subtitle}</p>
+          </RevealOnScroll>
+        )}
 
-      {/* ── Franja de fotos ─────────────────────────────────── */}
+        <RevealOnScroll delay={2} style={{ marginBottom: 40 }}>
+          <p className="edit" style={{ fontSize: 19, lineHeight: 1.5, color: 'var(--ink-soft)', margin: '0 auto' }}>
+            {intro}
+          </p>
+        </RevealOnScroll>
+      </div>
+
+      {/* ── Carrusel de fotos del negocio (coverflow, centrado) ─── */}
       <RevealOnScroll delay={3}>
-        <div className="nosotros-photos">
-          <div className="nosotros-photo nosotros-photo-lg">
-            <Image src={photos.showroom} alt="Showroom de LasLangDeco" fill sizes="(min-width: 900px) 55vw, 100vw" style={{ objectFit: 'cover' }} />
-          </div>
-          <div className="nosotros-photo">
-            <Image src={photos.taller} alt="Taller de un proveedor" fill sizes="(min-width: 900px) 25vw, 50vw" style={{ objectFit: 'cover' }} />
-          </div>
-          <div className="nosotros-photo">
-            <Image src={photos.detalle} alt="Detalle de una pieza" fill sizes="(min-width: 900px) 25vw, 50vw" style={{ objectFit: 'cover' }} />
-          </div>
-        </div>
+        <CoverflowCarousel images={photos} alt="Showroom y taller de LasLangDeco" />
       </RevealOnScroll>
 
       {/* ── Línea de tiempo — central, alternada, con círculos que se rellenan ── */}
@@ -106,9 +99,11 @@ export function Nosotros({ content = DEFAULT_NOSOTROS }: NosotrosProps) {
         {pilares.map((p, i) => (
           <RevealOnScroll key={p.title} delay={i + 9}>
             <div>
-              <div className="nosotros-pilar-img">
-                <Image src={pilarImages[i]} alt="" fill sizes="(min-width: 900px) 25vw, 45vw" style={{ objectFit: 'cover' }} />
-              </div>
+              {pilarImages[i] && (
+                <div className="nosotros-pilar-img">
+                  <Image src={pilarImages[i]} alt="" fill sizes="(min-width: 900px) 25vw, 45vw" style={{ objectFit: 'cover' }} />
+                </div>
+              )}
               <h3 style={{ fontFamily: 'var(--font-ui)', fontSize: 16, fontWeight: 500, margin: '14px 0 8px' }}>{p.title}</h3>
               <p className="edit" style={{ fontSize: 15, lineHeight: 1.5, color: 'var(--ink-mute)', margin: 0 }}>{p.desc}</p>
             </div>

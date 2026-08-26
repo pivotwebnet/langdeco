@@ -26,12 +26,12 @@ export async function PUT(request: NextRequest) {
   const isValidNosotros = (n: unknown): boolean => {
     if (!n || typeof n !== 'object') return false
     const v = n as Record<string, unknown>
-    const photos = v.photos as Record<string, unknown> | undefined
+    const photos = v.photos as unknown
     return (
       typeof v.title === 'string' &&
       typeof v.titleEmphasis === 'string' &&
       typeof v.intro === 'string' &&
-      !!photos && typeof photos.showroom === 'string' && typeof photos.taller === 'string' && typeof photos.detalle === 'string' &&
+      Array.isArray(photos) && photos.every((p) => typeof p === 'string') &&
       Array.isArray(v.hitos) && v.hitos.length === 4 &&
       v.hitos.every((h) => h && typeof h.year === 'string' && typeof h.label === 'string') &&
       Array.isArray(v.pilares) && v.pilares.length === 3 &&

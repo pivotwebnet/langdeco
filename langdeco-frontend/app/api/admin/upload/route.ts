@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isValidSessionToken, SESSION_COOKIE } from '@/lib/admin-session'
-import { saveUploadedImage } from '@/lib/media'
+import { saveUploadedImage, isUploadFolder } from '@/lib/media'
 
 // Endpoint único de upload de imágenes del panel admin — lo usan tanto el form
 // de producto (foto libre) como Contenido (Hero, logo, Nosotros, Inspiración).
+// `folder` viaja en el FormData y decide en qué subcarpeta de uploads/ (y más
+// adelante, con qué prefijo de key en R2) queda la imagen.
 export async function POST(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value
   if (!isValidSessionToken(token)) {
@@ -12,13 +14,17 @@ export async function POST(request: NextRequest) {
 
   const form = await request.formData().catch(() => null)
   const file = form?.get('file')
+  const folder = form?.get('folder')
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: 'Falta el archivo' }, { status: 400 })
   }
+  if (!isUploadFolder(folder)) {
+    return NextResponse.json({ error: 'Carpeta de destino inválida' }, { status: 400 })
+  }
 
   try {
-    const url = await saveUploadedImage(file)
+    const url = await saveUploadedImage(file, folder)
     return NextResponse.json({ url })
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Error al subir la imagen' }, { status: 400 })

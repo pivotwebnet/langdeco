@@ -727,21 +727,29 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
   box-shadow: 0 20px 48px -20px rgba(10,10,10,0.28);
 }
 
-/* ── Nosotros — fotos, timeline, pilares ──────────────────────────────── */
-.nosotros-photos {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 48px;
-}
-.nosotros-photo {
+/* ── Coverflow — carrusel centrado (Nosotros: fotos del negocio) ──────── */
+.coverflow {
   position: relative;
-  aspect-ratio: 4/3;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto 48px;
   overflow: hidden;
-  border-radius: 4px;
-  background: #ECEAE4;
+  touch-action: pan-y;
 }
-.nosotros-photo-lg { grid-column: 1 / -1; aspect-ratio: 16/9; }
+.coverflow-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  color: var(--ink);
+  box-shadow: 0 6px 18px rgba(10,10,10,0.18);
+  z-index: 2000;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.coverflow-arrow:hover { background: #fff; transform: translateY(-50%) scale(1.08); }
 
 .nosotros-subtitle {
   font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase;
@@ -856,17 +864,6 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
 .nosotros-cta .btn.ghost:hover { background: var(--bg); color: var(--ink); }
 
 @media (min-width: 900px) {
-  .nosotros-photos {
-    grid-template-columns: 1.4fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: 14px;
-  }
-  /* Antes "aspect-ratio: auto": la caja quedaba sin proporción propia, dependiendo
-     del alto que le tocara por el grid (implícito, no garantizado). Con una relación
-     fija + height:100% queda igual de alta ocupando las 2 filas, pero sin depender
-     de ningún cálculo indirecto — el recorte (object-fit:cover) hace el resto. */
-  .nosotros-photo-lg { grid-column: 1; grid-row: 1 / 3; aspect-ratio: auto; height: 100%; }
-
   .nosotros-timeline { gap: 64px; margin: 16px 0 64px; }
   .nosotros-timeline-line { left: 50%; transform: translateX(-50%); }
   .nosotros-timeline-item {

@@ -47,7 +47,7 @@ export interface NosotrosContent {
   titleEmphasis: string
   subtitle: string
   intro: string
-  photos: { showroom: string; taller: string; detalle: string }
+  photos: string[]
   hitos: [NosotrosHito, NosotrosHito, NosotrosHito, NosotrosHito]
   pilares: [NosotrosPilar, NosotrosPilar, NosotrosPilar]
   team: NosotrosTeamMember[]

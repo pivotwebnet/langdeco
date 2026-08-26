@@ -28,11 +28,11 @@ const DEFAULT_CONTENT: SiteContent = {
     titleEmphasis: 'Se compone.',
     subtitle: 'Nuestro viaje, paso a paso',
     intro: 'Desde 2014 elegimos, a mano, mobiliario y objetos para hogares que no tienen apuro. En Rafaela, Santa Fe, armamos un showroom con piezas que acompañan una casa durante años, no una temporada.',
-    photos: {
-      showroom: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1000&q=80',
-      taller: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=700&q=80',
-      detalle: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=700&q=80',
-    },
+    photos: [
+      'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1000&q=80',
+      'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=700&q=80',
+      'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=700&q=80',
+    ],
     hitos: [
       { year: '2014', label: 'Abrimos las puertas en Rafaela, con un puñado de piezas elegidas a mano.', imageUrl: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=700&q=80' },
       { year: '2017', label: 'Mudamos el showroom a Sgto. Cabral, para tener más lugar para curar.', imageUrl: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=1000&q=80' },

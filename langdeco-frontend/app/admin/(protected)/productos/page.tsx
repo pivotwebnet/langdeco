@@ -418,6 +418,7 @@ function ImageSlot({ url, isCover, canMoveUp, canMoveDown, onChange, onRemove, o
     try {
       const form = new FormData()
       form.append('file', file)
+      form.append('folder', 'productos')
       const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')

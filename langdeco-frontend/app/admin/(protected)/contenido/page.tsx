@@ -32,7 +32,7 @@ export default function ContenidoAdmin() {
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null)
   const [uploadingHero, setUploadingHero] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
-  const [uploadingNosotrosPhoto, setUploadingNosotrosPhoto] = useState<'showroom' | 'taller' | 'detalle' | null>(null)
+  const [uploadingNosotrosPhoto, setUploadingNosotrosPhoto] = useState<number | null>(null)
   const [uploadingHitoImage, setUploadingHitoImage] = useState<number | null>(null)
   const [uploadingTeamPhoto, setUploadingTeamPhoto] = useState<number | null>(null)
   const [products, setProducts] = useState<BackendProduct[]>([])
@@ -74,8 +74,20 @@ export default function ContenidoAdmin() {
   const setNosotros = (patch: Partial<SiteContent['nosotros']>) =>
     setContent((c) => c && { ...c, nosotros: { ...c.nosotros, ...patch } })
 
-  const setNosotrosPhoto = (key: keyof SiteContent['nosotros']['photos'], url: string) =>
-    setContent((c) => c && { ...c, nosotros: { ...c.nosotros, photos: { ...c.nosotros.photos, [key]: url } } })
+  const setNosotrosPhoto = (index: number, url: string) => {
+    setContent((c) => {
+      if (!c) return c
+      const photos = [...c.nosotros.photos]
+      photos[index] = url
+      return { ...c, nosotros: { ...c.nosotros, photos } }
+    })
+  }
+
+  const addNosotrosPhoto = () =>
+    setContent((c) => c && { ...c, nosotros: { ...c.nosotros, photos: [...c.nosotros.photos, ''] } })
+
+  const removeNosotrosPhoto = (index: number) =>
+    setContent((c) => c && { ...c, nosotros: { ...c.nosotros, photos: c.nosotros.photos.filter((_, i) => i !== index) } })
 
   const setHito = (index: number, patch: Partial<NosotrosHito>) => {
     setContent((c) => {
@@ -119,6 +131,7 @@ export default function ContenidoAdmin() {
     try {
       const form = new FormData()
       form.append('file', file)
+      form.append('folder', 'inspiracion')
       const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
@@ -142,6 +155,7 @@ export default function ContenidoAdmin() {
     try {
       const form = new FormData()
       form.append('file', file)
+      form.append('folder', field === 'heroImageUrl' ? 'hero' : 'logo')
       const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
@@ -155,16 +169,17 @@ export default function ContenidoAdmin() {
     }
   }
 
-  const uploadNosotrosPhoto = async (key: 'showroom' | 'taller' | 'detalle', file: globalThis.File) => {
-    setUploadingNosotrosPhoto(key)
+  const uploadNosotrosPhoto = async (index: number, file: globalThis.File) => {
+    setUploadingNosotrosPhoto(index)
     setError(null)
     try {
       const form = new FormData()
       form.append('file', file)
+      form.append('folder', 'nosotros')
       const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
-      setNosotrosPhoto(key, data.url)
+      setNosotrosPhoto(index, data.url)
     } catch (e) {
       const msg = (e as Error).message
       setError(msg)
@@ -180,6 +195,7 @@ export default function ContenidoAdmin() {
     try {
       const form = new FormData()
       form.append('file', file)
+      form.append('folder', 'nosotros')
       const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
@@ -199,6 +215,7 @@ export default function ContenidoAdmin() {
     try {
       const form = new FormData()
       form.append('file', file)
+      form.append('folder', 'nosotros')
       const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
@@ -342,21 +359,27 @@ export default function ContenidoAdmin() {
           </div>
         </div>
 
-        <h3 className="adm-eyebrow" style={{ margin: '0 0 8px' }}>Fotos (franja + pilares)</h3>
+        <h3 className="adm-eyebrow" style={{ margin: '0 0 4px' }}>Fotos (carrusel + pilares)</h3>
+        <p className="adm-eyebrow" style={{ margin: '0 0 12px' }}>
+          Se muestran como un carrusel en la sección Nosotros. Los pilares de la Filosofía reutilizan estas mismas fotos.
+        </p>
         <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-          {(['showroom', 'taller', 'detalle'] as const).map((key) => (
-            <div key={key} style={{ flexShrink: 0, width: 120 }}>
+          {content.nosotros.photos.map((url, i) => (
+            <div key={i} style={{ flexShrink: 0, width: 120 }}>
               <div style={{ width: 120, height: 150, background: 'var(--adm-surface-2)', overflow: 'hidden', marginBottom: 8, position: 'relative' }}>
-                {content.nosotros.photos[key] && (
+                {url && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={content.nosotros.photos[key]} alt={key} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 )}
               </div>
-              <p className="adm-eyebrow" style={{ margin: '0 0 4px', textTransform: 'capitalize' }}>{key}</p>
-              <HiddenFileInput uploading={uploadingNosotrosPhoto === key} onUpload={(f) => uploadNosotrosPhoto(key, f)} />
+              <HiddenFileInput uploading={uploadingNosotrosPhoto === i} onUpload={(f) => uploadNosotrosPhoto(i, f)} />
+              <button type="button" className="adm-link-btn danger" onClick={() => removeNosotrosPhoto(i)} style={{ marginTop: 6, width: '100%' }}>
+                Quitar
+              </button>
             </div>
           ))}
         </div>
+        <button type="button" className="adm-btn ghost sm" onClick={addNosotrosPhoto} style={{ marginBottom: 24 }}>+ Agregar foto</button>
 
         <h3 className="adm-eyebrow" style={{ margin: '0 0 8px' }}>Línea de tiempo (4 hitos)</h3>
         {content.nosotros.hitos.map((h, i) => (

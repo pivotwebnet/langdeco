@@ -155,16 +155,51 @@ export function Header({ hasPromo = false }: HeaderProps) {
   // scroll con rueda/touch, y un salto nativo de ancla (comportamiento por defecto de <Link>)
   // mueve la ventana sin que Lenis se entere — en el próximo scroll "tira" de vuelta a donde
   // Lenis creía que estabas, dando la sensación de que el link no llevó a ningún lado.
+  const scrollToId = (id: string) => {
+    const el = document.getElementById(id)
+    if (!el) return false
+    const lenis = getLenisInstance()
+    if (lenis) {
+      // Lenis vive en el layout raíz y no se recrea al cambiar de página — su `limit`
+      // (el tope que clampea cualquier scrollTo) se recalcula recién ~250ms después de
+      // que cambia el alto del contenido (ResizeObserver con debounce). Si venimos de
+      // navegar desde otra página más corta, ese límite todavía es el de la página vieja
+      // en el momento en que este código corre, así que scrollTo() clampeaba el destino a
+      // una sección temprana (por eso "Visualizador"/"Inspiración" terminaban en la
+      // Selección). resize() fuerza el recálculo sincrónico antes de scrollear.
+      lenis.resize()
+      lenis.scrollTo(el)
+    } else {
+      el.scrollIntoView({ behavior: 'smooth' })
+    }
+    return true
+  }
+
   const onHashNavClick = (e: React.MouseEvent, href: string) => {
     const hashIndex = href.indexOf('#')
-    if (hashIndex === -1 || window.location.pathname !== '/') return
+    if (hashIndex === -1) return
     const id = href.slice(hashIndex + 1)
-    const el = document.getElementById(id)
-    if (!el) return
+
+    if (window.location.pathname === '/') {
+      if (scrollToId(id)) e.preventDefault()
+      return
+    }
+
+    // Estamos en otra página: la sección todavía no existe en el DOM, hay que
+    // navegar a home primero. Interceptamos igual (en vez de dejar el salto nativo
+    // de Next) porque si no, aterriza en cualquier lado sin que Lenis se entere, y
+    // recién el próximo click (ya en home) scrollea al lugar correcto.
+    // scroll:false es clave: si no, el propio scroll-to-top de Next compite con el
+    // de Lenis de abajo y lo corta a mitad de camino, dejando la página en cualquier
+    // sección (lo que reportaste — terminaba en "Nuestros Favoritos" sin relación).
     e.preventDefault()
-    const lenis = getLenisInstance()
-    if (lenis) lenis.scrollTo(el)
-    else el.scrollIntoView({ behavior: 'smooth' })
+    router.push('/', { scroll: false })
+    const deadline = Date.now() + 5000
+    const poll = () => {
+      if (scrollToId(id)) return
+      if (Date.now() < deadline) requestAnimationFrame(poll)
+    }
+    requestAnimationFrame(poll)
   }
 
   const searchPanelProps = {
