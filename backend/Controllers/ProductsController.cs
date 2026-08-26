@@ -191,14 +191,23 @@ public class ProductsController : ControllerBase
         if (string.IsNullOrWhiteSpace(input.Name))
             return "El nombre es obligatorio";
 
+        if (input.Name.Length > 200)
+            return "El nombre no puede superar los 200 caracteres";
+
         if (string.IsNullOrWhiteSpace(input.Material))
             return "El material es obligatorio";
+
+        if (input.Material.Length > 200)
+            return "El material no puede superar los 200 caracteres";
 
         if (!await _db.Categories.AnyAsync(c => c.Id == input.CategoryId))
             return "La categoría indicada no existe";
 
-        if (input.Price < 0 || input.Stock < 0)
-            return "El precio y el stock no pueden ser negativos";
+        if (input.Price <= 0)
+            return "El precio debe ser mayor a cero";
+
+        if (input.Stock < 0)
+            return "El stock no puede ser negativo";
 
         if (input.OriginalPrice is not null && input.OriginalPrice <= input.Price)
             return "El precio original (tachado) debe ser mayor que el precio";

@@ -55,6 +55,18 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 })
   }
 
+  // Estos campos son texto principal siempre visible en el sitio público —
+  // guardarlos vacíos deja huecos en producción sin ningún aviso.
+  const nosotros = body.nosotros as SiteContent['nosotros']
+  if (
+    body.heroTitle.trim().length === 0 ||
+    body.heroSubtitle.trim().length === 0 ||
+    nosotros.title.trim().length === 0 ||
+    nosotros.intro.trim().length === 0
+  ) {
+    return NextResponse.json({ error: 'El título y la bajada del Hero, y el título e intro de Nosotros, no pueden quedar vacíos' }, { status: 400 })
+  }
+
   await saveSiteContent(body as SiteContent)
   return NextResponse.json({ ok: true })
 }

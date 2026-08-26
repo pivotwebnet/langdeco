@@ -38,6 +38,31 @@ const EMPTY_FORM: ProductForm = {
 }
 
 const ROOM_TAG_OPTIONS = ['Living', 'Comedor', 'Dormitorio', 'Cocina', 'Baño', 'Exterior', 'Oficina', 'Entrada']
+const MAX_ROOM_TAGS = 6
+const SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/
+
+function validateProductForm(form: ProductForm, isNew: boolean): string | null {
+  if (isNew && !SLUG_REGEX.test(form.id)) {
+    return 'El id debe ser un slug (minúsculas-números-guiones)'
+  }
+  if (form.name.length > 200) return 'El nombre no puede superar los 200 caracteres'
+  if (form.material.length > 200) return 'El material no puede superar los 200 caracteres'
+
+  const price = Number(form.price)
+  if (!form.price || !(price > 0)) return 'El precio debe ser mayor a cero'
+
+  if (form.originalPrice) {
+    const originalPrice = Number(form.originalPrice)
+    if (!(originalPrice > price)) return 'El precio original (tachado) debe ser mayor que el precio'
+  }
+
+  if (form.wholesalePrice) {
+    const wholesalePrice = Number(form.wholesalePrice)
+    if (!(wholesalePrice < price)) return 'El precio mayorista debe ser menor que el precio'
+  }
+
+  return null
+}
 
 
 export default function ProductosAdmin() {
@@ -105,6 +130,12 @@ export default function ProductosAdmin() {
 
   const onSave = async () => {
     if (!form) return
+    const validationError = validateProductForm(form, isNewForm)
+    if (validationError) {
+      setError(validationError)
+      toast.error(validationError)
+      return
+    }
     setSaving(true)
     setError(null)
     try {
@@ -325,14 +356,14 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
           </Field>
         </div>
 
-        <Field label="Nombre"><input className="adm-input" value={form.name} onChange={(e) => set('name', e.target.value)} style={{ width: '100%' }} /></Field>
+        <Field label="Nombre"><input className="adm-input" value={form.name} onChange={(e) => set('name', e.target.value)} maxLength={200} style={{ width: '100%' }} /></Field>
 
         <div className="adm-grid-2" style={{ marginTop: 12 }}>
           <Field label="Tag (opcional)"><input className="adm-input" value={form.tag} onChange={(e) => set('tag', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Aspecto (ej. 4/5)"><input className="adm-input" value={form.aspect} onChange={(e) => set('aspect', e.target.value)} style={{ width: '100%' }} /></Field>
-          <Field label="Material"><input className="adm-input" value={form.material} onChange={(e) => set('material', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Material"><input className="adm-input" value={form.material} onChange={(e) => set('material', e.target.value)} maxLength={200} style={{ width: '100%' }} /></Field>
           <Field label="Origen (opcional)"><input className="adm-input" value={form.origin} onChange={(e) => set('origin', e.target.value)} style={{ width: '100%' }} /></Field>
-          <Field label="Precio"><input className="adm-input" type="number" value={form.price} onChange={(e) => set('price', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Precio"><input className="adm-input" type="number" required min="0.01" step="0.01" value={form.price} onChange={(e) => set('price', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Precio tachado (opcional)"><input className="adm-input" type="number" value={form.originalPrice} onChange={(e) => set('originalPrice', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Precio mayorista (opcional)"><input className="adm-input" type="number" value={form.wholesalePrice} onChange={(e) => set('wholesalePrice', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Stock"><input className="adm-input" type="number" value={form.stock} onChange={(e) => set('stock', e.target.value)} style={{ width: '100%' }} /></Field>
@@ -344,7 +375,7 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
           </Field>
         </div>
 
-        <Field label="¿Para qué ambiente se recomienda? (opcional)">
+        <Field label={`¿Para qué ambiente se recomienda? (opcional, hasta ${MAX_ROOM_TAGS})`}>
           <RoomTagsInput value={form.roomTags} onChange={(v) => set('roomTags', v)} />
         </Field>
 
@@ -464,12 +495,15 @@ function ImageSlot({ url, isCover, canMoveUp, canMoveDown, onChange, onRemove, o
 
 function RoomTagsInput({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
   const [custom, setCustom] = useState('')
+  const atLimit = value.length >= MAX_ROOM_TAGS
 
   const toggle = (tag: string) => {
+    if (!value.includes(tag) && atLimit) return
     onChange(value.includes(tag) ? value.filter((t) => t !== tag) : [...value, tag])
   }
 
   const addCustom = () => {
+    if (atLimit) return
     const tag = custom.trim()
     if (!tag || value.some((t) => t.toLowerCase() === tag.toLowerCase())) return
     onChange([...value, tag])
@@ -489,6 +523,7 @@ function RoomTagsInput({ value, onChange }: { value: string[]; onChange: (v: str
               type="button"
               className="adm-btn ghost sm"
               onClick={() => toggle(tag)}
+              disabled={!active && atLimit}
               style={active ? { background: 'var(--ink)', color: 'var(--adm-bg)' } : undefined}
             >
               {active ? '✓ ' : '+ '}{tag}
@@ -514,11 +549,13 @@ function RoomTagsInput({ value, onChange }: { value: string[]; onChange: (v: str
           value={custom}
           onChange={(e) => setCustom(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustom() } }}
-          placeholder="Otro ambiente (para esta pieza)"
+          placeholder={atLimit ? `Máximo ${MAX_ROOM_TAGS} ambientes` : 'Otro ambiente (para esta pieza)'}
+          disabled={atLimit}
           style={{ flex: 1 }}
         />
-        <button type="button" className="adm-btn ghost sm" onClick={addCustom}>+ Agregar</button>
+        <button type="button" className="adm-btn ghost sm" onClick={addCustom} disabled={atLimit}>+ Agregar</button>
       </div>
+      {atLimit && <p style={{ fontSize: 12, color: 'var(--ink-soft, #6d6858)', margin: '6px 0 0' }}>Máximo {MAX_ROOM_TAGS} ambientes por producto.</p>}
     </div>
   )
 }
