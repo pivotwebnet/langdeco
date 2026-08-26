@@ -3,7 +3,45 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { MIN_PASSWORD_LENGTH, isPasswordStrong, PASSWORD_REQUIREMENTS_HINT } from '@/lib/password-policy'
+import { MIN_PASSWORD_LENGTH, checkPassword, isPasswordStrong, PASSWORD_REQUIREMENTS_HINT } from '@/lib/password-policy'
+
+const STRENGTH_COLORS = { red: '#dc2626', yellow: '#d97706', green: '#16a34a' } as const
+
+function PasswordStrength({ password }: { password: string }) {
+  if (!password) return null
+
+  const { length, hasLetter, hasNumber } = checkPassword(password)
+  const metCount = Number(length) + Number(hasLetter) + Number(hasNumber)
+  const level = metCount === 3 ? 'green' : metCount === 0 ? 'red' : 'yellow'
+  const color = STRENGTH_COLORS[level]
+
+  const missing: string[] = []
+  if (!length) missing.push(`al menos ${MIN_PASSWORD_LENGTH} caracteres`)
+  if (!hasLetter) missing.push('una letra')
+  if (!hasNumber) missing.push('un número')
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ display: 'flex', gap: 4 }}>
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            style={{
+              height: 4,
+              flex: 1,
+              borderRadius: 2,
+              background: i < metCount ? color : '#e5e7eb',
+              transition: 'background-color 0.15s',
+            }}
+          />
+        ))}
+      </div>
+      <p style={{ fontSize: 12, margin: '6px 0 0', color, fontWeight: 500 }}>
+        {level === 'green' ? '✓ Contraseña segura' : `Falta: ${missing.join(', ')}`}
+      </p>
+    </div>
+  )
+}
 
 export default function SetupPage() {
   const [password, setPassword] = useState('')
@@ -74,6 +112,7 @@ export default function SetupPage() {
             required
             style={{ width: '100%' }}
           />
+          <PasswordStrength password={password} />
         </div>
 
         <div className="adm-field">
