@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { Field } from '@/components/admin/Field'
+import { MIN_PASSWORD_LENGTH, isPasswordStrong, PASSWORD_REQUIREMENTS_HINT } from '@/lib/password-policy'
 
 export default function ConfiguracionAdmin() {
   const toast = useAdminToast()
@@ -22,6 +23,11 @@ export default function ConfiguracionAdmin() {
 
     if (newPassword !== confirm) {
       setError('Las contraseñas nuevas no coinciden')
+      return
+    }
+
+    if (!isPasswordStrong(newPassword)) {
+      setError(PASSWORD_REQUIREMENTS_HINT)
       return
     }
 
@@ -71,12 +77,13 @@ export default function ConfiguracionAdmin() {
             <input className="adm-input" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required style={{ width: '100%' }} />
           </Field>
 
-          <Field label="Nueva contraseña" style={{ marginBottom: 16 }}>
-            <input className="adm-input" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={8} style={{ width: '100%' }} />
+          <Field label="Nueva contraseña" style={{ marginBottom: 4 }}>
+            <input className="adm-input" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required minLength={MIN_PASSWORD_LENGTH} style={{ width: '100%' }} />
           </Field>
+          <p style={{ fontSize: 12, color: 'var(--ink-soft)', margin: '0 0 16px' }}>{PASSWORD_REQUIREMENTS_HINT}</p>
 
           <Field label="Confirmar nueva contraseña" style={{ marginBottom: 16 }}>
-            <input className="adm-input" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={8} style={{ width: '100%' }} />
+            <input className="adm-input" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={MIN_PASSWORD_LENGTH} style={{ width: '100%' }} />
           </Field>
 
           {error && <div className="adm-alert error">{error}</div>}

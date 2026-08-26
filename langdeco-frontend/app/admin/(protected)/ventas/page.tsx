@@ -210,8 +210,14 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const [clientType, setClientType] = useState<ClientType>('Retail')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Transfer')
   const [status, setStatus] = useState<'Pending' | 'Paid'>('Pending')
-  const [discountPercent, setDiscountPercent] = useState(0)
+  const [discountKind, setDiscountKind] = useState<'Percent' | 'Fixed'>('Percent')
+  const [discountIsSurcharge, setDiscountIsSurcharge] = useState(false)
+  const [discountValue, setDiscountValue] = useState(0)
   const [taxRatePercent, setTaxRatePercent] = useState(0)
+
+  // discountPercent/discountFixedAmount negativos representan un recargo en vez de un descuento (ver DocumentTotalsCalculator en el backend).
+  const discountPercent = discountKind === 'Percent' ? (discountIsSurcharge ? -discountValue : discountValue) : 0
+  const discountFixedAmount = discountKind === 'Fixed' ? (discountIsSurcharge ? -discountValue : discountValue) : 0
   const [items, setItems] = useState<{ productId: string; quantity: number }[]>([])
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -243,10 +249,15 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   }
   const removeItem = (i: number) => setItems(items.filter((_, idx) => idx !== i))
 
-  const estimatedTotal = items.reduce((sum, it) => {
+  const subtotal = items.reduce((sum, it) => {
     const product = products.find((p) => p.id === it.productId)
     return sum + resolvePrice(product, clientType) * it.quantity
   }, 0)
+  // Mismo cálculo que DocumentTotalsCalculator.Compute en el backend.
+  const discountAmount = discountKind === 'Fixed' ? discountFixedAmount : Math.round(subtotal * discountPercent) / 100
+  const netAmount = subtotal - discountAmount
+  const taxAmount = Math.round(netAmount * taxRatePercent) / 100
+  const estimatedTotal = netAmount + taxAmount
 
   // Si el cliente es mayorista, cualquier producto sin precio mayorista cargado
   // se cobraría a precio minorista sin avisar — lo marcamos antes de guardar.
@@ -255,6 +266,15 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         .map((it) => products.find((p) => p.id === it.productId))
         .filter((p): p is BackendProduct => !!p && p.wholesalePrice == null)
     : []
+
+  // Cantidad pedida por encima del stock disponible — se avisa antes de guardar en vez de
+  // dejar que el backend lo rechace recién al enviar el formulario.
+  const insufficientStock = items
+    .filter((it) => {
+      const product = products.find((p) => p.id === it.productId)
+      return !!product && it.quantity > product.stock
+    })
+    .map((it) => products.find((p) => p.id === it.productId) as BackendProduct)
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -272,7 +292,7 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         body: JSON.stringify({
           clientId: selectedClientId || null,
           customer: { name: clientName, contact: clientContact || null, taxId: clientTaxId || null, address: clientAddress || null },
-          clientType, paymentMethod, status, discountPercent, taxRatePercent,
+          clientType, paymentMethod, status, discountType: discountKind, discountPercent, discountFixedAmount, taxRatePercent,
           items: items.map((it) => ({ productId: it.productId, quantity: it.quantity, priceType: clientType })),
         }),
       })
@@ -325,8 +345,23 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
               <option value="Paid">Pagada</option>
             </select>
           </Field>
-          <Field label="Bonificación %">
-            <input className="adm-input" type="number" min={0} max={100} value={discountPercent} onChange={(e) => setDiscountPercent(Number(e.target.value))} style={{ width: '100%' }} />
+          <Field label="Ajuste">
+            <div style={{ display: 'flex', gap: 6 }}>
+              <select className="adm-select" value={discountIsSurcharge ? 'surcharge' : 'discount'} onChange={(e) => setDiscountIsSurcharge(e.target.value === 'surcharge')} style={{ flex: 1 }}>
+                <option value="discount">Descuento</option>
+                <option value="surcharge">Recargo</option>
+              </select>
+              <select className="adm-select" value={discountKind} onChange={(e) => setDiscountKind(e.target.value as 'Percent' | 'Fixed')} style={{ flex: 1 }}>
+                <option value="Percent">%</option>
+                <option value="Fixed">$ fijo</option>
+              </select>
+            </div>
+          </Field>
+          <Field label={discountKind === 'Percent' ? 'Valor del ajuste (%)' : 'Valor del ajuste ($)'}>
+            <input
+              className="adm-input" type="number" min={0} max={discountKind === 'Percent' ? 100 : undefined}
+              value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))} style={{ width: '100%' }}
+            />
           </Field>
           <Field label="Alícuota IVA % (0 = exento)">
             <input className="adm-input" type="number" min={0} max={100} value={taxRatePercent} onChange={(e) => setTaxRatePercent(Number(e.target.value))} style={{ width: '100%' }} />
@@ -359,15 +394,38 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
               Sin precio mayorista cargado: {missingWholesale.map((p) => p.name).join(', ')}. No vas a poder guardar la venta hasta cargarles precio mayorista en Productos, o cambiar el tipo de cliente a minorista.
             </div>
           )}
+          {insufficientStock.length > 0 && (
+            <div className="adm-alert error" style={{ marginTop: 8, marginBottom: 0 }}>
+              Sin stock suficiente: {insufficientStock.map((p) => `${p.name} (stock: ${p.stock})`).join(', ')}. Ajustá la cantidad para poder guardar la venta.
+            </div>
+          )}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--adm-border)' }}>
-          <span className="mono">Total estimado</span>
-          <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 14, fontWeight: 500 }}>{formatPrice(estimatedTotal)}</span>
+        <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--adm-border)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span className="adm-table-sub">Subtotal</span>
+            <span className="adm-table-sub">{formatPrice(subtotal)}</span>
+          </div>
+          {discountAmount !== 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span className="adm-table-sub">{discountAmount > 0 ? 'Descuento' : 'Recargo'}</span>
+              <span className="adm-table-sub">{discountAmount > 0 ? '-' : '+'}{formatPrice(Math.abs(discountAmount))}</span>
+            </div>
+          )}
+          {taxAmount !== 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span className="adm-table-sub">IVA</span>
+              <span className="adm-table-sub">{formatPrice(taxAmount)}</span>
+            </div>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+            <span className="mono">Total estimado</span>
+            <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 14, fontWeight: 500 }}>{formatPrice(estimatedTotal)}</span>
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-          <button className="adm-btn" type="submit" disabled={saving || missingWholesale.length > 0} style={{ flex: 1 }}>
+          <button className="adm-btn" type="submit" disabled={saving || missingWholesale.length > 0 || insufficientStock.length > 0} style={{ flex: 1 }}>
             {saving ? 'Guardando...' : 'Registrar venta'}
           </button>
           <button className="adm-btn ghost" type="button" onClick={onClose} style={{ flex: 1 }}>Cancelar</button>

@@ -106,6 +106,21 @@ export default function ClientesAdmin() {
 
   const onSave = async () => {
     if (!form) return
+
+    const incompleteContact = form.contactPersons.findIndex(
+      (cp) => !cp.name.trim() && (cp.role.trim() || cp.cell.trim() || cp.phone.trim() || cp.email.trim()),
+    )
+    if (incompleteContact !== -1) {
+      setError(`Completá el nombre de la persona de contacto (fila ${incompleteContact + 1}) o borrala`)
+      return
+    }
+
+    const incompleteField = form.customFields.findIndex((cf) => !cf.label.trim() && cf.value.trim())
+    if (incompleteField !== -1) {
+      setError(`Completá la etiqueta del campo personalizado (fila ${incompleteField + 1}) o borralo`)
+      return
+    }
+
     setSaving(true)
     setError(null)
     try {

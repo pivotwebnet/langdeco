@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminPassword, saveAdminPassword } from '@/lib/admin-credentials'
 import { isValidSessionToken, SESSION_COOKIE } from '@/lib/admin-session'
+import { isPasswordStrong, PASSWORD_REQUIREMENTS_HINT } from '@/lib/password-policy'
 
 export async function POST(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value
@@ -22,8 +23,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'La contraseña actual es incorrecta' }, { status: 400 })
   }
 
-  if (typeof newPassword !== 'string' || newPassword.length < 8) {
-    return NextResponse.json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' }, { status: 400 })
+  if (typeof newPassword !== 'string' || !isPasswordStrong(newPassword)) {
+    return NextResponse.json({ error: PASSWORD_REQUIREMENTS_HINT }, { status: 400 })
   }
 
   await saveAdminPassword(newPassword)
