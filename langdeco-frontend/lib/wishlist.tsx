@@ -19,7 +19,12 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(WISHLIST_KEY)
-      if (raw) setIds(JSON.parse(raw))
+      if (!raw) return
+      const parsed = JSON.parse(raw)
+      // Si el dato guardado está corrompido (no es un array de ids), lo ignoramos en vez de romper la página.
+      if (Array.isArray(parsed) && parsed.every((id) => typeof id === 'string')) {
+        setIds(parsed)
+      }
     } catch { /* ignore */ }
   }, [])
 

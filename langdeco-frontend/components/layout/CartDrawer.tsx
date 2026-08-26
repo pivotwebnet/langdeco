@@ -142,8 +142,8 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
               className="btn"
               style={{ width: '100%', justifyContent: 'center' }}
               onClick={() => {
-                const msg = encodeURIComponent(`Hola, me interesan estas piezas:\n${items.map(i => `• ${i.name} (${i.qty}x) — ${i.price}`).join('\n')}\nTotal estimado: ${formatPrice(total)}`)
-                window.open(`https://wa.me/5493492287864?text=${msg}`, '_blank')
+                const msg = encodeURIComponent(`Hola, me interesan estas piezas:\n${items.map(i => `• ${i.name} (${i.qty}x) — ${formatPrice(i.priceNum * i.qty)}`).join('\n')}\nTotal estimado: ${formatPrice(total)}`)
+                window.open(`https://wa.me/5493492287864?text=${msg}`, '_blank', 'noopener,noreferrer')
               }}
             >
               <Icon.Whatsapp /> Hablar con nosotros

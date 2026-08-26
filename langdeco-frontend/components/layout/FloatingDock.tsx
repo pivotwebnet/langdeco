@@ -32,7 +32,7 @@ export function FloatingDock() {
       <Magnetic strength={0.2}>
         <button
           className="wa-pill"
-          onClick={() => window.open('https://wa.me/5493492287864', '_blank')}
+          onClick={() => window.open('https://wa.me/5493492287864', '_blank', 'noopener,noreferrer')}
           aria-label="Hablar con nosotros"
         >
           <div className="dot"><Icon.Whatsapp /></div>
