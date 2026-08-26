@@ -13,6 +13,7 @@ import { useSiteLogo } from '@/lib/useSiteLogo'
 import { getLenisInstance } from '@/lib/lenis'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Magnetic } from '@/components/ui/Magnetic'
+import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
 import * as Icon from '@/components/ui/Icon'
 import type { Product } from '@/lib/types'
 
@@ -480,7 +481,7 @@ interface SearchPanelProps {
 function SearchPanel({ query, results, totalResults, catalog, catalogError, onSelect, onViewAll, onQuickTerm, mobile }: SearchPanelProps) {
   return (
     <div className={`nav-search-dropdown${mobile ? ' mobile' : ''}`}>
-      {query.length === 0 && (
+      {query.trim().length === 0 && (
         <>
           <div className="mono" style={{ color: 'var(--ink-mute)', marginBottom: 10 }}>Búsquedas frecuentes</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -493,7 +494,7 @@ function SearchPanel({ query, results, totalResults, catalog, catalogError, onSe
         </>
       )}
 
-      {query.length > 0 && (
+      {query.trim().length > 0 && (
         <>
           {!catalog && !catalogError && (
             <div className="mono" style={{ color: 'var(--ink-mute)', padding: '8px 0' }}>Buscando…</div>
@@ -517,8 +518,10 @@ function SearchPanel({ query, results, totalResults, catalog, catalogError, onSe
               className="nav-search-result"
             >
               <div style={{ position: 'relative', width: 38, height: 46, flexShrink: 0, background: '#ECEAE4', overflow: 'hidden', borderRadius: 3 }}>
-                {p.imageUrl && (
+                {p.imageUrl ? (
                   <Image src={p.imageUrl} alt="" fill unoptimized sizes="38px" style={{ objectFit: 'cover' }} />
+                ) : (
+                  <ImagePlaceholder size={14} />
                 )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>

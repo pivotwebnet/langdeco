@@ -213,6 +213,7 @@ export function Productos({ products, categories, initialCategory, initialQuery 
                 <input
                   type="number"
                   inputMode="numeric"
+                  min="0"
                   placeholder="Mín"
                   value={priceMin}
                   onChange={(e) => changePriceMin(e.target.value)}
@@ -223,6 +224,7 @@ export function Productos({ products, categories, initialCategory, initialQuery 
                 <input
                   type="number"
                   inputMode="numeric"
+                  min="0"
                   placeholder="Máx"
                   value={priceMax}
                   onChange={(e) => changePriceMax(e.target.value)}
