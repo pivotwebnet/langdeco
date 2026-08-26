@@ -14,6 +14,9 @@ export interface SiteContent {
   legal: LegalContent
 }
 
+/** Texto que ve una visitante real cuando un campo de contenido legal/ayuda todavía no se cargó desde el panel. */
+export const PENDING_CONTENT_FALLBACK = 'Estamos actualizando esta información — escribinos por WhatsApp y te ayudamos con el detalle.'
+
 const FILE_NAME = 'site-content.json'
 
 const DEFAULT_CONTENT: SiteContent = {

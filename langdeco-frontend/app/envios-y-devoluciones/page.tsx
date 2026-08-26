@@ -3,14 +3,15 @@ import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { LegalSection } from '@/components/ui/LegalSection'
-import { getSiteContent } from '@/lib/site-content'
+import { getSiteContent, PENDING_CONTENT_FALLBACK } from '@/lib/site-content'
 
 export const metadata: Metadata = {
   title: 'Envíos y devoluciones — LasLangDeco',
   description: 'Zonas de envío, plazos y condiciones de devolución de LasLangDeco.',
 }
 
-const PENDIENTE = 'Pendiente de completar en el panel admin.'
+const PENDIENTE = PENDING_CONTENT_FALLBACK
+const PLAZO_PENDIENTE = 'un plazo a confirmar por WhatsApp'
 
 export default async function EnviosYDevolucionesPage() {
   const { envios } = (await getSiteContent()).legal
@@ -45,7 +46,7 @@ export default async function EnviosYDevolucionesPage() {
           <LegalSection title="Devoluciones">
             <p>
               Aceptamos devoluciones de productos sin uso, en su embalaje original, dentro de{' '}
-              {envios.plazoDevolucionDias ? `${envios.plazoDevolucionDias} días` : '[plazo a confirmar]'}
+              {envios.plazoDevolucionDias ? `${envios.plazoDevolucionDias} días` : PLAZO_PENDIENTE}
               {' '}desde la entrega. Escribinos por WhatsApp o email para coordinarla.
             </p>
             <p style={{ marginTop: 10 }}>
@@ -59,7 +60,7 @@ export default async function EnviosYDevolucionesPage() {
           <LegalSection title="Piezas dañadas en el envío">
             <p>
               Si tu pedido llega dañado, contactanos dentro de{' '}
-              {envios.plazoDanioHoras ? `las ${envios.plazoDanioHoras}` : '[plazo a confirmar]'}
+              {envios.plazoDanioHoras ? `las ${envios.plazoDanioHoras}` : PLAZO_PENDIENTE}
               {' '}siguientes a la entrega con fotos del estado del producto y el embalaje.
             </p>
           </LegalSection>

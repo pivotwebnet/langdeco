@@ -3,14 +3,14 @@ import Link from 'next/link'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { getSiteContent } from '@/lib/site-content'
+import { getSiteContent, PENDING_CONTENT_FALLBACK } from '@/lib/site-content'
 
 export const metadata: Metadata = {
   title: 'Preguntas frecuentes — LasLangDeco',
   description: 'Respuestas a las dudas más comunes sobre compras, envíos y devoluciones en LasLangDeco.',
 }
 
-const PENDIENTE = 'Pendiente de completar en el panel admin.'
+const PENDIENTE = PENDING_CONTENT_FALLBACK
 
 export default async function PreguntasFrecuentesPage() {
   const { faq } = (await getSiteContent()).legal
