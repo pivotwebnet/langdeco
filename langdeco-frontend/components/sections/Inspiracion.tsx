@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
@@ -21,6 +21,28 @@ export function Inspiracion({ items, products }: InspiracionProps) {
   const { add } = useCart()
   const [openMarker, setOpenMarker] = useState<string | null>(null)
   const [added, setAdded] = useState<string | null>(null)
+  // En touch no hay hover real, así que ahí se mantiene el click-toggle de siempre;
+  // solo en dispositivos con mouse el hotspot se abre/cierra al pasar por encima.
+  const [supportsHover] = useState(() =>
+    typeof window === 'undefined' ? false : window.matchMedia('(hover: hover) and (pointer: fine)').matches
+  )
+  // Entre el punto y la tarjeta hay 14px de aire (.look-hotspot-card, top: calc(100% + 14px)) —
+  // al cruzar ese hueco con el mouse, técnicamente se sale del wrapper antes de entrar a la
+  // tarjeta, así que un cierre inmediato en mouseleave la cerraba antes de llegar a tocarla.
+  // Con un pequeño delay (cancelable si el mouse re-entra a tiempo) da lugar a cruzar el hueco.
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const openHotspot = (key: string) => {
+    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null }
+    setOpenMarker(key)
+  }
+  const scheduleCloseHotspot = (key: string) => {
+    if (closeTimer.current) clearTimeout(closeTimer.current)
+    closeTimer.current = setTimeout(() => {
+      setOpenMarker((m) => (m === key ? null : m))
+      closeTimer.current = null
+    }, 300)
+  }
+  useEffect(() => () => { if (closeTimer.current) clearTimeout(closeTimer.current) }, [])
 
   const matchProduct = (pieceName: string) =>
     products.find((prod) => prod.name.trim().toLowerCase() === pieceName.trim().toLowerCase())
@@ -129,7 +151,12 @@ export function Inspiracion({ items, products }: InspiracionProps) {
                     const alignRight = h.x > 75
 
                     return (
-                      <div key={key} style={{ position: 'absolute', left: `${h.x}%`, top: `${h.y}%`, zIndex: isOpen ? 32 : 30 }}>
+                      <div
+                        key={key}
+                        style={{ position: 'absolute', left: `${h.x}%`, top: `${h.y}%`, zIndex: isOpen ? 32 : 30 }}
+                        onMouseEnter={() => { if (supportsHover) openHotspot(key) }}
+                        onMouseLeave={() => { if (supportsHover) scheduleCloseHotspot(key) }}
+                      >
                         <button
                           className="look-hotspot"
                           onClick={(e) => { e.stopPropagation(); setOpenMarker(isOpen ? null : key) }}

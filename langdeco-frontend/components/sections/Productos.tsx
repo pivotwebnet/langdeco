@@ -16,7 +16,7 @@ import type { BackendCategory } from '@/lib/backend-types'
 const PAGE_SIZE = 6
 
 const tabStyle = (active: boolean) => ({
-  padding: '12px 20px',
+  padding: '14px 20px',
   background: active ? 'var(--ink)' : 'transparent',
   color: active ? 'var(--bg)' : 'var(--ink)',
   border: 0, cursor: 'pointer',
@@ -51,6 +51,9 @@ export function Productos({ products, categories, initialCategory, initialQuery 
   const [priceMin, setPriceMin] = useState('')
   const [priceMax, setPriceMax] = useState('')
   const [searchQuery, setSearchQuery] = useState(initialQuery ?? '')
+  // Solo importa en mobile — en desktop el panel de filtros va siempre visible
+  // al costado (CSS lo fuerza abierto ahí, ver .cat-sidebar en globals.css).
+  const [filtersOpen, setFiltersOpen] = useState(false)
   const { add } = useCart()
   const router = useRouter()
 
@@ -165,7 +168,19 @@ export function Productos({ products, categories, initialCategory, initialQuery 
 
         {/* ── Sidebar de filtros + contenido ──────────────────── */}
         <div className="cat-layout">
-          <aside className="cat-sidebar">
+          {!searchActive && (
+            <button
+              type="button"
+              className="cat-filters-toggle"
+              onClick={() => setFiltersOpen((v) => !v)}
+              aria-expanded={filtersOpen}
+            >
+              <span>Filtros{hasActiveFilters ? ' · activos' : ''}</span>
+              <Icon.ArrowDown style={{ width: 12, height: 12, transform: filtersOpen ? 'rotate(180deg)' : undefined, transition: 'transform 0.2s ease' }} />
+            </button>
+          )}
+
+          <aside className="cat-sidebar" data-open={searchActive || filtersOpen}>
             {!searchActive && categoriesInTab.length > 0 && (
               <div className="cat-sidebar-block">
                 <span className="mono cat-sidebar-label">Categoría</span>

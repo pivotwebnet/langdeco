@@ -139,6 +139,11 @@ body {
   transition: background 0.18s;
 }
 .header .icon-btn:hover { background: var(--bg-deep); }
+/* Hamburguesa/buscador/cerrar son la UI más usada del sitio en mobile — un
+   poco más grandes que en desktop para que el toque sea más cómodo. */
+@media (max-width: 767px) {
+  .header .icon-btn { width: 42px; height: 42px; }
+}
 
 .explorar-link { background: var(--bg); transition: background 0.2s; }
 .explorar-link:hover { background: var(--bg-deep); }
@@ -165,6 +170,17 @@ body {
 }
 .header .cart-pill:hover { opacity: 0.82; transform: translateY(-1px); }
 
+/* ── Drawer del carrito (CartDrawer.tsx) ──────────────────────────────
+   100vh como fallback + 100dvh encima: en mobile (barra de direcciones
+   dinámica) 100vh se calcula contra el viewport más grande posible, así que
+   el cálculo se pasa de la altura real visible y puede tapar el botón
+   "Vaciar selección". Si el navegador no entiende dvh, ignora esa línea
+   entera y se queda con el 100vh de arriba — no rompe nada. */
+.cart-drawer {
+  max-height: calc(100vh - var(--header-h) - var(--promo-h) - 32px);
+  max-height: calc(100dvh - var(--header-h) - var(--promo-h) - 32px);
+}
+
 /* ── Buscador inline del navbar ───────────────────────────────────────
    Se expande a la izquierda del ícono de lupa en vez de abrir una
    pantalla completa; el resultado vive en un panel desplegable. */
@@ -177,7 +193,8 @@ body {
   transition: width 0.32s cubic-bezier(.16,.84,.2,1), opacity 0.2s ease, border-color 0.2s ease;
 }
 .nav-search-input.open { width: 190px; opacity: 1; border-bottom-color: var(--ink); padding: 8px 2px; }
-.nav-search-input.open.mobile { width: 100%; }
+/* 16px (no 13px) — con menos, iOS Safari hace zoom automático al enfocar el campo */
+.nav-search-input.open.mobile { width: 100%; font-size: 16px; }
 .nav-search-input::placeholder { color: var(--ink-mute); }
 
 .nav-search-dropdown {
@@ -413,7 +430,9 @@ body {
    peek de la card — el look pesado del .prod-arrow base no combinaba
    con este carril ─────────────────────────────────────────────────── */
 .sel-arrow {
-  width: 32px; height: 32px;
+  /* un poco más grande y más lejos del borde que el 32px/4px original —
+     quedaba fácil tocar la card por error en vez de la flecha en mobile */
+  width: 36px; height: 36px;
   background: color-mix(in oklab, var(--bg) 78%, transparent);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -424,10 +443,27 @@ body {
 .sel-arrow:disabled { opacity: 0.35; }
 .prod-arrow-left { left: 4px; }
 .prod-arrow-right { right: 4px; }
+.sel-arrow.prod-arrow-left { left: 8px; }
+.sel-arrow.prod-arrow-right { right: 8px; }
 
 /* ── Catálogo: sidebar de filtros ──────────────────────────────────── */
 .cat-layout { display: flex; flex-direction: column; gap: 32px; padding: 0 24px; }
+
+/* Solo mobile — en desktop el panel de filtros va siempre visible al costado
+   (se oculta este botón y .cat-sidebar ignora data-open, más abajo). Antes el
+   panel completo (categoría + orden + precio) se renderizaba entero arriba
+   de la grilla en mobile, obligando a scrollear una pantalla de filtros
+   antes de ver un solo producto. */
+.cat-filters-toggle {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  width: 100%; padding: 13px 16px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+  font-family: var(--font-ui); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer;
+}
+
 .cat-sidebar { display: flex; flex-direction: column; gap: 28px; }
+.cat-sidebar[data-open="false"] { display: none; }
 .cat-sidebar-block { display: flex; flex-direction: column; gap: 12px; }
 .cat-sidebar-label { display: block; color: var(--ink-mute); letter-spacing: 0.14em; }
 
@@ -442,8 +478,9 @@ body {
 
 .cat-price-inputs { display: flex; align-items: center; gap: 10px; }
 .cat-price-input {
+  /* 16px (no 14px) — con menos, iOS Safari hace zoom automático al enfocar el campo */
   width: 88px; padding: 9px 10px; border: 1px solid var(--line); background: var(--bg);
-  font-family: var(--font-ui); font-size: 14px; color: var(--ink);
+  font-family: var(--font-ui); font-size: 16px; color: var(--ink);
 }
 .cat-price-input:focus { outline: none; border-color: var(--ink); }
 .cat-price-input::-webkit-outer-spin-button, .cat-price-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -463,7 +500,9 @@ body {
 
 @media (min-width: 900px) {
   .cat-layout { flex-direction: row; align-items: flex-start; gap: 48px; }
+  .cat-filters-toggle { display: none; }
   .cat-sidebar { flex: 0 0 220px; position: sticky; top: calc(var(--header-h) + 24px); }
+  .cat-sidebar[data-open="false"] { display: flex; }
   .cat-content { flex: 1 1 auto; }
 }
 
@@ -509,6 +548,9 @@ body {
 .footer-social-btn.ig:hover { background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
 .footer-social-btn.wa:hover { background: #25D366; }
 .footer-social-btn.fb:hover { background: #1877F2; }
+@media (max-width: 767px) {
+  .footer-social-btn { width: 42px; height: 42px; }
+}
 
 .footer-contact-row {
   display: flex; align-items: flex-start; gap: 10px;
@@ -1273,7 +1315,7 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
   width: fit-content;
 }
 .pd-qty-stepper button {
-  width: 38px; height: 38px;
+  width: 42px; height: 42px;
   display: grid;
   place-items: center;
   background: none;
@@ -1773,7 +1815,19 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
   padding: 12px 24px 80px;
 }
 
-.viz-canvas-col { display: flex; flex-direction: column; gap: 14px; }
+.viz-top {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.viz-canvas-col { display: flex; flex-direction: column; gap: 14px; flex: 1 1 auto; min-width: 0; }
+.viz-cat-block { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.viz-cat-col {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 6px;
+}
 
 .viz-dropzone {
   display: flex;
@@ -1792,14 +1846,27 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
 .viz-dropzone.over { border-color: var(--ink); background: color-mix(in oklab, var(--bg-deep) 80%, var(--ink) 6%); }
 
 .viz-canvas {
+  /* El div se ajusta al tamaño real de la foto (no fuerza 100% de ancho) para que
+     los porcentajes x/y de cada mueble arrastrado sigan mapeando 1:1 al exportar
+     la imagen final a resolución completa — lo que cambia es que la foto en sí
+     queda acotada por max-height/max-width, así una foto vertical o panorámica
+     no desarma el resto de la sección. */
   position: relative;
-  width: 100%;
+  align-self: center;
+  max-width: 100%;
   background: var(--bg-deep);
   overflow: hidden;
   touch-action: none;
   user-select: none;
 }
-.viz-photo { width: 100%; height: auto; display: block; pointer-events: none; }
+.viz-photo {
+  display: block;
+  max-width: 100%;
+  max-height: 420px;
+  width: auto;
+  height: auto;
+  pointer-events: none;
+}
 
 .viz-canvas-hint {
   position: absolute;
@@ -1877,28 +1944,50 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
 .viz-cat-chip:hover { border-color: var(--ink); }
 .viz-cat-chip[data-active="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
-.viz-page-btn {
-  width: 26px; height: 26px;
+.viz-catalog { position: relative; }
+.viz-catalog-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 44px; height: 44px;
   display: grid; place-items: center;
-  border: 1px solid var(--line);
-  background: transparent;
+  border-radius: 50%;
+  background: var(--bg);
   color: var(--ink);
-  border-radius: 999px;
-  cursor: pointer;
-  transition: border-color 0.15s, opacity 0.15s;
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 14px rgba(10,10,10,0.14);
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
-.viz-page-btn:hover { border-color: var(--ink); }
-.viz-page-btn:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+.viz-catalog-arrow.prev { left: -18px; }
+.viz-catalog-arrow.next { right: -18px; }
+.viz-catalog-arrow svg { width: 15px; height: 15px; }
+.viz-catalog-arrow:hover {
+  background: var(--bg-deep);
+  box-shadow: 0 0 0 1px var(--leaf), 0 8px 22px -6px color-mix(in oklch, var(--leaf) 55%, transparent);
+  transform: translateY(-50%) scale(1.06);
+}
+.viz-catalog-arrow:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
 
 .viz-sidebar-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
   gap: 10px;
+  overflow-x: auto;
+  overscroll-behavior: contain;
+  scroll-snap-type: x proximity;
+  padding-bottom: 4px;
+  /* la barra de scroll nativa se reemplaza por las flechas de .viz-catalog-arrow —
+     el gesto de deslizar con el dedo/mouse sigue andando igual, solo se esconde la UI */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.viz-sidebar-grid::-webkit-scrollbar { display: none; }
 .viz-thumb {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  flex: 0 0 128px;
+  scroll-snap-align: start;
   background: transparent;
   border: 0;
   padding: 0;
@@ -1912,8 +2001,13 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
   aspect-ratio: 4/5;
   background: var(--bg-deep);
   overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 .viz-thumb-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.viz-thumb-img:hover {
+  box-shadow: 0 0 0 1px var(--leaf), 0 10px 28px -8px color-mix(in oklch, var(--leaf) 55%, transparent);
+  transform: scale(1.02);
+}
 
 .viz-thumb-actions {
   position: absolute;
@@ -1948,26 +2042,26 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
 }
 
 @media (min-width: 900px) {
-  .viz-layout {
-    flex-direction: row;
-    align-items: flex-start;
-    padding: 12px 64px 96px;
-    gap: 48px;
-  }
-  .viz-canvas-col { flex: 1 1 68%; position: sticky; top: calc(var(--promo-h) + var(--header-h) + 16px); }
-  .viz-sidebar { flex: 1 1 32%; max-width: 380px; }
-  .viz-sidebar-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .viz-layout { padding: 12px 64px 96px; gap: 24px; }
+  .viz-top { flex-direction: row; align-items: flex-start; gap: 16px; }
+  /* Angosta a propósito: así el cuadro de la foto se estira y su borde derecho
+     queda lo más parejo posible con el de la fila de productos de abajo.
+     El max-height real (mismo alto que el cuadro de la foto) lo calcula JS con
+     un ResizeObserver, porque hay muchas más categorías de las que entran ahí
+     — con overflow-y:auto entran todas, solo hay que deslizar para verlas. */
+  .viz-cat-block { flex: 0 1 140px; }
+  .viz-cat-col { overscroll-behavior: contain; }
+  .viz-thumb { flex-basis: 150px; }
+  .viz-photo { max-height: 560px; }
+  .viz-catalog-arrow.prev { left: -28px; }
+  .viz-catalog-arrow.next { right: -28px; }
 }
 
 /* Versión embebida en la home, debajo de Inspiración. */
 [data-dt="visualizador-embed"][data-size="compact"] .viz-layout { max-width: 1180px; margin: 0 auto; padding: 8px 24px 64px; gap: 20px; }
 [data-dt="visualizador-embed"][data-size="compact"] .viz-dropzone { aspect-ratio: 2/1; }
-[data-dt="visualizador-embed"][data-size="compact"] .viz-sidebar-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; }
 @media (min-width: 900px) {
-  [data-dt="visualizador-embed"][data-size="compact"] .viz-layout { padding: 8px 24px 72px; gap: 36px; }
-  [data-dt="visualizador-embed"][data-size="compact"] .viz-canvas-col { flex: 1 1 68%; position: static; max-width: 784px; }
-  [data-dt="visualizador-embed"][data-size="compact"] .viz-sidebar { flex: 1 1 32%; max-width: 340px; }
-  [data-dt="visualizador-embed"][data-size="compact"] .viz-sidebar-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  [data-dt="visualizador-embed"][data-size="compact"] .viz-layout { padding: 8px 24px 72px; gap: 20px; }
 }
 
 /* ── Product quick view modal ─────────────────────────────────────────── */

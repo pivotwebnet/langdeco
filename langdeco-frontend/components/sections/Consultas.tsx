@@ -118,6 +118,7 @@ const inputStyle: React.CSSProperties = {
   border: '1px solid var(--line)',
   background: 'var(--bg)',
   color: 'var(--ink)',
-  fontSize: 15,
+  // 16px (no 15px) — con menos, iOS Safari hace zoom automático al enfocar el campo
+  fontSize: 16,
   outline: 'none',
 }

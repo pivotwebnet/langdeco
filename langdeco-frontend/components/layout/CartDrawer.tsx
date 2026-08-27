@@ -39,12 +39,12 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
 
       {/* Drawer */}
       <div
+        className="cart-drawer"
         style={{
           position: 'fixed',
           top: 'calc(var(--header-h) + var(--promo-h) + 16px)',
           right: 16,
           width: 'min(420px, calc(100vw - 32px))',
-          maxHeight: 'calc(100vh - var(--header-h) - var(--promo-h) - 32px)',
           background: 'var(--bg)',
           borderRadius: 20,
           zIndex: 201,
