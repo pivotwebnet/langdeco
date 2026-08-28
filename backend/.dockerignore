@@ -1,0 +1,7 @@
+bin/
+obj/
+*.user
+.vs/
+
+# Tiene la cadena de conexión real de desarrollo (con contraseña) — nunca a la imagen.
+appsettings.Development.json

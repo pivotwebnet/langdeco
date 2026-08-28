@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Genera .next/standalone (server mínimo + solo los node_modules que realmente
+  // usa) — sin esto, la imagen Docker tendría que copiar node_modules entero.
+  output: 'standalone',
   turbopack: {
     root: __dirname,
   },

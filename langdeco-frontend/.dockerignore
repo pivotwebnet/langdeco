@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+data
+
+# Las variables de entorno las inyecta Coolify en runtime, no van a la imagen.
+.env*
+
+*.md
+.vscode
+coverage
+test-results
+playwright-report
+blob-report
+playwright/.cache
+*.tsbuildinfo
