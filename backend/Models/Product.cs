@@ -24,4 +24,8 @@ public class Product
 
     public List<ProductSpec> Specs { get; set; } = new();
     public List<ProductImage> Images { get; set; } = new();
+
+    // Recorte sin fondo (PNG con canal alfa) — la única imagen que usa el Visualizador
+    // de espacios para superponer el producto sobre la foto del ambiente.
+    public string? CutoutImageUrl { get; set; }
 }

@@ -150,8 +150,9 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
         <div style={{ padding: 32, fontFamily: 'var(--font-ui)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
-              <div style={{ width: 72, height: 72, border: '1.5px solid #444', display: 'grid', placeItems: 'center', textAlign: 'center', fontSize: 11, fontWeight: 600, padding: 4 }}>
-                LaLang Deco
+              <div style={{ width: 72, height: 72, border: '1.5px solid #444', display: 'grid', placeItems: 'center', padding: 4 }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/assets/logo.png" alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
               </div>
               <div style={{ fontSize: 12, marginTop: 6 }}>Tel: -</div>
             </div>

@@ -31,6 +31,7 @@ export interface BackendProduct {
   featured: boolean
   specs: BackendProductSpec[]
   images: string[]
+  cutoutImageUrl: string | null
 }
 
 export type ClientType = 'Retail' | 'Wholesale'

@@ -9,9 +9,9 @@ public record ProductDto(
     string Material, string? Origin, List<string> RoomTags,
     decimal Price, decimal? OriginalPrice, decimal? WholesalePrice, int Stock,
     string? Note, string? Aspect, bool Active, bool Featured,
-    List<ProductSpecDto> Specs, List<string> Images);
+    List<ProductSpecDto> Specs, List<string> Images, string? CutoutImageUrl);
 
 public record ProductUpsertDto(
     string Id, string Name, string CategoryId, string? Tag, string Material, string? Origin, List<string> RoomTags,
     decimal Price, decimal? OriginalPrice, decimal? WholesalePrice, int Stock, string? Note, string? Aspect, bool Featured,
-    List<ProductSpecInput> Specs, List<string> Images);
+    List<ProductSpecInput> Specs, List<string> Images, string? CutoutImageUrl);

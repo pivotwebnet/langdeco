@@ -26,6 +26,7 @@ type ProductForm = {
   featured: boolean
   specs: { label: string; value: string }[]
   images: string[]
+  cutoutImageUrl: string
 }
 
 // Mismo umbral que usa el badge público "¡Últimas N!" en ProductCard.tsx.
@@ -34,7 +35,7 @@ const LOW_STOCK_THRESHOLD = 3
 const EMPTY_FORM: ProductForm = {
   id: '', name: '', categoryId: '', tag: '', material: '', origin: '', roomTags: [],
   price: '', originalPrice: '', wholesalePrice: '', stock: '0', note: '', aspect: '', featured: false,
-  specs: [], images: [],
+  specs: [], images: [], cutoutImageUrl: '',
 }
 
 const ROOM_TAG_OPTIONS = ['Living', 'Comedor', 'Dormitorio', 'Cocina', 'Baño', 'Exterior', 'Oficina', 'Entrada']
@@ -125,6 +126,7 @@ export default function ProductosAdmin() {
       wholesalePrice: p.wholesalePrice ? String(p.wholesalePrice) : '',
       stock: String(p.stock), note: p.note || '', aspect: p.aspect || '', featured: p.featured,
       specs: p.specs.map((s) => ({ ...s })), images: [...p.images],
+      cutoutImageUrl: p.cutoutImageUrl || '',
     })
   }
 
@@ -146,6 +148,7 @@ export default function ProductosAdmin() {
         wholesalePrice: form.wholesalePrice ? Number(form.wholesalePrice) : null,
         stock: Number(form.stock), note: form.note || null, aspect: form.aspect || null,
         featured: form.featured, specs: form.specs, images: form.images,
+        cutoutImageUrl: form.cutoutImageUrl || null,
       }
 
       if (isNewForm) {
@@ -417,6 +420,13 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
           ))}
         </div>
 
+        <div style={{ marginTop: 16 }}>
+          <div style={{ marginBottom: 8 }}>
+            <span className="mono">Imagen PNG (sin fondo — usada en el Visualizador)</span>
+          </div>
+          <CutoutImageSlot url={form.cutoutImageUrl} onChange={(v) => set('cutoutImageUrl', v)} />
+        </div>
+
         <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
           <button className="adm-btn" onClick={onSave} disabled={saving} style={{ flex: 1 }}>
             {saving ? 'Guardando...' : 'Guardar'}
@@ -476,7 +486,9 @@ function ImageSlot({ url, isCover, canMoveUp, canMoveDown, onChange, onRemove, o
         )}
       </div>
       {isCover && <span className="adm-badge ok" style={{ flexShrink: 0 }}>Portada</span>}
-      <input className="adm-input" value={url} onChange={(e) => onChange(e.target.value)} placeholder="https://... o subí un archivo" style={{ flex: 1 }} />
+      <span className="mono" style={{ flex: 1, fontSize: 11, color: url ? 'var(--ink-soft)' : 'var(--danger, #c0392b)' }}>
+        {url ? 'Imagen cargada' : 'Sin imagen — subí un archivo'}
+      </span>
       <input
         ref={fileRef}
         type="file"
@@ -485,9 +497,62 @@ function ImageSlot({ url, isCover, canMoveUp, canMoveDown, onChange, onRemove, o
         onChange={(e) => { const f = e.target.files?.[0]; if (f) onPickFile(f); e.target.value = '' }}
       />
       <button type="button" className="adm-btn ghost sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
-        {uploading ? 'Subiendo...' : 'Subir'}
+        {uploading ? 'Subiendo...' : url ? 'Reemplazar' : 'Subir'}
       </button>
       <button type="button" className="adm-btn ghost sm" onClick={onRemove}>✕</button>
+      {error && <span style={{ color: 'var(--danger, #c0392b)', fontSize: 11 }}>{error}</span>}
+    </div>
+  )
+}
+
+function CutoutImageSlot({ url, onChange }: { url: string; onChange: (url: string) => void }) {
+  const toast = useAdminToast()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const onPickFile = async (file: File) => {
+    setUploading(true)
+    setError(null)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      form.append('folder', 'productos-cutout')
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: form })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Error al subir la imagen')
+      onChange(data.url)
+    } catch (e) {
+      const msg = (e as Error).message
+      setError(msg)
+      toast.error(msg)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <div style={{ width: 40, height: 40, flexShrink: 0, background: 'var(--adm-surface-2)', overflow: 'hidden', position: 'relative' }}>
+        {url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        )}
+      </div>
+      <span className="mono" style={{ flex: 1, fontSize: 11, color: url ? 'var(--ink-soft)' : 'var(--danger, #c0392b)' }}>
+        {url ? 'Imagen PNG cargada' : 'Sin imagen PNG — el producto no aparece en el Visualizador'}
+      </span>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/png"
+        style={{ display: 'none' }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onPickFile(f); e.target.value = '' }}
+      />
+      <button type="button" className="adm-btn ghost sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
+        {uploading ? 'Subiendo...' : url ? 'Reemplazar' : 'Subir'}
+      </button>
+      {url && <button type="button" className="adm-btn ghost sm" onClick={() => onChange('')}>✕</button>}
       {error && <span style={{ color: 'var(--danger, #c0392b)', fontSize: 11 }}>{error}</span>}
     </div>
   )

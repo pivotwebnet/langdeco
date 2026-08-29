@@ -56,9 +56,6 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
-
-    using var seedScope = app.Services.CreateScope();
-    await backend.Data.DbSeeder.SeedAsync(seedScope.ServiceProvider.GetRequiredService<AppDbContext>());
 }
 
 app.UseExceptionHandler(errorApp =>

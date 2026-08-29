@@ -19,6 +19,7 @@ export interface Product {
   note?: string
   imageUrl?: string
   extraImages?: string[]
+  cutoutImageUrl?: string
   specs?: ProductSpec[]
 }
 

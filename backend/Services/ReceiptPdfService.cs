@@ -10,6 +10,13 @@ namespace backend.Services;
 public class ReceiptPdfService
 {
     private static readonly CultureInfo MoneyCulture = CultureInfo.GetCultureInfo("es-AR");
+    private static readonly byte[]? LogoBytes = LoadLogoBytes();
+
+    private static byte[]? LoadLogoBytes()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Assets", "logo.png");
+        return File.Exists(path) ? File.ReadAllBytes(path) : null;
+    }
 
     public byte[] Generate(ReceiptData data, CompanySettings company)
     {
@@ -69,16 +76,16 @@ public class ReceiptPdfService
 
     private static void ComposeStamp(IContainer container, string companyName)
     {
-        container
-            .Border(1.5f)
-            .BorderColor(Colors.Grey.Darken2)
-            .Padding(4)
-            .AlignCenter()
-            .AlignMiddle()
-            .Text(companyName)
-            .FontSize(8)
-            .Bold()
-            .AlignCenter();
+        var box = container.Border(1.5f).BorderColor(Colors.Grey.Darken2).Padding(4);
+
+        if (LogoBytes is not null)
+        {
+            box.Image(LogoBytes).FitArea();
+        }
+        else
+        {
+            box.AlignCenter().AlignMiddle().Text(companyName).FontSize(8).Bold().AlignCenter();
+        }
     }
 
     private static void ComposeBody(IContainer container, ReceiptData data)

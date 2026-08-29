@@ -83,7 +83,7 @@ export default function CategoriasAdmin() {
     setError(null)
     try {
       await api(`/categories/${c.id}`, { method: 'DELETE' })
-      toast.success('Categoría eliminada.')
+      toast.success('Categoría eliminada o desactivada.')
       await load()
     } catch (e) {
       const msg = (e as Error).message
@@ -189,7 +189,7 @@ export default function CategoriasAdmin() {
       {confirmDelete && (
         <ConfirmDialog
           title="Eliminar categoría"
-          message={`¿Eliminar la categoría "${confirmDelete.name}"? Si tiene productos asociados no se va a poder borrar.`}
+          message={`¿Eliminar la categoría "${confirmDelete.name}"? Si tiene productos asociados, se desactiva en vez de borrarse.`}
           confirmLabel="Eliminar"
           danger
           onConfirm={() => onDelete(confirmDelete)}

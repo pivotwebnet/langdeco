@@ -19,6 +19,7 @@ export function toProduct(bp: BackendProduct): Product {
     note: bp.note ?? undefined,
     imageUrl: bp.images[0],
     extraImages: bp.images.slice(1),
+    cutoutImageUrl: bp.cutoutImageUrl ?? undefined,
     specs: bp.specs,
   }
 }

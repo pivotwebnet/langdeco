@@ -97,6 +97,7 @@ public class ProductsController : ControllerBase
             Aspect = input.Aspect,
             Featured = input.Featured,
             Active = true,
+            CutoutImageUrl = input.CutoutImageUrl,
         };
         ApplySpecsAndImages(product, input);
 
@@ -133,6 +134,7 @@ public class ProductsController : ControllerBase
         product.Note = input.Note;
         product.Aspect = input.Aspect;
         product.Featured = input.Featured;
+        product.CutoutImageUrl = input.CutoutImageUrl;
 
         _db.ProductSpecs.RemoveRange(product.Specs);
         _db.ProductImages.RemoveRange(product.Images);
@@ -260,7 +262,7 @@ public class ProductsController : ControllerBase
         p.Material, p.Origin, p.RoomTags, p.Price, p.OriginalPrice, p.WholesalePrice, p.Stock,
         p.Note, p.Aspect, p.Active, p.Featured,
         p.Specs.OrderBy(s => s.Order).Select(s => new ProductSpecDto(s.Label, s.Value)).ToList(),
-        p.Images.OrderBy(i => i.Order).Select(i => i.Url).ToList());
+        p.Images.OrderBy(i => i.Order).Select(i => i.Url).ToList(), p.CutoutImageUrl);
 
     private bool IsAdmin() =>
         AdminKeyComparer.Matches(Request.Headers["X-Admin-Key"].ToString(), _config["AdminApiKey"]);

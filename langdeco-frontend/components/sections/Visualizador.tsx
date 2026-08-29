@@ -84,7 +84,7 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
     return () => mq.removeEventListener('change', update)
   }, [])
 
-  const withImage = products.filter((p) => p.imageUrl)
+  const withImage = products.filter((p) => p.cutoutImageUrl)
   const filteredProducts = categoryFilter ? withImage.filter((p) => p.category === categoryFilter) : withImage
 
   // Flechas en vez de la barra de scroll nativa — igual siguen pudiendo deslizar
@@ -118,7 +118,7 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
   }
 
   function addItem(product: Product, xPct = 42, yPct = 42) {
-    if (!product.imageUrl) return
+    if (!product.cutoutImageUrl) return
     const uid = crypto.randomUUID()
     zCounter.current += 1
     setItems((prev) => [
@@ -126,7 +126,7 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
       {
         uid,
         productId: product.id,
-        imageUrl: product.imageUrl!,
+        imageUrl: product.cutoutImageUrl!,
         name: product.name,
         x: clamp(xPct - 15, 0, 82),
         y: clamp(yPct - 15, 0, 82),
@@ -485,7 +485,7 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
                   style={!photoUrl ? { cursor: 'default', opacity: 0.5 } : undefined}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.imageUrl} alt={p.name} draggable={false} />
+                  <img src={p.cutoutImageUrl} alt={p.name} draggable={false} />
                   <div className="viz-thumb-actions">
                     <Tooltip label="Agregar al carrito">
                       <button
