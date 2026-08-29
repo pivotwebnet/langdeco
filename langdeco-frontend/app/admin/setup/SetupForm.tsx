@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { MIN_PASSWORD_LENGTH, checkPassword, isPasswordStrong, PASSWORD_REQUIREMENTS_HINT } from '@/lib/password-policy'
 
@@ -48,7 +47,6 @@ export default function SetupPage() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,13 +69,16 @@ export default function SetupPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => null)
       if (!res.ok) {
-        setError(data.error || 'No se pudo configurar la contraseña')
+        setError(data?.error || 'No se pudo configurar la contraseña. Probá de nuevo.')
         return
       }
-      router.push('/admin')
-      router.refresh()
+      // Navegación dura (no router.push) a propósito: el caché de rutas del
+      // cliente puede haber guardado el redirect a /admin/login de cuando
+      // todavía no había sesión — router.push podría reusar ese resultado
+      // viejo en vez de pedir /admin de nuevo ya autenticado.
+      window.location.href = '/admin'
     } finally {
       setLoading(false)
     }
