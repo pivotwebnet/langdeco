@@ -13,7 +13,7 @@ import { normalize } from '@/lib/normalize'
 import type { Product } from '@/lib/types'
 import type { BackendCategory } from '@/lib/backend-types'
 
-const PAGE_SIZE = 6
+const PAGE_SIZE = 10
 
 const tabStyle = (active: boolean) => ({
   padding: '14px 20px',
@@ -87,7 +87,6 @@ export function Productos({ products, categories, initialCategory, initialQuery 
         return products.filter(p =>
           normalize(p.name).includes(q) ||
           normalize(p.material).includes(q) ||
-          (p.tag && normalize(p.tag).includes(q)) ||
           (p.note && normalize(p.note).includes(q))
         )
       })()

@@ -53,7 +53,7 @@ export function ProductQuickView({ product, onClose, onAdd }: ProductQuickViewPr
   const discountPercent = hasDiscount ? Math.round((1 - product.priceNum / product.originalPriceNum!) * 100) : null
   const isOutOfStock = product.stock !== undefined && product.stock <= 0
   const isLowStock = product.stock !== undefined && product.stock > 0 && product.stock <= 3
-  const showInstallment = product.priceNum > 0 && !isOutOfStock
+  const showInstallment = product.priceNum > 0 && !!product.installments && !isOutOfStock
   const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
     `Hola, me interesa consultar por "${product.name}" (${product.price}). ¿Me pasás más información?`
   )}`
@@ -124,11 +124,8 @@ export function ProductQuickView({ product, onClose, onAdd }: ProductQuickViewPr
         </div>
 
         <div style={{ padding: '28px 28px 32px' }}>
-          {(product.tag || isLowStock || isOutOfStock) && (
+          {(isLowStock || isOutOfStock) && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
-              {product.tag && (
-                <span className="mono" style={{ fontSize: 9, letterSpacing: '0.2em' }}>{product.tag}</span>
-              )}
               {isOutOfStock ? (
                 <span className="mono" style={{ padding: '5px 10px', background: 'var(--ink)', color: 'var(--bg)', fontSize: 9, letterSpacing: '0.16em', borderRadius: 5 }}>
                   Sin stock
@@ -161,9 +158,15 @@ export function ProductQuickView({ product, onClose, onAdd }: ProductQuickViewPr
             )}
           </div>
 
+          {product.cardPriceNum != null && (
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: 15, color: 'var(--ink-mute)', marginBottom: 8 }}>
+              {formatPrice(product.cardPriceNum)} con tarjeta
+            </div>
+          )}
+
           {showInstallment && (
             <span className="mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '6px 12px', background: 'var(--leaf)', color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', borderRadius: 999, marginBottom: 16 }}>
-              ✓ 3 cuotas sin interés
+              ✓ {product.installments} cuotas sin interés
             </span>
           )}
 

@@ -6,6 +6,7 @@ import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
+import { BulkActionBar } from '@/components/admin/BulkActionBar'
 
 const GROUP_LABEL: Record<CategoryGroup, string> = { Mayor: 'Piezas Mayores', Tesoro: 'Pequeños Tesoros' }
 
@@ -105,6 +106,41 @@ export default function CategoriasAdmin() {
     }
   }
 
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkConfirm, setBulkConfirm] = useState<'activate' | 'deactivate' | null>(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  const allSelected = categories.length > 0 && categories.every((c) => selectedIds.has(c.id))
+  const toggleSelectAll = () => {
+    setSelectedIds(allSelected ? new Set() : new Set(categories.map((c) => c.id)))
+  }
+
+  const onBulkConfirm = async () => {
+    const action = bulkConfirm
+    setBulkConfirm(null)
+    setBulkBusy(true)
+    try {
+      const path = action === 'activate' ? '/categories/bulk-activate' : '/categories/bulk-deactivate'
+      const result = await api<{ updated: number; skipped: string[] }>(path, { method: 'POST', body: JSON.stringify({ ids: [...selectedIds] }) })
+      const verb = action === 'activate' ? 'activada' : 'desactivada'
+      toast.success(`${result.updated} categoría${result.updated === 1 ? '' : 's'} ${verb}${result.updated === 1 ? '' : 's'}.`)
+      setSelectedIds(new Set())
+      await load()
+    } catch (e) {
+      toast.error((e as Error).message)
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
   return (
     <div>
       <div className="adm-page-head">
@@ -126,10 +162,20 @@ export default function CategoriasAdmin() {
         <button className="adm-btn" type="submit" disabled={saving}>{saving ? 'Guardando…' : '+ Añadir categoría'}</button>
       </form>
 
+      {selectedIds.size > 0 && (
+        <BulkActionBar count={selectedIds.size} onClear={() => setSelectedIds(new Set())}>
+          <button type="button" className="adm-btn ghost sm" disabled={bulkBusy} onClick={() => setBulkConfirm('activate')}>Activar</button>
+          <button type="button" className="adm-btn ghost sm" disabled={bulkBusy} onClick={() => setBulkConfirm('deactivate')}>Desactivar</button>
+        </BulkActionBar>
+      )}
+
       <div className="adm-card adm-table-wrap">
         <table className="adm-table">
           <thead>
             <tr>
+              <th style={{ width: 32 }}>
+                <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} aria-label="Seleccionar todo" />
+              </th>
               <th>Id</th>
               <th>Nombre</th>
               <th>Grupo</th>
@@ -139,10 +185,13 @@ export default function CategoriasAdmin() {
           </thead>
           <tbody>
             {loading && (
-              <TableSkeletonRows columns={5} />
+              <TableSkeletonRows columns={6} />
             )}
             {!loading && categories.map((c) => (
               <tr key={c.id} className={c.active ? '' : 'inactive'}>
+                <td>
+                  <input type="checkbox" checked={selectedIds.has(c.id)} onChange={() => toggleSelect(c.id)} aria-label={`Seleccionar ${c.name}`} />
+                </td>
                 <td className="mono">{c.id}</td>
                 <td>
                   {editingId === c.id ? (
@@ -194,6 +243,17 @@ export default function CategoriasAdmin() {
           danger
           onConfirm={() => onDelete(confirmDelete)}
           onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+
+      {bulkConfirm && (
+        <ConfirmDialog
+          title={bulkConfirm === 'activate' ? 'Activar categorías' : 'Desactivar categorías'}
+          message={`¿${bulkConfirm === 'activate' ? 'Activar' : 'Desactivar'} ${selectedIds.size} categoría${selectedIds.size === 1 ? '' : 's'} seleccionada${selectedIds.size === 1 ? '' : 's'}?`}
+          confirmLabel={bulkConfirm === 'activate' ? 'Activar' : 'Desactivar'}
+          danger={bulkConfirm === 'deactivate'}
+          onConfirm={onBulkConfirm}
+          onCancel={() => setBulkConfirm(null)}
         />
       )}
     </div>

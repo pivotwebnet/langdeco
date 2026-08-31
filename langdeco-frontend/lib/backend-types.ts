@@ -17,16 +17,15 @@ export interface BackendProduct {
   name: string
   categoryId: string
   categoryName: string
-  tag: string | null
   material: string
-  origin: string | null
   roomTags: string[]
   price: number
+  cardPrice: number | null
   originalPrice: number | null
   wholesalePrice: number | null
   stock: number
+  installments: number | null
   note: string | null
-  aspect: string | null
   active: boolean
   featured: boolean
   specs: BackendProductSpec[]
@@ -34,6 +33,7 @@ export interface BackendProduct {
   cutoutImageUrl: string | null
 }
 
+export type DiscountType = 'Percent' | 'Fixed'
 export type ClientType = 'Retail' | 'Wholesale'
 export type SaleStatus = 'Pending' | 'Paid' | 'Cancelled'
 export type PaymentMethod = 'Transfer' | 'Cash' | 'Other'
@@ -62,7 +62,9 @@ export interface BackendSale {
   status: SaleStatus
   paymentMethod: PaymentMethod
   subtotal: number
+  discountType: DiscountType
   discountPercent: number
+  discountFixedAmount: number
   discountAmount: number
   taxRatePercent: number
   taxAmount: number
@@ -87,7 +89,9 @@ export interface BackendBudget {
   status: BudgetStatus
   validUntil: string | null
   subtotal: number
+  discountType: DiscountType
   discountPercent: number
+  discountFixedAmount: number
   discountAmount: number
   taxRatePercent: number
   taxAmount: number

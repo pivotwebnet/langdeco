@@ -23,6 +23,7 @@ type ClientForm = {
   cell: string
   phone: string
   email: string
+  webPage: string
   address: string
   province: string
   postalCode: string
@@ -30,6 +31,7 @@ type ClientForm = {
   note: string
   initialBalance: string
   dni: string
+  nicknameML: string
   salesCategory: string
   salesDiscountPercent: string
   noteForClient: string
@@ -48,9 +50,9 @@ type ClientForm = {
 }
 
 const EMPTY_FORM: ClientForm = {
-  id: null, companyOrFullName: '', firstName: '', lastName: '', cell: '', phone: '', email: '',
+  id: null, companyOrFullName: '', firstName: '', lastName: '', cell: '', phone: '', email: '', webPage: '',
   address: '', province: '', postalCode: '', locality: '', note: '', initialBalance: '0',
-  dni: '', salesCategory: '', salesDiscountPercent: '0', noteForClient: '',
+  dni: '', nicknameML: '', salesCategory: '', salesDiscountPercent: '0', noteForClient: '',
   billingCompanyOrFullName: '', taxId: '', ivaCondition: 'ConsumidorFinal', defaultReceiptType: 'FacturaB',
   billingPhone: '', billingCell: '', fiscalAddress: '', fiscalLocality: '', fiscalProvince: '', fiscalPostalCode: '',
   contactPersons: [], customFields: [],
@@ -90,10 +92,10 @@ export default function ClientesAdmin() {
 
   const openEdit = (c: BackendClient) => setForm({
     id: c.id, companyOrFullName: c.companyOrFullName, firstName: c.firstName || '', lastName: c.lastName || '',
-    cell: c.cell || '', phone: c.phone || '', email: c.email || '',
+    cell: c.cell || '', phone: c.phone || '', email: c.email || '', webPage: c.webPage || '',
     address: c.address || '', province: c.province || '', postalCode: c.postalCode || '', locality: c.locality || '',
     note: c.note || '', initialBalance: String(c.initialBalance),
-    dni: c.dni || '', salesCategory: c.salesCategory || '', salesDiscountPercent: String(c.salesDiscountPercent),
+    dni: c.dni || '', nicknameML: c.nicknameML || '', salesCategory: c.salesCategory || '', salesDiscountPercent: String(c.salesDiscountPercent),
     noteForClient: c.noteForClient || '',
     billingCompanyOrFullName: c.billingCompanyOrFullName, taxId: c.taxId || '',
     ivaCondition: c.ivaCondition, defaultReceiptType: c.defaultReceiptType,
@@ -126,10 +128,10 @@ export default function ClientesAdmin() {
     try {
       const payload = {
         companyOrFullName: form.companyOrFullName, firstName: form.firstName || null, lastName: form.lastName || null,
-        cell: form.cell || null, phone: form.phone || null, email: form.email || null,
+        cell: form.cell || null, phone: form.phone || null, email: form.email || null, webPage: form.webPage || null,
         address: form.address || null, province: form.province || null, postalCode: form.postalCode || null,
         locality: form.locality || null, note: form.note || null, initialBalance: Number(form.initialBalance) || 0,
-        dni: form.dni || null, salesCategory: form.salesCategory || null,
+        dni: form.dni || null, nicknameML: form.nicknameML || null, salesCategory: form.salesCategory || null,
         salesDiscountPercent: Number(form.salesDiscountPercent) || 0, noteForClient: form.noteForClient || null,
         billingCompanyOrFullName: form.billingCompanyOrFullName || form.companyOrFullName, taxId: form.taxId || null,
         ivaCondition: form.ivaCondition, defaultReceiptType: form.defaultReceiptType,
@@ -354,6 +356,7 @@ function ClientFormModal({ form, isNew, saving, onChange, onCancel, onSave }: {
           <Field label="Cel."><input className="adm-input" value={form.cell} onChange={(e) => set('cell', e.target.value)} placeholder="+54 9 11 2345-678" style={{ width: '100%' }} /></Field>
           <Field label="Teléfono"><input className="adm-input" value={form.phone} onChange={(e) => set('phone', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Email"><input className="adm-input" value={form.email} onChange={(e) => set('email', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Página Web"><input className="adm-input" value={form.webPage} onChange={(e) => set('webPage', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Domicilio"><input className="adm-input" value={form.address} onChange={(e) => set('address', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Provincia"><input className="adm-input" value={form.province} onChange={(e) => set('province', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Localidad"><input className="adm-input" value={form.locality} onChange={(e) => set('locality', e.target.value)} style={{ width: '100%' }} /></Field>
@@ -417,6 +420,7 @@ function ClientFormModal({ form, isNew, saving, onChange, onCancel, onSave }: {
             {cuitCheck === 'invalid' && <span className="adm-badge danger" style={{ marginTop: 6 }}>✗ CUIT inválido</span>}
           </Field>
           <Field label="DNI"><input className="adm-input" value={form.dni} onChange={(e) => set('dni', e.target.value)} placeholder="12345678" style={{ width: '100%' }} /></Field>
+          <Field label="Usuario Mercado Libre"><input className="adm-input" value={form.nicknameML} onChange={(e) => set('nicknameML', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Condición de IVA">
             <select className="adm-select" value={form.ivaCondition} onChange={(e) => set('ivaCondition', e.target.value as IvaCondition)} style={{ width: '100%' }}>
               {Object.entries(IVA_CONDITION_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}

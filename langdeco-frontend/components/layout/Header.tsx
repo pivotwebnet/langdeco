@@ -74,7 +74,6 @@ export function Header({ hasPromo = false }: HeaderProps) {
     return catalog.filter((p) =>
       normalize(p.name).includes(q) ||
       normalize(p.material).includes(q) ||
-      (p.tag && normalize(p.tag).includes(q)) ||
       (p.note && normalize(p.note).includes(q))
     )
   }, [query, catalog])

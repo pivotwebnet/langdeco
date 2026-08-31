@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import type { BackendBudget, BackendProduct, BackendSale, BackendCustomer, ClientType } from '@/lib/backend-types'
+import type { BackendBudget, BackendProduct, BackendSale, BackendCustomer, ClientType, DiscountType } from '@/lib/backend-types'
 import { useEscapeKey } from '@/lib/useEscapeKey'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
@@ -45,10 +45,21 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
   const clientType = record.clientType
 
   const [customer, setCustomer] = useState<BackendCustomer>(record.customer)
-  const [discountPercent, setDiscountPercent] = useState(record.discountPercent)
+  const [discountKind, setDiscountKind] = useState<DiscountType>(record.discountType)
+  const [discountIsSurcharge, setDiscountIsSurcharge] = useState(
+    record.discountType === 'Fixed' ? record.discountFixedAmount < 0 : record.discountPercent < 0
+  )
+  const [discountValue, setDiscountValue] = useState(
+    Math.abs(record.discountType === 'Fixed' ? record.discountFixedAmount : record.discountPercent)
+  )
   const [taxRatePercent, setTaxRatePercent] = useState(record.taxRatePercent)
   const [validUntilInput, setValidUntilInput] = useState(validUntil ? validUntil.slice(0, 10) : '')
   const [items, setItems] = useState(record.items.map((it) => ({ productId: it.productId, quantity: it.quantity })))
+
+  // discountPercent/discountFixedAmount negativos representan un recargo en vez de un descuento
+  // (mismo criterio que NewSaleModal/NewBudgetModal en ventas/page.tsx y DocumentTotalsCalculator en el backend).
+  const discountPercent = discountKind === 'Percent' ? (discountIsSurcharge ? -discountValue : discountValue) : 0
+  const discountFixedAmount = discountKind === 'Fixed' ? (discountIsSurcharge ? -discountValue : discountValue) : 0
 
   const pdfUrl = `/api/admin/backend${basePath}/${record.id}/pdf`
 
@@ -56,7 +67,7 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
     const product = products.find((p) => p.id === it.productId)
     return sum + resolvePrice(product, clientType) * it.quantity
   }, 0)
-  const previewDiscount = Math.round(previewSubtotal * discountPercent) / 100
+  const previewDiscount = discountKind === 'Fixed' ? discountFixedAmount : Math.round(previewSubtotal * discountPercent) / 100
   const previewNet = previewSubtotal - previewDiscount
   const previewTax = Math.round(previewNet * taxRatePercent) / 100
   const previewTotal = previewNet + previewTax
@@ -84,7 +95,7 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
     try {
       const body: Record<string, unknown> = {
         customer: { name: customer.name, contact: customer.contact || null, taxId: customer.taxId || null, address: customer.address || null },
-        discountPercent, taxRatePercent,
+        discountType: discountKind, discountPercent, discountFixedAmount, taxRatePercent,
         items: items.map((it) => ({ productId: it.productId, quantity: it.quantity, priceType: clientType })),
       }
       if (kind === 'budget') body.validUntil = validUntilInput ? new Date(validUntilInput).toISOString() : null
@@ -106,7 +117,9 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
     setEditing(false)
     setCustomer(record.customer)
     setItems(record.items.map((it) => ({ productId: it.productId, quantity: it.quantity })))
-    setDiscountPercent(record.discountPercent)
+    setDiscountKind(record.discountType)
+    setDiscountIsSurcharge(record.discountType === 'Fixed' ? record.discountFixedAmount < 0 : record.discountPercent < 0)
+    setDiscountValue(Math.abs(record.discountType === 'Fixed' ? record.discountFixedAmount : record.discountPercent))
     setTaxRatePercent(record.taxRatePercent)
   }
 
@@ -246,19 +259,45 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
             <div style={{ width: 300 }}>
               {editing && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, marginBottom: 8 }}>
-                  <label style={{ flex: 1 }}>Bonif. % <input type="number" min={0} max={100} value={discountPercent} onChange={(e) => setDiscountPercent(Number(e.target.value))} style={{ ...inlineInput, width: '100%' }} /></label>
-                  <label style={{ flex: 1 }}>IVA % <input type="number" min={0} max={100} value={taxRatePercent} onChange={(e) => setTaxRatePercent(Number(e.target.value))} style={{ ...inlineInput, width: '100%' }} /></label>
-                </div>
+                <>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <select
+                      value={discountIsSurcharge ? 'surcharge' : 'discount'}
+                      onChange={(e) => setDiscountIsSurcharge(e.target.value === 'surcharge')}
+                      style={{ ...inlineInput, flex: 1 }}
+                    >
+                      <option value="discount">Descuento</option>
+                      <option value="surcharge">Recargo</option>
+                    </select>
+                    <select
+                      value={discountKind}
+                      onChange={(e) => setDiscountKind(e.target.value as DiscountType)}
+                      style={{ ...inlineInput, flex: 1 }}
+                    >
+                      <option value="Percent">%</option>
+                      <option value="Fixed">$ fijo</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, marginBottom: 8 }}>
+                    <label style={{ flex: 1 }}>
+                      {discountKind === 'Percent' ? 'Valor (%)' : 'Valor ($)'}
+                      <input
+                        type="number" min={0} max={discountKind === 'Percent' ? 100 : undefined}
+                        value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))} style={{ ...inlineInput, width: '100%' }}
+                      />
+                    </label>
+                    <label style={{ flex: 1 }}>IVA % <input type="number" min={0} max={100} value={taxRatePercent} onChange={(e) => setTaxRatePercent(Number(e.target.value))} style={{ ...inlineInput, width: '100%' }} /></label>
+                  </div>
+                </>
               )}
               <div style={{ background: '#334155', color: 'white', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                 <span>{(editing ? taxRatePercent : record.taxRatePercent) === 0 ? 'Importe Neto Exento' : 'Importe Neto'}</span>
                 <span>{formatMoney(editing ? previewNet : (record.subtotal - record.discountAmount))}</span>
               </div>
-              {(editing ? previewDiscount : record.discountAmount) > 0 && (
+              {(editing ? previewDiscount : record.discountAmount) !== 0 && (
                 <div style={{ background: '#475569', color: 'white', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                  <span>Descuento</span>
-                  <span>-{formatMoney(editing ? previewDiscount : record.discountAmount)}</span>
+                  <span>{(editing ? previewDiscount : record.discountAmount) > 0 ? 'Descuento' : 'Recargo'}</span>
+                  <span>{(editing ? previewDiscount : record.discountAmount) > 0 ? '-' : '+'}{formatMoney(Math.abs(editing ? previewDiscount : record.discountAmount))}</span>
                 </div>
               )}
               {(editing ? previewTax : record.taxAmount) > 0 && (

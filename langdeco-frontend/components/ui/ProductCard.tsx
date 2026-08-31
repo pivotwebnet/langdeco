@@ -37,10 +37,9 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
   const isAdded = added === p.id
   const showImage = !!p.imageUrl && !imgError
   const addBtnRef = useRef<HTMLButtonElement>(null)
-  // Aspect fijo por variante — todas las cards del mismo listado miden igual,
-  // sin importar la proporción de la foto que haya cargado cada producto.
+  // Aspect fijo por variante — todas las cards del mismo listado miden igual.
   const aspect = variant === 'strip' ? '3/4' : '1/1'
-  const installment = p.priceNum > 0 ? formatPrice(p.priceNum / 3) : null
+  const installment = p.priceNum > 0 && p.installments ? formatPrice(p.priceNum / p.installments) : null
   const hasDiscount = !!p.originalPriceNum && p.originalPriceNum > p.priceNum
   const discountPercent = hasDiscount ? Math.round((1 - p.priceNum / p.originalPriceNum!) * 100) : null
   const isOutOfStock = p.stock !== undefined && p.stock <= 0
@@ -96,43 +95,37 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
           )}
         </div>
 
-        <div style={{ position: 'absolute', top: 10, left: 10, right: 50, zIndex: 3, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'flex-start' }}>
+        <div style={{ position: 'absolute', top: 10, left: 10, right: 'var(--card-badges-clearance)', zIndex: 3, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'flex-start' }}>
           {isLowStock && !isOutOfStock && (
             <Tooltip label="Quedan pocas unidades en stock">
-              <span className="mono" style={{ padding: '7px 11px', background: URGENT, color: '#fff', fontSize: 10, letterSpacing: '0.1em', fontWeight: 600, borderRadius: 5 }}>
+              <span className="mono" style={{ padding: 'var(--card-badge-pad)', background: URGENT, color: '#fff', fontSize: 'var(--card-badge-font)', letterSpacing: '0.1em', fontWeight: 600, borderRadius: 5 }}>
                 ¡Últimas {p.stock}!
               </span>
             </Tooltip>
           )}
 
           {showBadge && (
-            <span className="mono" style={{ padding: '7px 11px', background: 'var(--ink)', color: 'var(--bg)', fontSize: 10, letterSpacing: '0.1em', borderRadius: 5 }}>
+            <span className="mono" style={{ padding: 'var(--card-badge-pad)', background: 'var(--ink)', color: 'var(--bg)', fontSize: 'var(--card-badge-font)', letterSpacing: '0.1em', borderRadius: 5 }}>
               ★ Favorito
             </span>
           )}
 
-          {p.tag && (
-            <span className="mono" style={{ padding: '7px 11px', background: 'rgba(242,241,237,0.92)', fontSize: 10, letterSpacing: '0.1em', borderRadius: 5 }}>
-              {p.tag}
-            </span>
-          )}
-
           {hasDiscount && (
-            <span className="mono" style={{ padding: '7px 11px', background: 'var(--leaf)', color: 'var(--bg)', fontSize: 10, letterSpacing: '0.1em', borderRadius: 5 }}>
+            <span className="mono" style={{ padding: 'var(--card-badge-pad)', background: 'var(--leaf)', color: 'var(--bg)', fontSize: 'var(--card-badge-font)', letterSpacing: '0.1em', borderRadius: 5 }}>
               -{discountPercent}%
             </span>
           )}
 
           {roomTags.map((tag) => (
             <Tooltip key={tag} label="Ambiente">
-              <span className="mono" style={{ padding: '7px 11px', background: 'rgba(242,241,237,0.92)', fontSize: 10, letterSpacing: '0.08em', borderRadius: 5 }}>
+              <span className="mono" style={{ padding: 'var(--card-badge-pad)', background: 'rgba(242,241,237,0.92)', fontSize: 'var(--card-badge-font)', letterSpacing: '0.08em', borderRadius: 5 }}>
                 {tag}
               </span>
             </Tooltip>
           ))}
 
           {extraRoomTags > 0 && (
-            <span className="mono" style={{ padding: '7px 11px', background: 'rgba(242,241,237,0.92)', fontSize: 10, borderRadius: 5, color: 'var(--ink-mute)' }}>
+            <span className="mono" style={{ padding: 'var(--card-badge-pad)', background: 'rgba(242,241,237,0.92)', fontSize: 'var(--card-badge-font)', borderRadius: 5, color: 'var(--ink-mute)' }}>
               +{extraRoomTags}
             </span>
           )}
@@ -141,21 +134,21 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
         {p.material && (
           <div style={{ position: 'absolute', left: 10, bottom: 10, zIndex: 4 }}>
             <Tooltip label="Material" side="bottom">
-              <span className="mono" style={{ padding: '7px 11px', background: 'var(--umber)', color: '#F5EFE0', fontSize: 10, letterSpacing: '0.08em', borderRadius: 5, boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)' }}>
+              <span className="mono" style={{ padding: 'var(--card-badge-pad)', background: 'var(--umber)', color: '#F5EFE0', fontSize: 'var(--card-badge-font)', letterSpacing: '0.08em', borderRadius: 5, boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)' }}>
                 {p.material}
               </span>
             </Tooltip>
           </div>
         )}
 
-        <div style={{ position: 'absolute', top: 10, right: onQuickView ? 60 : 10, zIndex: 4 }}>
+        <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 4 }}>
           <Tooltip label={saved ? 'Quitar de guardados' : 'Guardar'}>
             <button
               onClick={(e) => { e.stopPropagation(); toggleSaved(p.id) }}
               aria-label={saved ? `Quitar ${p.name} de guardados` : `Guardar ${p.name}`}
               aria-pressed={saved}
               style={{
-                width: 40, height: 40, borderRadius: 999,
+                width: 'var(--card-btn-size)', height: 'var(--card-btn-size)', borderRadius: 999,
                 background: 'rgba(242,241,237,0.92)', color: saved ? '#B0453A' : 'var(--ink)',
                 border: 0, cursor: 'pointer', display: 'grid', placeItems: 'center',
                 boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)',
@@ -170,13 +163,13 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
         </div>
 
         {onQuickView && (
-          <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 4 }}>
+          <div className="prod-card-quickview" style={{ position: 'absolute', top: 10, right: 'var(--card-btn-pair-offset)', zIndex: 4 }}>
             <Tooltip label="Detalle">
               <button
                 onClick={(e) => { e.stopPropagation(); onQuickView(p) }}
                 aria-label={`Vista rápida de ${p.name}`}
                 style={{
-                  width: 40, height: 40, borderRadius: 999,
+                  width: 'var(--card-btn-size)', height: 'var(--card-btn-size)', borderRadius: 999,
                   background: 'rgba(242,241,237,0.92)', color: 'var(--ink)',
                   border: 0, cursor: 'pointer', display: 'grid', placeItems: 'center',
                   boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)',
@@ -191,7 +184,7 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
           </div>
         )}
 
-        <div style={{ position: 'absolute', right: 60, bottom: 10, zIndex: 4 }}>
+        <div style={{ position: 'absolute', right: 'var(--card-btn-pair-offset)', bottom: 10, zIndex: 4 }}>
           <Tooltip label="Consulta rápida">
             <a
               href={whatsappHref(p)}
@@ -200,7 +193,7 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
               onClick={(e) => e.stopPropagation()}
               aria-label={`Consultar por ${p.name} en WhatsApp`}
               style={{
-                width: 42, height: 42, borderRadius: 999,
+                width: 'var(--card-btn-size-lg)', height: 'var(--card-btn-size-lg)', borderRadius: 999,
                 background: 'rgba(242,241,237,0.96)', color: 'var(--whatsapp)',
                 display: 'grid', placeItems: 'center',
                 boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)',
@@ -222,7 +215,7 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
               disabled={isOutOfStock}
               onClick={(e) => { e.stopPropagation(); if (!isOutOfStock) onAdd(p) }}
               style={{
-                width: 42, height: 42, borderRadius: 999,
+                width: 'var(--card-btn-size-lg)', height: 'var(--card-btn-size-lg)', borderRadius: 999,
                 background: isAdded ? 'var(--leaf)' : 'rgba(242,241,237,0.96)',
                 color: isAdded ? 'var(--bg)' : 'var(--ink)',
                 border: 0, cursor: isOutOfStock ? 'not-allowed' : 'pointer', display: 'grid', placeItems: 'center',
@@ -254,9 +247,15 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
           )}
         </div>
 
+        {p.cardPriceNum != null && (
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: variant === 'strip' ? 14 : 12, color: 'var(--ink-mute)', marginBottom: 4 }}>
+            {formatPrice(p.cardPriceNum)} con tarjeta
+          </div>
+        )}
+
         {installment && !isOutOfStock && (
           <span className="mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 9px', background: 'var(--leaf)', color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: '0.04em', borderRadius: 999 }}>
-            ✓ 3 cuotas sin interés
+            ✓ {p.installments} cuotas sin interés
           </span>
         )}
 

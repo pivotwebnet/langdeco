@@ -6,15 +6,14 @@ export interface ProductSpec {
 export interface Product {
   id: string
   name: string
-  tag?: string
   material: string
-  origin?: string
   roomTags?: string[]
   price: string
   priceNum: number
+  cardPriceNum?: number
   originalPriceNum?: number
   stock?: number
-  aspect?: string
+  installments?: number
   category: string
   note?: string
   imageUrl?: string

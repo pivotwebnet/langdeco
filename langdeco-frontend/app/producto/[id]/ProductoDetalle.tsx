@@ -68,7 +68,7 @@ export function ProductoDetalle({ product, related }: Props) {
   const discountPercent = hasDiscount ? Math.round((1 - product.priceNum / product.originalPriceNum!) * 100) : null
   const isOutOfStock = product.stock !== undefined && product.stock <= 0
   const isLowStock = product.stock !== undefined && product.stock > 0 && product.stock <= 3
-  const showInstallment = product.priceNum > 0 && !isOutOfStock
+  const showInstallment = product.priceNum > 0 && !!product.installments && !isOutOfStock
   const maxQty = product.stock !== undefined ? Math.max(1, Math.min(product.stock, 99)) : 99
 
   useGSAP(() => {
@@ -188,11 +188,8 @@ export function ProductoDetalle({ product, related }: Props) {
 
           {/* Info */}
           <RevealOnScroll delay={1} className="pd-info">
-            {(product.tag || isLowStock || isOutOfStock) && (
+            {(isLowStock || isOutOfStock) && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-                {product.tag && (
-                  <span className="mono" style={{ fontSize: 9, letterSpacing: '0.2em', color: 'var(--ink-soft)' }}>{product.tag}</span>
-                )}
                 {isOutOfStock ? (
                   <span className="mono" style={{ padding: '5px 10px', background: 'var(--ink)', color: 'var(--bg)', fontSize: 9, letterSpacing: '0.16em', borderRadius: 5 }}>
                     Sin stock
@@ -221,9 +218,15 @@ export function ProductoDetalle({ product, related }: Props) {
               )}
             </div>
 
+            {product.cardPriceNum != null && (
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: 18, color: 'var(--ink-mute)', marginBottom: 12 }}>
+                {formatPrice(product.cardPriceNum)} con tarjeta
+              </div>
+            )}
+
             {showInstallment && (
               <span className="mono" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '7px 13px', background: 'var(--leaf)', color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', borderRadius: 999, marginBottom: 20 }}>
-                ✓ 3 cuotas sin interés
+                ✓ {product.installments} cuotas sin interés
               </span>
             )}
 

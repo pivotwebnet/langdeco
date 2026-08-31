@@ -89,6 +89,36 @@ public class CategoriesController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{id}/deactivate")]
+    [RequireAdminKey]
+    public async Task<IActionResult> Deactivate(string id)
+    {
+        var category = await _db.Categories.FindAsync(id);
+        if (category is null) return NotFound();
+
+        category.Active = false;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpPost("bulk-activate")]
+    [RequireAdminKey]
+    public async Task<ActionResult<BulkResultDto>> BulkActivate(BulkIdsDto input)
+    {
+        var updated = await _db.Categories.Where(c => input.Ids.Contains(c.Id))
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.Active, true));
+        return Ok(new BulkResultDto(updated, new List<string>()));
+    }
+
+    [HttpPost("bulk-deactivate")]
+    [RequireAdminKey]
+    public async Task<ActionResult<BulkResultDto>> BulkDeactivate(BulkIdsDto input)
+    {
+        var updated = await _db.Categories.Where(c => input.Ids.Contains(c.Id))
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.Active, false));
+        return Ok(new BulkResultDto(updated, new List<string>()));
+    }
+
     [HttpDelete("{id}")]
     [RequireAdminKey]
     public async Task<IActionResult> Delete(string id)

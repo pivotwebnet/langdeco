@@ -8,21 +8,22 @@ import { Field } from '@/components/admin/Field'
 import { formatPrice } from '@/lib/data'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
+import { BulkActionBar } from '@/components/admin/BulkActionBar'
+import { PercentAdjustDialog } from '@/components/admin/PercentAdjustDialog'
 
 type ProductForm = {
   id: string
   name: string
   categoryId: string
-  tag: string
   material: string
-  origin: string
   roomTags: string[]
   price: string
+  cardPrice: string
   originalPrice: string
   wholesalePrice: string
   stock: string
+  installments: string
   note: string
-  aspect: string
   featured: boolean
   specs: { label: string; value: string }[]
   images: string[]
@@ -33,8 +34,8 @@ type ProductForm = {
 const LOW_STOCK_THRESHOLD = 3
 
 const EMPTY_FORM: ProductForm = {
-  id: '', name: '', categoryId: '', tag: '', material: '', origin: '', roomTags: [],
-  price: '', originalPrice: '', wholesalePrice: '', stock: '0', note: '', aspect: '', featured: false,
+  id: '', name: '', categoryId: '', material: '', roomTags: [],
+  price: '', cardPrice: '', originalPrice: '', wholesalePrice: '', stock: '0', installments: '', note: '', featured: false,
   specs: [], images: [], cutoutImageUrl: '',
 }
 
@@ -84,6 +85,11 @@ export default function ProductosAdmin() {
   const [isNewForm, setIsNewForm] = useState(true)
   const [saving, setSaving] = useState(false)
 
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkConfirm, setBulkConfirm] = useState<'activate' | 'deactivate' | null>(null)
+  const [showPercentDialog, setShowPercentDialog] = useState(false)
+  const [bulkBusy, setBulkBusy] = useState(false)
+
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -113,6 +119,65 @@ export default function ProductosAdmin() {
 
   const lowStockCount = products.filter((p) => p.active && p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD).length
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  const allFilteredSelected = filtered.length > 0 && filtered.every((p) => selectedIds.has(p.id))
+  const toggleSelectAll = () => {
+    setSelectedIds(allFilteredSelected ? new Set() : new Set(filtered.map((p) => p.id)))
+  }
+
+  const runBulkAction = async (path: string, successLabel: (r: { updated: number; skipped: string[] }) => string) => {
+    setBulkBusy(true)
+    try {
+      const result = await api<{ updated: number; skipped: string[] }>(path, {
+        method: 'POST',
+        body: JSON.stringify({ ids: [...selectedIds] }),
+      })
+      toast.success(successLabel(result))
+      setSelectedIds(new Set())
+      await load()
+    } catch (e) {
+      toast.error((e as Error).message)
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
+  const onBulkConfirm = async () => {
+    const action = bulkConfirm
+    setBulkConfirm(null)
+    if (action === 'activate') {
+      await runBulkAction('/products/bulk-activate', (r) => `${r.updated} pieza${r.updated === 1 ? '' : 's'} activada${r.updated === 1 ? '' : 's'}.`)
+    } else if (action === 'deactivate') {
+      await runBulkAction('/products/bulk-deactivate', (r) => `${r.updated} pieza${r.updated === 1 ? '' : 's'} desactivada${r.updated === 1 ? '' : 's'}.`)
+    }
+  }
+
+  const onBulkPriceAdjust = async (percent: number) => {
+    setShowPercentDialog(false)
+    setBulkBusy(true)
+    try {
+      const result = await api<{ updated: number; skipped: string[] }>('/products/bulk-price-adjust', {
+        method: 'POST',
+        body: JSON.stringify({ ids: [...selectedIds], percent }),
+      })
+      const skippedMsg = result.skipped.length > 0 ? ` ${result.skipped.length} sin cambios (el ajuste dejaba el precio en cero o menos).` : ''
+      toast.success(`${result.updated} precio${result.updated === 1 ? '' : 's'} ajustado${result.updated === 1 ? '' : 's'}.${skippedMsg}`)
+      setSelectedIds(new Set())
+      await load()
+    } catch (e) {
+      toast.error((e as Error).message)
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
   const openCreate = () => {
     setIsNewForm(true)
     setForm({ ...EMPTY_FORM, categoryId: categories[0]?.id || '' })
@@ -121,10 +186,11 @@ export default function ProductosAdmin() {
   const openEdit = (p: BackendProduct) => {
     setIsNewForm(false)
     setForm({
-      id: p.id, name: p.name, categoryId: p.categoryId, tag: p.tag || '', material: p.material,
-      origin: p.origin || '', roomTags: [...p.roomTags], price: String(p.price), originalPrice: p.originalPrice ? String(p.originalPrice) : '',
+      id: p.id, name: p.name, categoryId: p.categoryId, material: p.material,
+      roomTags: [...p.roomTags], price: String(p.price), cardPrice: p.cardPrice ? String(p.cardPrice) : '',
+      originalPrice: p.originalPrice ? String(p.originalPrice) : '',
       wholesalePrice: p.wholesalePrice ? String(p.wholesalePrice) : '',
-      stock: String(p.stock), note: p.note || '', aspect: p.aspect || '', featured: p.featured,
+      stock: String(p.stock), installments: p.installments ? String(p.installments) : '', note: p.note || '', featured: p.featured,
       specs: p.specs.map((s) => ({ ...s })), images: [...p.images],
       cutoutImageUrl: p.cutoutImageUrl || '',
     })
@@ -142,11 +208,12 @@ export default function ProductosAdmin() {
     setError(null)
     try {
       const payload = {
-        id: form.id, name: form.name, categoryId: form.categoryId, tag: form.tag || null,
-        material: form.material, origin: form.origin || null, roomTags: form.roomTags,
-        price: Number(form.price), originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
+        id: form.id, name: form.name, categoryId: form.categoryId,
+        material: form.material, roomTags: form.roomTags,
+        price: Number(form.price), cardPrice: form.cardPrice ? Number(form.cardPrice) : null,
+        originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
         wholesalePrice: form.wholesalePrice ? Number(form.wholesalePrice) : null,
-        stock: Number(form.stock), note: form.note || null, aspect: form.aspect || null,
+        stock: Number(form.stock), installments: form.installments ? Number(form.installments) : null, note: form.note || null,
         featured: form.featured, specs: form.specs, images: form.images,
         cutoutImageUrl: form.cutoutImageUrl || null,
       }
@@ -216,28 +283,39 @@ export default function ProductosAdmin() {
         <input
           className="adm-input"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setSelectedIds(new Set()) }}
           placeholder="Buscar pieza..."
           style={{ flex: 1, maxWidth: 280 }}
         />
-        <select className="adm-select" value={filter} onChange={(e) => setFilter(e.target.value)}>
+        <select className="adm-select" value={filter} onChange={(e) => { setFilter(e.target.value); setSelectedIds(new Set()) }}>
           <option value="all">Todas las categorías</option>
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
         <label className="adm-checkbox-row">
-          <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
+          <input type="checkbox" checked={showInactive} onChange={(e) => { setShowInactive(e.target.checked); setSelectedIds(new Set()) }} />
           Mostrar inactivos
         </label>
         <label className="adm-checkbox-row">
-          <input type="checkbox" checked={lowStockOnly} onChange={(e) => setLowStockOnly(e.target.checked)} />
+          <input type="checkbox" checked={lowStockOnly} onChange={(e) => { setLowStockOnly(e.target.checked); setSelectedIds(new Set()) }} />
           Solo stock bajo
         </label>
       </div>
+
+      {selectedIds.size > 0 && (
+        <BulkActionBar count={selectedIds.size} onClear={() => setSelectedIds(new Set())}>
+          <button type="button" className="adm-btn ghost sm" disabled={bulkBusy} onClick={() => setBulkConfirm('activate')}>Activar</button>
+          <button type="button" className="adm-btn ghost sm" disabled={bulkBusy} onClick={() => setBulkConfirm('deactivate')}>Desactivar</button>
+          <button type="button" className="adm-btn sm" disabled={bulkBusy} onClick={() => setShowPercentDialog(true)}>Ajustar precio %</button>
+        </BulkActionBar>
+      )}
 
       <div className="adm-card adm-table-wrap">
         <table className="adm-table">
           <thead>
             <tr>
+              <th style={{ width: 32 }}>
+                <input type="checkbox" checked={allFilteredSelected} onChange={toggleSelectAll} aria-label="Seleccionar todo" />
+              </th>
               <th>Nombre</th>
               <th>Categoría</th>
               <th>Precio</th>
@@ -248,13 +326,15 @@ export default function ProductosAdmin() {
           </thead>
           <tbody>
             {loading && (
-              <TableSkeletonRows columns={6} />
+              <TableSkeletonRows columns={7} />
             )}
             {!loading && filtered.map((p) => (
               <tr key={p.id} className={p.active ? '' : 'inactive'}>
                 <td>
+                  <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} aria-label={`Seleccionar ${p.name}`} />
+                </td>
+                <td>
                   <div className="adm-table-name">{p.name}{p.featured && ' ★'}</div>
-                  <div className="adm-table-sub">{p.tag || '—'}</div>
                 </td>
                 <td>{p.categoryName}</td>
                 <td className="mono">{formatPrice(p.price)}</td>
@@ -303,6 +383,25 @@ export default function ProductosAdmin() {
           danger
           onConfirm={() => onDelete(confirmDelete)}
           onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+
+      {bulkConfirm && (
+        <ConfirmDialog
+          title={bulkConfirm === 'activate' ? 'Activar piezas' : 'Desactivar piezas'}
+          message={`¿${bulkConfirm === 'activate' ? 'Activar' : 'Desactivar'} ${selectedIds.size} pieza${selectedIds.size === 1 ? '' : 's'} seleccionada${selectedIds.size === 1 ? '' : 's'}?`}
+          confirmLabel={bulkConfirm === 'activate' ? 'Activar' : 'Desactivar'}
+          danger={bulkConfirm === 'deactivate'}
+          onConfirm={onBulkConfirm}
+          onCancel={() => setBulkConfirm(null)}
+        />
+      )}
+
+      {showPercentDialog && (
+        <PercentAdjustDialog
+          count={selectedIds.size}
+          onConfirm={onBulkPriceAdjust}
+          onCancel={() => setShowPercentDialog(false)}
         />
       )}
     </div>
@@ -362,14 +461,13 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
         <Field label="Nombre"><input className="adm-input" value={form.name} onChange={(e) => set('name', e.target.value)} maxLength={200} style={{ width: '100%' }} /></Field>
 
         <div className="adm-grid-2" style={{ marginTop: 12 }}>
-          <Field label="Tag (opcional)"><input className="adm-input" value={form.tag} onChange={(e) => set('tag', e.target.value)} style={{ width: '100%' }} /></Field>
-          <Field label="Aspecto (ej. 4/5)"><input className="adm-input" value={form.aspect} onChange={(e) => set('aspect', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Material"><input className="adm-input" value={form.material} onChange={(e) => set('material', e.target.value)} maxLength={200} style={{ width: '100%' }} /></Field>
-          <Field label="Origen (opcional)"><input className="adm-input" value={form.origin} onChange={(e) => set('origin', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Precio"><input className="adm-input" type="number" required min="0.01" step="0.01" value={form.price} onChange={(e) => set('price', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Precio tarjeta (opcional)"><input className="adm-input" type="number" value={form.cardPrice} onChange={(e) => set('cardPrice', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Precio tachado (opcional)"><input className="adm-input" type="number" value={form.originalPrice} onChange={(e) => set('originalPrice', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Precio mayorista (opcional)"><input className="adm-input" type="number" value={form.wholesalePrice} onChange={(e) => set('wholesalePrice', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Stock"><input className="adm-input" type="number" value={form.stock} onChange={(e) => set('stock', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Cuotas sin interés (opcional)"><input className="adm-input" type="number" min="0" value={form.installments} onChange={(e) => set('installments', e.target.value)} placeholder="ej. 3" style={{ width: '100%' }} /></Field>
           <Field label="Destacado">
             <label className="adm-checkbox-row" style={{ marginTop: 8 }}>
               <input type="checkbox" checked={form.featured} onChange={(e) => set('featured', e.target.checked)} />
@@ -382,7 +480,7 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
           <RoomTagsInput value={form.roomTags} onChange={(v) => set('roomTags', v)} />
         </Field>
 
-        <Field label="Nota curatorial (opcional)">
+        <Field label="Descripción (opcional)">
           <textarea className="adm-textarea" value={form.note} onChange={(e) => set('note', e.target.value)} rows={2} />
         </Field>
 

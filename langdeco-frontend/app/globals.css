@@ -376,6 +376,36 @@ body {
 .prod-card-media img { border-radius: 8px; transition: transform 0.6s cubic-bezier(.2,.8,.2,1), opacity 0.4s ease; }
 .prod-card:hover .prod-card-media img { transform: scale(1.07); }
 
+/* Botones/badges superpuestos sobre la imagen — tamaños vía variables para que
+   en mobile no tapen la foto (ver ProductCard.tsx). Mismas proporciones que
+   los valores de desktop, solo más chico. */
+.prod-card {
+  --card-btn-size: 32px;
+  --card-btn-size-lg: 34px;
+  --card-btn-pair-offset: 52px;
+  --card-badge-pad: 5px 8px;
+  --card-badge-font: 9px;
+  --card-badges-clearance: 42px;
+}
+@media (min-width: 900px) {
+  .prod-card {
+    --card-btn-size: 40px;
+    --card-btn-size-lg: 42px;
+    --card-btn-pair-offset: 60px;
+    --card-badge-pad: 7px 11px;
+    --card-badge-font: 10px;
+    --card-badges-clearance: 50px;
+  }
+}
+
+/* El botón de "ver detalle" (ojo) sobre la imagen es redundante en mobile —
+   ya existe el botón de texto "Ver detalles" debajo y tocar la card navega
+   igual. Se oculta debajo de 900px, no se saca del DOM. */
+.prod-card-quickview { display: none; }
+@media (min-width: 900px) {
+  .prod-card-quickview { display: block; }
+}
+
 .img-skeleton {
   position: absolute; inset: 0; z-index: 1;
   background: linear-gradient(100deg, #ECEAE4 30%, #F5F3EE 50%, #ECEAE4 70%);
@@ -1670,8 +1700,8 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
   [data-dt="productos"] .prod-nav { padding: 0 68px; }
   [data-dt="productos"] .prod-arrow-left { left: 8px; }
   [data-dt="productos"] .prod-arrow-right { right: 8px; }
-  [data-dt="productos"] .prod-grid-mayores { grid-template-columns: repeat(3, 1fr) !important; }
-  [data-dt="productos"] .prod-grid-tesoros { grid-template-columns: repeat(3, 1fr) !important; }
+  [data-dt="productos"] .prod-grid-mayores { grid-template-columns: repeat(5, 1fr) !important; gap: 28px 14px !important; }
+  [data-dt="productos"] .prod-grid-tesoros { grid-template-columns: repeat(5, 1fr) !important; gap: 28px 14px !important; }
 
   [data-dt="catalogo-rapido"] .prod-nav { padding: 0 68px; }
   [data-dt="catalogo-rapido"] .prod-arrow-left { left: 8px; }

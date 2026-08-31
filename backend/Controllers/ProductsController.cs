@@ -85,16 +85,15 @@ public class ProductsController : ControllerBase
             Id = input.Id,
             Name = input.Name,
             CategoryId = input.CategoryId,
-            Tag = input.Tag,
             Material = input.Material,
-            Origin = input.Origin,
             RoomTags = NormalizeRoomTags(input.RoomTags),
             Price = input.Price,
+            CardPrice = input.CardPrice,
             OriginalPrice = input.OriginalPrice,
             WholesalePrice = input.WholesalePrice,
             Stock = input.Stock,
+            Installments = input.Installments,
             Note = input.Note,
-            Aspect = input.Aspect,
             Featured = input.Featured,
             Active = true,
             CutoutImageUrl = input.CutoutImageUrl,
@@ -123,16 +122,15 @@ public class ProductsController : ControllerBase
 
         product.Name = input.Name;
         product.CategoryId = input.CategoryId;
-        product.Tag = input.Tag;
         product.Material = input.Material;
-        product.Origin = input.Origin;
         product.RoomTags = NormalizeRoomTags(input.RoomTags);
         product.Price = input.Price;
+        product.CardPrice = input.CardPrice;
         product.OriginalPrice = input.OriginalPrice;
         product.WholesalePrice = input.WholesalePrice;
         product.Stock = input.Stock;
+        product.Installments = input.Installments;
         product.Note = input.Note;
-        product.Aspect = input.Aspect;
         product.Featured = input.Featured;
         product.CutoutImageUrl = input.CutoutImageUrl;
 
@@ -157,6 +155,67 @@ public class ProductsController : ControllerBase
         product.Active = true;
         await _db.SaveChangesAsync();
         return NoContent();
+    }
+
+    [HttpPost("{id}/deactivate")]
+    [RequireAdminKey]
+    public async Task<IActionResult> Deactivate(string id)
+    {
+        var product = await _db.Products.FindAsync(id);
+        if (product is null) return NotFound();
+
+        product.Active = false;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    [HttpPost("bulk-activate")]
+    [RequireAdminKey]
+    public async Task<ActionResult<BulkResultDto>> BulkActivate(BulkIdsDto input)
+    {
+        var updated = await _db.Products.Where(p => input.Ids.Contains(p.Id))
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.Active, true));
+        return Ok(new BulkResultDto(updated, new List<string>()));
+    }
+
+    [HttpPost("bulk-deactivate")]
+    [RequireAdminKey]
+    public async Task<ActionResult<BulkResultDto>> BulkDeactivate(BulkIdsDto input)
+    {
+        var updated = await _db.Products.Where(p => input.Ids.Contains(p.Id))
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.Active, false));
+        return Ok(new BulkResultDto(updated, new List<string>()));
+    }
+
+    // Escalar Price/OriginalPrice/WholesalePrice por el mismo factor preserva
+    // OriginalPrice > Price > WholesalePrice automáticamente (multiplicar tres
+    // positivos ordenados por el mismo factor positivo no cambia el orden) —
+    // no hace falta revalidar esa relación, solo que Price no quede en cero o negativo.
+    [HttpPost("bulk-price-adjust")]
+    [RequireAdminKey]
+    public async Task<ActionResult<BulkResultDto>> BulkPriceAdjust(BulkPriceAdjustDto input)
+    {
+        var factor = 1 + input.Percent / 100m;
+        var products = await _db.Products.Where(p => input.Ids.Contains(p.Id)).ToListAsync();
+        var skipped = new List<string>();
+
+        foreach (var product in products)
+        {
+            var newPrice = Math.Round(product.Price * factor, 2);
+            if (newPrice <= 0)
+            {
+                skipped.Add(product.Id);
+                continue;
+            }
+
+            product.Price = newPrice;
+            if (product.CardPrice is not null) product.CardPrice = Math.Round(product.CardPrice.Value * factor, 2);
+            if (product.OriginalPrice is not null) product.OriginalPrice = Math.Round(product.OriginalPrice.Value * factor, 2);
+            if (product.WholesalePrice is not null) product.WholesalePrice = Math.Round(product.WholesalePrice.Value * factor, 2);
+        }
+
+        await _db.SaveChangesAsync();
+        return Ok(new BulkResultDto(products.Count - skipped.Count, skipped));
     }
 
     [HttpDelete("{id}")]
@@ -258,9 +317,9 @@ public class ProductsController : ControllerBase
     }
 
     private static ProductDto ToDto(Product p) => new(
-        p.Id, p.Name, p.CategoryId, p.Category?.Name ?? p.CategoryId, p.Tag,
-        p.Material, p.Origin, p.RoomTags, p.Price, p.OriginalPrice, p.WholesalePrice, p.Stock,
-        p.Note, p.Aspect, p.Active, p.Featured,
+        p.Id, p.Name, p.CategoryId, p.Category?.Name ?? p.CategoryId,
+        p.Material, p.RoomTags, p.Price, p.CardPrice, p.OriginalPrice, p.WholesalePrice, p.Stock, p.Installments,
+        p.Note, p.Active, p.Featured,
         p.Specs.OrderBy(s => s.Order).Select(s => new ProductSpecDto(s.Label, s.Value)).ToList(),
         p.Images.OrderBy(i => i.Order).Select(i => i.Url).ToList(), p.CutoutImageUrl);
 

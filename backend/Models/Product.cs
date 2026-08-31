@@ -7,18 +7,19 @@ public class Product
     public string CategoryId { get; set; } = string.Empty;
     public Category? Category { get; set; }
 
-    public string? Tag { get; set; }
     public string Material { get; set; } = string.Empty;
-    public string? Origin { get; set; }
     public List<string> RoomTags { get; set; } = new();
 
     public decimal Price { get; set; }
+    public decimal? CardPrice { get; set; }
     public decimal? OriginalPrice { get; set; }
     public decimal? WholesalePrice { get; set; }
     public int Stock { get; set; }
 
+    // Cantidad de cuotas sin interés para el badge del sitio público — null/0 lo oculta.
+    public int? Installments { get; set; }
+
     public string? Note { get; set; }
-    public string? Aspect { get; set; }
     public bool Active { get; set; } = true;
     public bool Featured { get; set; }
 
