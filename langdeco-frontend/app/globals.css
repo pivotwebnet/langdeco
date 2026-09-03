@@ -547,6 +547,24 @@ body {
   padding: 48px 24px 32px;
 }
 .footer-bottom { padding: 0 24px 32px; }
+.footer-bottom-row {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+}
+.footer-credit { display: flex; align-items: center; gap: 6px; }
+.footer-credit-label {
+  text-transform: uppercase; letter-spacing: 0.16em;
+  color: rgba(242,241,237,0.4); font-size: 9px;
+}
+.footer-credit-brand {
+  font-family: var(--font-edit); font-style: italic; font-size: 15px;
+  color: #fff; text-decoration: none;
+  transition: color 0.5s, text-shadow 0.5s;
+}
+.footer-credit-brand:hover {
+  color: #E86315;
+  text-shadow: 0 0 8px rgba(232,99,21,0.9), 0 0 18px rgba(232,99,21,0.55);
+}
 .footer-map {
   width: 100%;
   max-width: 100%;

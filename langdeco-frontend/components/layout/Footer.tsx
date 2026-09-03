@@ -190,9 +190,22 @@ export function Footer() {
       {/* ── Bottom bar ───────────────────────────────────────────── */}
       <div className="footer-bottom">
         <div style={{ height: 1, background: 'rgba(242,241,237,0.08)', marginBottom: 20 }} />
-        <span className="mono" style={{ color: 'rgba(242,241,237,0.28)', fontSize: 9 }}>
-          © 2026 · LasLangDeco
-        </span>
+        <div className="footer-bottom-row">
+          <span className="mono" style={{ color: 'rgba(242,241,237,0.28)', fontSize: 9 }}>
+            © 2026 · LasLangDeco
+          </span>
+          <div className="footer-credit">
+            <span className="mono footer-credit-label">Creado por</span>
+            <a
+              href="https://www.pivotweb.com.ar/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-credit-brand"
+            >
+              PIVOT
+            </a>
+          </div>
+        </div>
       </div>
     </footer>
   )
