@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   description: 'Respuestas a las dudas más comunes sobre compras, envíos y devoluciones en LasLangDeco.',
 }
 
+// Sin esto, Next prerenderiza la página como estática en build time (antes de
+// que exista el volumen con el contenido editado desde el admin) y los
+// cambios del panel nunca se reflejan en producción.
+export const dynamic = 'force-dynamic'
+
 const PENDIENTE = PENDING_CONTENT_FALLBACK
 
 export default async function PreguntasFrecuentesPage() {

@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   description: 'Términos y condiciones de uso del sitio de LasLangDeco.',
 }
 
+// Sin esto, Next prerenderiza la página como estática en build time (antes de
+// que exista el volumen con el contenido editado desde el admin) y los
+// cambios del panel nunca se reflejan en producción.
+export const dynamic = 'force-dynamic'
+
 export default async function TerminosYCondicionesPage() {
   const { terminos } = (await getSiteContent()).legal
 

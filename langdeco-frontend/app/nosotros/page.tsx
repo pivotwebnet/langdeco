@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   description: 'Desde 2014 elegimos, a mano, mobiliario y objetos para hogares que no tienen apuro.',
 }
 
+// Sin esto, Next prerenderiza la página como estática en build time (antes de
+// que exista el volumen con el contenido editado desde el admin) y los
+// cambios del panel nunca se reflejan en producción.
+export const dynamic = 'force-dynamic'
+
 export default async function NosotrosPage() {
   const siteContent = await getSiteContent()
 

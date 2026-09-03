@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   description: 'Zonas de envío, plazos y condiciones de devolución de LasLangDeco.',
 }
 
+// Sin esto, Next prerenderiza la página como estática en build time (antes de
+// que exista el volumen con el contenido editado desde el admin) y los
+// cambios del panel nunca se reflejan en producción.
+export const dynamic = 'force-dynamic'
+
 const PENDIENTE = PENDING_CONTENT_FALLBACK
 const PLAZO_PENDIENTE = 'un plazo a confirmar por WhatsApp'
 
