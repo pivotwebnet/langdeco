@@ -290,7 +290,7 @@ body {
 .floating-stack {
   position: fixed;
   right: 24px;
-  bottom: 24px;
+  bottom: 64px;
   z-index: 80;
   display: flex;
   flex-direction: column;
@@ -554,10 +554,10 @@ body {
 .footer-credit { display: flex; align-items: center; gap: 6px; }
 .footer-credit-label {
   text-transform: uppercase; letter-spacing: 0.16em;
-  color: rgba(242,241,237,0.4); font-size: 9px;
+  color: rgba(242,241,237,0.4); font-size: 12px;
 }
 .footer-credit-brand {
-  font-family: var(--font-edit); font-style: italic; font-size: 15px;
+  font-family: var(--font-edit); font-style: italic; font-size: 20px;
   color: #fff; text-decoration: none;
   transition: color 0.5s, text-shadow 0.5s;
 }
