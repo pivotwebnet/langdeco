@@ -7,6 +7,7 @@ import { useEscapeKey } from '@/lib/useEscapeKey'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 import { Field } from '@/components/admin/Field'
+import { ProductPicker } from '@/components/admin/ProductPicker'
 import { formatPrice } from '@/lib/data'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
@@ -219,6 +220,8 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const discountPercent = discountKind === 'Percent' ? (discountIsSurcharge ? -discountValue : discountValue) : 0
   const discountFixedAmount = discountKind === 'Fixed' ? (discountIsSurcharge ? -discountValue : discountValue) : 0
   const [items, setItems] = useState<{ productId: string; quantity: number }[]>([])
+  // -1 = agregando una línea nueva; un índice ≥0 = reemplazando el producto de esa línea.
+  const [pickerForIndex, setPickerForIndex] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -241,13 +244,18 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     }
   }
 
-  const addItem = () => { if (products.length > 0) setItems([...items, { productId: products[0].id, quantity: 1 }]) }
   const updateItem = (i: number, patch: Partial<{ productId: string; quantity: number }>) => {
     const next = [...items]
     next[i] = { ...next[i], ...patch }
     setItems(next)
   }
   const removeItem = (i: number) => setItems(items.filter((_, idx) => idx !== i))
+
+  const onPickProduct = (p: BackendProduct) => {
+    if (pickerForIndex === -1) setItems([...items, { productId: p.id, quantity: 1 }])
+    else if (pickerForIndex !== null) updateItem(pickerForIndex, { productId: p.id })
+    setPickerForIndex(null)
+  }
 
   const subtotal = items.reduce((sum, it) => {
     const product = products.find((p) => p.id === it.productId)
@@ -371,16 +379,18 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         <div style={{ marginTop: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span className="mono">Productos</span>
-            <button type="button" className="adm-btn ghost sm" onClick={addItem} disabled={products.length === 0}>+ Agregar</button>
+            <button type="button" className="adm-btn ghost sm" onClick={() => setPickerForIndex(-1)} disabled={products.length === 0}>+ Agregar</button>
           </div>
           {items.map((it, i) => {
             const product = products.find((p) => p.id === it.productId)
             const noWholesale = clientType === 'Wholesale' && !!product && product.wholesalePrice == null
             return (
               <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
-                <select className="adm-select" value={it.productId} onChange={(e) => updateItem(i, { productId: e.target.value })} style={{ flex: 1 }}>
-                  {products.map((p) => <option key={p.id} value={p.id}>{p.name} (stock: {p.stock})</option>)}
-                </select>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product?.name || 'Sin producto'}</div>
+                  {product && <div className="adm-table-sub">Stock: {product.stock}</div>}
+                </div>
+                <button type="button" className="adm-btn ghost sm" onClick={() => setPickerForIndex(i)}>Buscar</button>
                 <input className="adm-input" type="number" min={1} value={it.quantity} onChange={(e) => updateItem(i, { quantity: Number(e.target.value) })} style={{ width: 70 }} />
                 <span className="mono" style={{ fontSize: 11, width: 90, textAlign: 'right', color: noWholesale ? 'var(--adm-danger)' : undefined }}>
                   {product ? formatPrice(resolvePrice(product, clientType) * it.quantity) : ''}
@@ -431,6 +441,15 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
           <button className="adm-btn ghost" type="button" onClick={onClose} style={{ flex: 1 }}>Cancelar</button>
         </div>
       </form>
+
+      {pickerForIndex !== null && (
+        <ProductPicker
+          products={products}
+          title={pickerForIndex === -1 ? 'Agregar producto' : 'Cambiar producto'}
+          onSelect={onPickProduct}
+          onClose={() => setPickerForIndex(null)}
+        />
+      )}
     </div>
   )
 }
