@@ -80,6 +80,7 @@ export default function ProductosAdmin() {
   const [categories, setCategories] = useState<BackendCategory[]>([])
   const [suppliers, setSuppliers] = useState<BackendSupplier[]>([])
   const [filter, setFilter] = useState<string>('all')
+  const [supplierFilter, setSupplierFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [showInactive, setShowInactive] = useState(false)
   const [lowStockOnly, setLowStockOnly] = useState(false)
@@ -158,6 +159,7 @@ export default function ProductosAdmin() {
   const filtered = products.filter((p) => {
     if (!showInactive && !p.active) return false
     if (filter !== 'all' && p.categoryId !== filter) return false
+    if (supplierFilter !== 'all' && String(p.supplierId ?? '') !== supplierFilter) return false
     if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false
     if (lowStockOnly && !(p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD)) return false
     return true
@@ -354,6 +356,10 @@ export default function ProductosAdmin() {
           <option value="all">Todas las categorías</option>
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
+        <select className="adm-select" value={supplierFilter} onChange={(e) => { setSupplierFilter(e.target.value); setSelectedIds(new Set()) }}>
+          <option value="all">Todos los proveedores</option>
+          {suppliers.map((s) => <option key={s.id} value={String(s.id)}>{s.companyOrFullName}</option>)}
+        </select>
         <label className="adm-checkbox-row">
           <input type="checkbox" checked={showInactive} onChange={(e) => { setShowInactive(e.target.checked); setSelectedIds(new Set()) }} />
           Mostrar inactivos
@@ -381,7 +387,9 @@ export default function ProductosAdmin() {
               </th>
               <th>Nombre</th>
               <th>Categoría</th>
+              <th>Proveedor</th>
               <th>Precio</th>
+              <th>Costo</th>
               <th>Stock</th>
               <th>Estado</th>
               <th></th>
@@ -389,7 +397,7 @@ export default function ProductosAdmin() {
           </thead>
           <tbody>
             {loading && (
-              <TableSkeletonRows columns={7} />
+              <TableSkeletonRows columns={9} />
             )}
             {!loading && filtered.map((p) => (
               <tr key={p.id} className={p.active ? '' : 'inactive'}>
@@ -400,7 +408,9 @@ export default function ProductosAdmin() {
                   <div className="adm-table-name">{p.name}{p.featured && ' ★'}</div>
                 </td>
                 <td>{p.categoryName}</td>
+                <td>{p.supplierName || <span style={{ color: 'var(--ink-soft)' }}>—</span>}</td>
                 <td className="mono">{formatPrice(p.price)}</td>
+                <td className="mono">{p.costPrice ? formatPrice(p.costPrice) : <span style={{ color: 'var(--ink-soft)' }}>—</span>}</td>
                 <td className="mono">
                   {p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD ? (
                     <span className="adm-badge warn">{p.stock}</span>
