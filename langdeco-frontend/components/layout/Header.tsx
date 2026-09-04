@@ -73,7 +73,7 @@ export function Header({ hasPromo = false }: HeaderProps) {
     if (!q || !catalog) return []
     return catalog.filter((p) =>
       normalize(p.name).includes(q) ||
-      normalize(p.material).includes(q) ||
+      (p.material && normalize(p.material).includes(q)) ||
       (p.note && normalize(p.note).includes(q))
     )
   }, [query, catalog])
@@ -525,7 +525,7 @@ function SearchPanel({ query, results, totalResults, catalog, catalogError, onSe
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                <div className="mono" style={{ fontSize: 9, color: 'var(--ink-mute)', marginTop: 2 }}>{p.material}</div>
+                {p.material && <div className="mono" style={{ fontSize: 9, color: 'var(--ink-mute)', marginTop: 2 }}>{p.material}</div>}
               </div>
               <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: 'var(--ink)', flexShrink: 0 }}>{p.price}</div>
             </button>

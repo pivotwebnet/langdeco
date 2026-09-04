@@ -14,11 +14,13 @@ public class ProductsController : ControllerBase
 {
     private readonly AppDbContext _db;
     private readonly IConfiguration _config;
+    private readonly ProductExcelService _excel;
 
-    public ProductsController(AppDbContext db, IConfiguration config)
+    public ProductsController(AppDbContext db, IConfiguration config, ProductExcelService excel)
     {
         _db = db;
         _config = config;
+        _excel = excel;
     }
 
     [HttpGet]
@@ -34,6 +36,7 @@ public class ProductsController : ControllerBase
             .Include(p => p.Category)
             .Include(p => p.Specs)
             .Include(p => p.Images)
+            .Include(p => p.Supplier)
             .AsNoTracking()
             .AsQueryable();
 
@@ -43,7 +46,7 @@ public class ProductsController : ControllerBase
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim().ToLower();
-            query = query.Where(p => p.Name.ToLower().Contains(s) || p.Material.ToLower().Contains(s));
+            query = query.Where(p => p.Name.ToLower().Contains(s) || (p.Material ?? "").ToLower().Contains(s));
         }
 
         query = query.OrderBy(p => p.Name);
@@ -65,6 +68,7 @@ public class ProductsController : ControllerBase
             .Include(p => p.Category)
             .Include(p => p.Specs)
             .Include(p => p.Images)
+            .Include(p => p.Supplier)
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == id);
 
@@ -95,8 +99,11 @@ public class ProductsController : ControllerBase
             Installments = input.Installments,
             Note = input.Note,
             Featured = input.Featured,
-            Active = true,
+            Active = input.Active,
             CutoutImageUrl = input.CutoutImageUrl,
+            CostPrice = input.CostPrice,
+            IvaPercent = input.IvaPercent,
+            SupplierId = input.SupplierId,
         };
         ApplySpecsAndImages(product, input);
 
@@ -132,7 +139,11 @@ public class ProductsController : ControllerBase
         product.Installments = input.Installments;
         product.Note = input.Note;
         product.Featured = input.Featured;
+        product.Active = input.Active;
         product.CutoutImageUrl = input.CutoutImageUrl;
+        product.CostPrice = input.CostPrice;
+        product.IvaPercent = input.IvaPercent;
+        product.SupplierId = input.SupplierId;
 
         _db.ProductSpecs.RemoveRange(product.Specs);
         _db.ProductImages.RemoveRange(product.Images);
@@ -143,6 +154,136 @@ public class ProductsController : ControllerBase
         await _db.SaveChangesAsync();
 
         return Ok(await ReloadDto(product.Id));
+    }
+
+    // Endpoint liviano para el wizard de categorización post-importación — evita que
+    // asignar una sola categoría tenga que reenviar el ProductUpsertDto completo.
+    [HttpPost("{id}/category")]
+    [RequireAdminKey]
+    public async Task<IActionResult> SetCategory(string id, SetCategoryDto input)
+    {
+        var product = await _db.Products.FindAsync(id);
+        if (product is null) return NotFound();
+
+        if (!await _db.Categories.AnyAsync(c => c.Id == input.CategoryId))
+            return BadRequest(new { error = "La categoría indicada no existe" });
+
+        product.CategoryId = input.CategoryId;
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // Categoría placeholder (ver migración SeedSinCategoria) donde caen los productos
+    // importados por Excel — el Excel de origen no trae categoría. Oculta del sitio
+    // público (Category.Active = false); el admin las reasigna con el wizard de
+    // categorización, que consulta /products?category=sin-categoria.
+    public const string PendingCategoryId = "sin-categoria";
+
+    [HttpPost("import")]
+    [Consumes("multipart/form-data")]
+    [RequireAdminKey]
+    public async Task<ActionResult<ProductImportResultDto>> Import(IFormFile file)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { error = "Archivo vacío" });
+
+        if (!await _db.Categories.AnyAsync(c => c.Id == PendingCategoryId))
+            return BadRequest(new { error = "Falta la categoría 'Sin categoría' — faltan aplicar migraciones" });
+
+        List<ProductImportRow> rows;
+        using (var stream = file.OpenReadStream())
+            rows = _excel.ParseImport(stream);
+
+        var existingIds = (await _db.Products.Select(p => p.Id).ToListAsync()).ToHashSet();
+
+        var supplierLookup = await PartyImportMatcher.PrefetchAsync(
+            _db.Suppliers,
+            rows.Where(r => !string.IsNullOrWhiteSpace(r.ProveedorName)).Select(r => ((string?)null, r.ProveedorName!)));
+
+        var errors = new List<ImportRowError>();
+        var created = 0;
+        var suppliersCreated = 0;
+        var forcedInactive = 0;
+        var stockCorrected = 0;
+
+        await using var tx = await _db.Database.BeginTransactionAsync();
+
+        foreach (var row in rows)
+        {
+            if (string.IsNullOrWhiteSpace(row.Name))
+            {
+                errors.Add(new ImportRowError(row.RowNumber, "Falta el nombre"));
+                continue;
+            }
+
+            var slug = Validation.Slugify(row.Name);
+            var candidate = slug;
+            var suffix = 2;
+            while (!existingIds.Add(candidate))
+                candidate = $"{slug}-{suffix++}";
+
+            var stock = ProductExcelService.ParseStock(row.StockRaw);
+            if (stock < 0)
+            {
+                stock = 0;
+                stockCorrected++;
+            }
+
+            decimal price;
+            bool active;
+            string? note = null;
+            if (row.SalePrice <= 0)
+            {
+                price = 1m;
+                active = false;
+                note = "Precio a revisar (importado en $0)";
+                forcedInactive++;
+            }
+            else
+            {
+                price = row.SalePrice;
+                active = true;
+            }
+
+            Supplier? supplier = null;
+            if (!string.IsNullOrWhiteSpace(row.ProveedorName))
+            {
+                supplier = supplierLookup.Find(null, row.ProveedorName);
+                if (supplier is null)
+                {
+                    supplier = new Supplier
+                    {
+                        CompanyOrFullName = row.ProveedorName.Trim(),
+                        BillingCompanyOrFullName = row.ProveedorName.Trim(),
+                    };
+                    _db.Suppliers.Add(supplier);
+                    supplierLookup.Register(supplier);
+                    suppliersCreated++;
+                }
+            }
+
+            _db.Products.Add(new Product
+            {
+                Id = candidate,
+                Name = row.Name,
+                CategoryId = PendingCategoryId,
+                Material = null,
+                Price = price,
+                Stock = stock,
+                // Costo/IVA en 0 en el Excel viejo suele significar "sin cargar", no "gratis".
+                CostPrice = row.CostPrice > 0 ? row.CostPrice : null,
+                IvaPercent = row.IvaPercent,
+                Active = active,
+                Note = note,
+                Supplier = supplier,
+            });
+            created++;
+        }
+
+        await _db.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        return Ok(new ProductImportResultDto(created, suppliersCreated, forcedInactive, stockCorrected, errors));
     }
 
     [HttpPost("{id}/activate")]
@@ -255,14 +396,14 @@ public class ProductsController : ControllerBase
         if (input.Name.Length > 200)
             return "El nombre no puede superar los 200 caracteres";
 
-        if (string.IsNullOrWhiteSpace(input.Material))
-            return "El material es obligatorio";
-
-        if (input.Material.Length > 200)
+        if (input.Material is { Length: > 200 })
             return "El material no puede superar los 200 caracteres";
 
         if (!await _db.Categories.AnyAsync(c => c.Id == input.CategoryId))
             return "La categoría indicada no existe";
+
+        if (input.SupplierId is not null && !await _db.Suppliers.AnyAsync(s => s.Id == input.SupplierId))
+            return "El proveedor indicado no existe";
 
         if (input.Price <= 0)
             return "El precio debe ser mayor a cero";
@@ -310,6 +451,7 @@ public class ProductsController : ControllerBase
             .Include(p => p.Category)
             .Include(p => p.Specs)
             .Include(p => p.Images)
+            .Include(p => p.Supplier)
             .AsNoTracking()
             .FirstAsync(p => p.Id == id);
 
@@ -321,7 +463,8 @@ public class ProductsController : ControllerBase
         p.Material, p.RoomTags, p.Price, p.CardPrice, p.OriginalPrice, p.WholesalePrice, p.Stock, p.Installments,
         p.Note, p.Active, p.Featured,
         p.Specs.OrderBy(s => s.Order).Select(s => new ProductSpecDto(s.Label, s.Value)).ToList(),
-        p.Images.OrderBy(i => i.Order).Select(i => i.Url).ToList(), p.CutoutImageUrl);
+        p.Images.OrderBy(i => i.Order).Select(i => i.Url).ToList(), p.CutoutImageUrl,
+        p.CostPrice, p.IvaPercent, p.SupplierId, p.Supplier?.CompanyOrFullName);
 
     private bool IsAdmin() =>
         AdminKeyComparer.Matches(Request.Headers["X-Admin-Key"].ToString(), _config["AdminApiKey"]);

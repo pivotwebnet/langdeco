@@ -56,7 +56,7 @@ public class CategoriesController : ControllerBase
         if (await _db.Categories.AnyAsync(c => c.Id == input.Id))
             return BadRequest(new { error = "Ya existe una categoría con ese id" });
 
-        var category = new Category { Id = input.Id, Name = input.Name, Group = input.Group, Active = true };
+        var category = new Category { Id = input.Id, Name = input.Name, Group = input.Group, Active = input.Active };
         _db.Categories.Add(category);
         await _db.SaveChangesAsync();
 
@@ -72,6 +72,7 @@ public class CategoriesController : ControllerBase
 
         category.Name = input.Name;
         category.Group = input.Group;
+        category.Active = input.Active;
         await _db.SaveChangesAsync();
 
         return Ok(new CategoryDto(category.Id, category.Name, category.Group, category.Active));

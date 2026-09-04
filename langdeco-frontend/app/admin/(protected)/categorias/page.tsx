@@ -22,6 +22,7 @@ export default function CategoriasAdmin() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
   const [editingGroup, setEditingGroup] = useState<CategoryGroup>('Mayor')
+  const [editingActive, setEditingActive] = useState(true)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -57,14 +58,14 @@ export default function CategoriasAdmin() {
     }
   }
 
-  const startEdit = (c: BackendCategory) => { setEditingId(c.id); setEditingName(c.name); setEditingGroup(c.group) }
+  const startEdit = (c: BackendCategory) => { setEditingId(c.id); setEditingName(c.name); setEditingGroup(c.group); setEditingActive(c.active) }
 
   const onSaveEdit = async () => {
     if (!editingId) return
     setError(null)
     setSaving(true)
     try {
-      await api(`/categories/${editingId}`, { method: 'PUT', body: JSON.stringify({ id: editingId, name: editingName, group: editingGroup }) })
+      await api(`/categories/${editingId}`, { method: 'PUT', body: JSON.stringify({ id: editingId, name: editingName, group: editingGroup, active: editingActive }) })
       setEditingId(null)
       toast.success('Categoría actualizada.')
       await load()
@@ -210,7 +211,16 @@ export default function CategoriasAdmin() {
                     <span className="adm-table-sub">{GROUP_LABEL[c.group]}</span>
                   )}
                 </td>
-                <td><span className={`adm-badge ${c.active ? 'ok' : 'danger'}`}>{c.active ? 'Activa' : 'Inactiva'}</span></td>
+                <td>
+                  {editingId === c.id ? (
+                    <label className="adm-checkbox-row">
+                      <input type="checkbox" checked={editingActive} onChange={(e) => setEditingActive(e.target.checked)} />
+                      Activa
+                    </label>
+                  ) : (
+                    <span className={`adm-badge ${c.active ? 'ok' : 'danger'}`}>{c.active ? 'Activa' : 'Inactiva'}</span>
+                  )}
+                </td>
                 <td>
                   <div className="adm-table-actions">
                     {editingId === c.id ? (

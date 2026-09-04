@@ -6,7 +6,7 @@ export interface ProductSpec {
 export interface Product {
   id: string
   name: string
-  material: string
+  material: string | null
   roomTags?: string[]
   price: string
   priceNum: number

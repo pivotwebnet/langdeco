@@ -171,9 +171,11 @@ export function ProductQuickView({ product, onClose, onAdd }: ProductQuickViewPr
           )}
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-            <span className="mono" style={{ padding: '6px 11px', background: 'var(--umber)', color: '#F5EFE0', fontSize: 10, letterSpacing: '0.08em', borderRadius: 5 }}>
-              {product.material}
-            </span>
+            {product.material && (
+              <span className="mono" style={{ padding: '6px 11px', background: 'var(--umber)', color: '#F5EFE0', fontSize: 10, letterSpacing: '0.08em', borderRadius: 5 }}>
+                {product.material}
+              </span>
+            )}
             {product.roomTags?.map((tag) => (
               <span key={tag} className="mono" style={{ padding: '6px 11px', background: 'rgba(242,241,237,0.7)', border: '1px solid var(--line)', color: 'var(--ink-soft)', fontSize: 10, letterSpacing: '0.08em', borderRadius: 5 }}>
                 {tag}

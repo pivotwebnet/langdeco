@@ -16,6 +16,14 @@ public record ClientImportRow(
     string? ContactName, string? ContactRole, string? ContactCell, string? ContactPhone, string? ContactEmail,
     bool Active, string? Dni);
 
+public record ProductImportRow(
+    int RowNumber, string Name, string? ProveedorName,
+    string StockRaw, decimal CostPrice, decimal SalePrice, decimal? IvaPercent);
+
+public record ProductImportResultDto(
+    int Created, int SuppliersCreated, int ForcedInactivePriceZero, int StockCorrected,
+    List<ImportRowError> Errors);
+
 public record SupplierImportRow(
     int RowNumber,
     string CompanyOrFullName, string? FirstName, string? LastName, string? Cell, string? Phone,

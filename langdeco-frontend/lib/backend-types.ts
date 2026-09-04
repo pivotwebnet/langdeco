@@ -17,7 +17,7 @@ export interface BackendProduct {
   name: string
   categoryId: string
   categoryName: string
-  material: string
+  material: string | null
   roomTags: string[]
   price: number
   cardPrice: number | null
@@ -31,6 +31,10 @@ export interface BackendProduct {
   specs: BackendProductSpec[]
   images: string[]
   cutoutImageUrl: string | null
+  costPrice: number | null
+  ivaPercent: number | null
+  supplierId: number | null
+  supplierName: string | null
 }
 
 export type DiscountType = 'Percent' | 'Fixed'

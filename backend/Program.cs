@@ -23,6 +23,7 @@ builder.Services.AddScoped<DocumentNumberingService>();
 builder.Services.AddScoped<ReceiptPdfService>();
 builder.Services.AddScoped<ClientExcelService>();
 builder.Services.AddScoped<SupplierExcelService>();
+builder.Services.AddScoped<ProductExcelService>();
 builder.Services.AddScoped<StockService>();
 builder.Services.AddScoped<BudgetLifecycleService>();
 

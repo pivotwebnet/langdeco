@@ -7,7 +7,9 @@ public class Product
     public string CategoryId { get; set; } = string.Empty;
     public Category? Category { get; set; }
 
-    public string Material { get; set; } = string.Empty;
+    // Opcional — el alta manual la sigue pidiendo por convención, pero la importación
+    // masiva desde Excel no trae este dato y no puede bloquear la carga.
+    public string? Material { get; set; }
     public List<string> RoomTags { get; set; } = new();
 
     public decimal Price { get; set; }
@@ -15,6 +17,12 @@ public class Product
     public decimal? OriginalPrice { get; set; }
     public decimal? WholesalePrice { get; set; }
     public int Stock { get; set; }
+
+    // Datos de compra — informativos, no participan del cálculo de precio de venta.
+    public decimal? CostPrice { get; set; }
+    public decimal? IvaPercent { get; set; }
+    public int? SupplierId { get; set; }
+    public Supplier? Supplier { get; set; }
 
     // Cantidad de cuotas sin interés para el badge del sitio público — null/0 lo oculta.
     public int? Installments { get; set; }

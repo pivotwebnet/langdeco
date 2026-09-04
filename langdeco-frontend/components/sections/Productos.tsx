@@ -86,7 +86,7 @@ export function Productos({ products, categories, initialCategory, initialQuery 
         const q = normalize(searchQuery.trim())
         return products.filter(p =>
           normalize(p.name).includes(q) ||
-          normalize(p.material).includes(q) ||
+          (p.material && normalize(p.material).includes(q)) ||
           (p.note && normalize(p.note).includes(q))
         )
       })()

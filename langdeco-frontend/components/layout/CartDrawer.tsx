@@ -95,7 +95,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
                       </button>
                     </Tooltip>
                   </div>
-                  <div className="mono" style={{ marginBottom: 12 }}>{item.material}</div>
+                  {item.material && <div className="mono" style={{ marginBottom: 12 }}>{item.material}</div>}
 
                   {/* Qty + price row */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

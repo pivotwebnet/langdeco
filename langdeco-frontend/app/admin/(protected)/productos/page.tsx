@@ -1,15 +1,17 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { BackendCategory, BackendProduct } from '@/lib/backend-types'
+import type { BackendCategory, BackendProduct, BackendSupplier } from '@/lib/backend-types'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 import { Field } from '@/components/admin/Field'
+import { PriceInput } from '@/components/admin/PriceInput'
 import { formatPrice } from '@/lib/data'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
 import { BulkActionBar } from '@/components/admin/BulkActionBar'
 import { PercentAdjustDialog } from '@/components/admin/PercentAdjustDialog'
+import { CategoryAssignWizard, PENDING_CATEGORY_ID } from '@/components/admin/CategoryAssignWizard'
 
 type ProductForm = {
   id: string
@@ -25,6 +27,10 @@ type ProductForm = {
   installments: string
   note: string
   featured: boolean
+  active: boolean
+  costPrice: string
+  ivaPercent: string
+  supplierId: string
   specs: { label: string; value: string }[]
   images: string[]
   cutoutImageUrl: string
@@ -35,7 +41,8 @@ const LOW_STOCK_THRESHOLD = 3
 
 const EMPTY_FORM: ProductForm = {
   id: '', name: '', categoryId: '', material: '', roomTags: [],
-  price: '', cardPrice: '', originalPrice: '', wholesalePrice: '', stock: '0', installments: '', note: '', featured: false,
+  price: '', cardPrice: '', originalPrice: '', wholesalePrice: '', stock: '0', installments: '', note: '', featured: false, active: true,
+  costPrice: '', ivaPercent: '', supplierId: '',
   specs: [], images: [], cutoutImageUrl: '',
 }
 
@@ -71,12 +78,17 @@ export default function ProductosAdmin() {
   const toast = useAdminToast()
   const [products, setProducts] = useState<BackendProduct[]>([])
   const [categories, setCategories] = useState<BackendCategory[]>([])
+  const [suppliers, setSuppliers] = useState<BackendSupplier[]>([])
   const [filter, setFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [showInactive, setShowInactive] = useState(false)
   const [lowStockOnly, setLowStockOnly] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [importMsg, setImportMsg] = useState<string | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [showWizard, setShowWizard] = useState(false)
+  const importFileRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState<ProductForm | null>(null)
   // Se fija una sola vez al abrir el modal (create vs edit) — si se derivara en
   // cada render comparando form.id contra la lista de productos, tipear un id
@@ -94,12 +106,14 @@ export default function ProductosAdmin() {
     setLoading(true)
     setError(null)
     try {
-      const [prods, cats] = await Promise.all([
+      const [prods, cats, sups] = await Promise.all([
         api<BackendProduct[]>(`/products?includeInactive=true`),
         api<BackendCategory[]>(`/categories?includeInactive=true`),
+        api<BackendSupplier[]>(`/suppliers?includeInactive=true`),
       ])
       setProducts(prods)
       setCategories(cats)
+      setSuppliers(sups)
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -108,6 +122,38 @@ export default function ProductosAdmin() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  const pendingCategorization = products.filter((p) => p.categoryId === PENDING_CATEGORY_ID).length
+
+  const onImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError(null)
+    setImportMsg(null)
+    setImporting(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/admin/backend/products/import', { method: 'POST', body: formData })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
+      const parts = [`${data.created} productos creados`, `${data.suppliersCreated} proveedores nuevos`]
+      if (data.forcedInactivePriceZero) parts.push(`${data.forcedInactivePriceZero} inactivados por precio $0`)
+      if (data.stockCorrected) parts.push(`${data.stockCorrected} con stock corregido a 0`)
+      if (data.errors?.length) parts.push(`${data.errors.length} con error`)
+      const msg = `Importación completa: ${parts.join(', ')}.`
+      setImportMsg(msg)
+      toast.success(msg)
+      await load()
+    } catch (err) {
+      const msg = (err as Error).message
+      setError(msg)
+      toast.error(msg)
+    } finally {
+      setImporting(false)
+      if (importFileRef.current) importFileRef.current.value = ''
+    }
+  }
 
   const filtered = products.filter((p) => {
     if (!showInactive && !p.active) return false
@@ -186,11 +232,13 @@ export default function ProductosAdmin() {
   const openEdit = (p: BackendProduct) => {
     setIsNewForm(false)
     setForm({
-      id: p.id, name: p.name, categoryId: p.categoryId, material: p.material,
+      id: p.id, name: p.name, categoryId: p.categoryId, material: p.material || '',
       roomTags: [...p.roomTags], price: String(p.price), cardPrice: p.cardPrice ? String(p.cardPrice) : '',
       originalPrice: p.originalPrice ? String(p.originalPrice) : '',
       wholesalePrice: p.wholesalePrice ? String(p.wholesalePrice) : '',
-      stock: String(p.stock), installments: p.installments ? String(p.installments) : '', note: p.note || '', featured: p.featured,
+      stock: String(p.stock), installments: p.installments ? String(p.installments) : '', note: p.note || '', featured: p.featured, active: p.active,
+      costPrice: p.costPrice ? String(p.costPrice) : '', ivaPercent: p.ivaPercent ? String(p.ivaPercent) : '',
+      supplierId: p.supplierId ? String(p.supplierId) : '',
       specs: p.specs.map((s) => ({ ...s })), images: [...p.images],
       cutoutImageUrl: p.cutoutImageUrl || '',
     })
@@ -209,13 +257,16 @@ export default function ProductosAdmin() {
     try {
       const payload = {
         id: form.id, name: form.name, categoryId: form.categoryId,
-        material: form.material, roomTags: form.roomTags,
+        material: form.material || null, roomTags: form.roomTags,
         price: Number(form.price), cardPrice: form.cardPrice ? Number(form.cardPrice) : null,
         originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
         wholesalePrice: form.wholesalePrice ? Number(form.wholesalePrice) : null,
         stock: Number(form.stock), installments: form.installments ? Number(form.installments) : null, note: form.note || null,
-        featured: form.featured, specs: form.specs, images: form.images,
+        featured: form.featured, active: form.active, specs: form.specs, images: form.images,
         cutoutImageUrl: form.cutoutImageUrl || null,
+        costPrice: form.costPrice ? Number(form.costPrice) : null,
+        ivaPercent: form.ivaPercent ? Number(form.ivaPercent) : null,
+        supplierId: form.supplierId ? Number(form.supplierId) : null,
       }
 
       if (isNewForm) {
@@ -274,10 +325,22 @@ export default function ProductosAdmin() {
             {lowStockCount > 0 && <> · <span style={{ color: '#A8432A' }}>{lowStockCount} con stock bajo</span></>}
           </p>
         </div>
-        <button className="adm-btn" onClick={openCreate}>+ Añadir pieza</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {pendingCategorization > 0 && (
+            <button className="adm-btn ghost" onClick={() => setShowWizard(true)}>
+              Asignar categorías ({pendingCategorization} pendientes)
+            </button>
+          )}
+          <button className="adm-btn ghost" onClick={() => importFileRef.current?.click()} disabled={importing}>
+            {importing ? 'Importando...' : 'Importar Excel'}
+          </button>
+          <input ref={importFileRef} type="file" accept=".xlsx" onChange={onImportFile} style={{ display: 'none' }} />
+          <button className="adm-btn" onClick={openCreate}>+ Añadir pieza</button>
+        </div>
       </div>
 
       {error && <div className="adm-alert error">{error}</div>}
+      {importMsg && <div className="adm-alert success">{importMsg}</div>}
 
       <div className="adm-toolbar">
         <input
@@ -367,6 +430,7 @@ export default function ProductosAdmin() {
         <ProductFormModal
           form={form}
           categories={categories}
+          suppliers={suppliers}
           isNew={isNewForm}
           saving={saving}
           onChange={setForm}
@@ -404,13 +468,22 @@ export default function ProductosAdmin() {
           onCancel={() => setShowPercentDialog(false)}
         />
       )}
+
+      {showWizard && (
+        <CategoryAssignWizard
+          categories={categories}
+          onClose={() => setShowWizard(false)}
+          onDone={load}
+        />
+      )}
     </div>
   )
 }
 
-function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel, onSave }: {
+function ProductFormModal({ form, categories, suppliers, isNew, saving, onChange, onCancel, onSave }: {
   form: ProductForm
   categories: BackendCategory[]
+  suppliers: BackendSupplier[]
   isNew: boolean
   saving: boolean
   onChange: (f: ProductForm) => void
@@ -461,17 +534,31 @@ function ProductFormModal({ form, categories, isNew, saving, onChange, onCancel,
         <Field label="Nombre"><input className="adm-input" value={form.name} onChange={(e) => set('name', e.target.value)} maxLength={200} style={{ width: '100%' }} /></Field>
 
         <div className="adm-grid-2" style={{ marginTop: 12 }}>
-          <Field label="Material"><input className="adm-input" value={form.material} onChange={(e) => set('material', e.target.value)} maxLength={200} style={{ width: '100%' }} /></Field>
-          <Field label="Precio"><input className="adm-input" type="number" required min="0.01" step="0.01" value={form.price} onChange={(e) => set('price', e.target.value)} style={{ width: '100%' }} /></Field>
-          <Field label="Precio tarjeta (opcional)"><input className="adm-input" type="number" value={form.cardPrice} onChange={(e) => set('cardPrice', e.target.value)} style={{ width: '100%' }} /></Field>
-          <Field label="Precio tachado (opcional)"><input className="adm-input" type="number" value={form.originalPrice} onChange={(e) => set('originalPrice', e.target.value)} style={{ width: '100%' }} /></Field>
-          <Field label="Precio mayorista (opcional)"><input className="adm-input" type="number" value={form.wholesalePrice} onChange={(e) => set('wholesalePrice', e.target.value)} style={{ width: '100%' }} /></Field>
+          <Field label="Material (opcional)"><input className="adm-input" value={form.material} onChange={(e) => set('material', e.target.value)} maxLength={200} style={{ width: '100%' }} /></Field>
+          <Field label="Precio"><PriceInput value={form.price} onChange={(v) => set('price', v)} style={{ width: '100%' }} /></Field>
+          <Field label="Precio tarjeta (opcional)"><PriceInput value={form.cardPrice} onChange={(v) => set('cardPrice', v)} style={{ width: '100%' }} /></Field>
+          <Field label="Precio tachado (opcional)"><PriceInput value={form.originalPrice} onChange={(v) => set('originalPrice', v)} style={{ width: '100%' }} /></Field>
+          <Field label="Precio mayorista (opcional)"><PriceInput value={form.wholesalePrice} onChange={(v) => set('wholesalePrice', v)} style={{ width: '100%' }} /></Field>
           <Field label="Stock"><input className="adm-input" type="number" value={form.stock} onChange={(e) => set('stock', e.target.value)} style={{ width: '100%' }} /></Field>
           <Field label="Cuotas sin interés (opcional)"><input className="adm-input" type="number" min="0" value={form.installments} onChange={(e) => set('installments', e.target.value)} placeholder="ej. 3" style={{ width: '100%' }} /></Field>
+          <Field label="Costo (opcional)"><PriceInput value={form.costPrice} onChange={(v) => set('costPrice', v)} style={{ width: '100%' }} /></Field>
+          <Field label="IVA % (opcional)"><input className="adm-input" type="number" min="0" max="100" step="0.01" value={form.ivaPercent} onChange={(e) => set('ivaPercent', e.target.value)} placeholder="ej. 21" style={{ width: '100%' }} /></Field>
+          <Field label="Proveedor (opcional)">
+            <select className="adm-select" value={form.supplierId} onChange={(e) => set('supplierId', e.target.value)} style={{ width: '100%' }}>
+              <option value="">Sin proveedor</option>
+              {suppliers.map((s) => <option key={s.id} value={s.id}>{s.companyOrFullName}</option>)}
+            </select>
+          </Field>
           <Field label="Destacado">
             <label className="adm-checkbox-row" style={{ marginTop: 8 }}>
               <input type="checkbox" checked={form.featured} onChange={(e) => set('featured', e.target.checked)} />
               <span>Selección destacada</span>
+            </label>
+          </Field>
+          <Field label="Estado">
+            <label className="adm-checkbox-row" style={{ marginTop: 8 }}>
+              <input type="checkbox" checked={form.active} onChange={(e) => set('active', e.target.checked)} />
+              <span>Activo (visible en el sitio)</span>
             </label>
           </Field>
         </div>

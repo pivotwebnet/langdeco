@@ -40,18 +40,27 @@ public class AppDbContext : DbContext
             entity.HasKey(p => p.Id);
             entity.Property(p => p.Id).HasMaxLength(80);
             entity.Property(p => p.Name).IsRequired().HasMaxLength(200);
-            entity.Property(p => p.Material).IsRequired().HasMaxLength(200);
+            entity.Property(p => p.Material).HasMaxLength(200);
             // SQL específico de Postgres — se omite en otros proveedores (p. ej. SQLite en tests).
             if (Database.IsNpgsql())
                 entity.Property(p => p.RoomTags).HasDefaultValueSql("ARRAY[]::text[]");
             entity.Property(p => p.Price).HasPrecision(12, 2);
             entity.Property(p => p.OriginalPrice).HasPrecision(12, 2);
             entity.Property(p => p.WholesalePrice).HasPrecision(12, 2);
+            entity.Property(p => p.CostPrice).HasPrecision(12, 2);
+            entity.Property(p => p.IvaPercent).HasPrecision(5, 2);
 
             entity.HasOne(p => p.Category)
                 .WithMany(c => c.Products)
                 .HasForeignKey(p => p.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Referencia informativa al proveedor — nunca debe bloquear ni arrastrar el
+            // borrado de un Supplier, por eso SetNull en vez de Restrict/Cascade.
+            entity.HasOne(p => p.Supplier)
+                .WithMany()
+                .HasForeignKey(p => p.SupplierId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             entity.HasMany(p => p.Specs)
                 .WithOne(s => s.Product)

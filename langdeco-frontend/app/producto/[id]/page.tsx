@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   const product = toProduct(backendProduct)
   const title = `${product.name} — LasLangDeco`
-  const description = product.note || `${product.name} · ${product.material} · ${product.price}`
+  const description = product.note || [product.name, product.material, product.price].filter(Boolean).join(' · ')
   const images = product.imageUrl ? [{ url: product.imageUrl }] : undefined
 
   return {
