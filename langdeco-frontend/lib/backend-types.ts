@@ -14,6 +14,7 @@ export interface BackendProductSpec {
 
 export interface BackendProduct {
   id: string
+  code: string | null
   name: string
   categoryId: string
   categoryName: string
@@ -228,4 +229,48 @@ export interface BudgetsSummary {
   convertedCount: number
   conversionRatePercent: number
   expiringSoon: ExpiringBudget[]
+}
+
+export type CompraStatus = 'Pending' | 'Received' | 'Cancelled'
+export type GastoCategory = 'Alquiler' | 'Servicios' | 'Sueldos' | 'Impuestos' | 'Mantenimiento' | 'Insumos' | 'Otro'
+
+export interface BackendCompraItem {
+  productId: string
+  productName: string
+  quantity: number
+  unitCost: number
+}
+
+export interface BackendCompra {
+  id: number
+  number: number
+  supplierId: number
+  supplierName: string
+  status: CompraStatus
+  paymentMethod: PaymentMethod
+  subtotal: number
+  discountType: DiscountType
+  discountPercent: number
+  discountFixedAmount: number
+  discountAmount: number
+  taxRatePercent: number
+  taxAmount: number
+  total: number
+  note: string | null
+  createdAt: string
+  receivedAt: string | null
+  items: BackendCompraItem[]
+}
+
+export interface BackendGasto {
+  id: number
+  number: number
+  date: string
+  category: GastoCategory
+  description: string
+  amount: number
+  paymentMethod: PaymentMethod
+  supplierId: number | null
+  supplierName: string | null
+  createdAt: string
 }

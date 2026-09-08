@@ -15,6 +15,9 @@ public class AppDbContext : DbContext
     public DbSet<SaleItem> SaleItems => Set<SaleItem>();
     public DbSet<Budget> Budgets => Set<Budget>();
     public DbSet<BudgetItem> BudgetItems => Set<BudgetItem>();
+    public DbSet<Compra> Compras => Set<Compra>();
+    public DbSet<CompraItem> CompraItems => Set<CompraItem>();
+    public DbSet<Gasto> Gastos => Set<Gasto>();
     public DbSet<DocumentCounter> DocumentCounters => Set<DocumentCounter>();
     public DbSet<CompanySettings> CompanySettings => Set<CompanySettings>();
     public DbSet<Client> Clients => Set<Client>();
@@ -39,6 +42,8 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(p => p.Id);
             entity.Property(p => p.Id).HasMaxLength(80);
+            entity.Property(p => p.Code).HasMaxLength(60);
+            entity.HasIndex(p => p.Code).IsUnique();
             entity.Property(p => p.Name).IsRequired().HasMaxLength(200);
             entity.Property(p => p.Material).HasMaxLength(200);
             // SQL específico de Postgres — se omite en otros proveedores (p. ej. SQLite en tests).
@@ -176,6 +181,63 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(i => i.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Compra>(entity =>
+        {
+            entity.Property(c => c.SupplierName).IsRequired().HasMaxLength(200);
+            entity.Property(c => c.Subtotal).HasPrecision(12, 2);
+            entity.Property(c => c.DiscountType).HasConversion<string>().HasMaxLength(20);
+            entity.Property(c => c.DiscountPercent).HasPrecision(5, 2);
+            entity.Property(c => c.DiscountFixedAmount).HasPrecision(12, 2);
+            entity.Property(c => c.DiscountAmount).HasPrecision(12, 2);
+            entity.Property(c => c.TaxRatePercent).HasPrecision(5, 2);
+            entity.Property(c => c.TaxAmount).HasPrecision(12, 2);
+            entity.Property(c => c.Total).HasPrecision(12, 2);
+            entity.Property(c => c.Status).HasConversion<string>().HasMaxLength(20);
+            entity.Property(c => c.PaymentMethod).HasConversion<string>().HasMaxLength(20);
+            entity.Property(c => c.Note).HasMaxLength(2000);
+
+            entity.HasIndex(c => c.Number).IsUnique();
+            entity.HasIndex(c => c.Status);
+            entity.HasIndex(c => c.CreatedAt);
+
+            entity.HasOne(c => c.Supplier)
+                .WithMany()
+                .HasForeignKey(c => c.SupplierId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasMany(c => c.Items)
+                .WithOne(i => i.Compra)
+                .HasForeignKey(i => i.CompraId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CompraItem>(entity =>
+        {
+            entity.Property(i => i.UnitCost).HasPrecision(12, 2);
+
+            entity.HasOne(i => i.Product)
+                .WithMany()
+                .HasForeignKey(i => i.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Gasto>(entity =>
+        {
+            entity.Property(g => g.Category).HasConversion<string>().HasMaxLength(20);
+            entity.Property(g => g.Description).IsRequired().HasMaxLength(300);
+            entity.Property(g => g.Amount).HasPrecision(12, 2);
+            entity.Property(g => g.PaymentMethod).HasConversion<string>().HasMaxLength(20);
+
+            entity.HasIndex(g => g.Number).IsUnique();
+            entity.HasIndex(g => g.Date);
+            entity.HasIndex(g => g.Category);
+
+            entity.HasOne(g => g.Supplier)
+                .WithMany()
+                .HasForeignKey(g => g.SupplierId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<DocumentCounter>(entity =>

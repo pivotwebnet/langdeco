@@ -86,7 +86,8 @@ public class ProductsController : ControllerBase
 
         var product = new Product
         {
-            Id = input.Id,
+            Id = await GenerateUniqueIdAsync(input.Name),
+            Code = NormalizeCode(input.Code),
             Name = input.Name,
             CategoryId = input.CategoryId,
             Material = input.Material,
@@ -124,9 +125,10 @@ public class ProductsController : ControllerBase
 
         if (product is null) return NotFound();
 
-        var error = await ValidateInput(input, isCreate: false);
+        var error = await ValidateInput(input, isCreate: false, currentId: id);
         if (error is not null) return BadRequest(new { error });
 
+        product.Code = NormalizeCode(input.Code);
         product.Name = input.Name;
         product.CategoryId = input.CategoryId;
         product.Material = input.Material;
@@ -380,18 +382,22 @@ public class ProductsController : ControllerBase
         return NoContent();
     }
 
-    private async Task<string?> ValidateInput(ProductUpsertDto input, bool isCreate)
+    private async Task<string?> ValidateInput(ProductUpsertDto input, bool isCreate, string? currentId = null)
     {
-        if (isCreate)
-        {
-            if (!Validation.IsValidSlug(input.Id))
-                return "El id debe ser un slug (minúsculas-números-guiones)";
-            if (await _db.Products.AnyAsync(p => p.Id == input.Id))
-                return "Ya existe un producto con ese id";
-        }
-
         if (string.IsNullOrWhiteSpace(input.Name))
             return "El nombre es obligatorio";
+
+        var code = NormalizeCode(input.Code);
+        if (code is not null)
+        {
+            if (code.Length > 60)
+                return "El código no puede superar los 60 caracteres";
+            var codeTaken = isCreate
+                ? await _db.Products.AnyAsync(p => p.Code == code)
+                : await _db.Products.AnyAsync(p => p.Code == code && p.Id != currentId);
+            if (codeTaken)
+                return "Ya existe un producto con ese código";
+        }
 
         if (input.Name.Length > 200)
             return "El nombre no puede superar los 200 caracteres";
@@ -429,6 +435,22 @@ public class ProductsController : ControllerBase
         return null;
     }
 
+    private static string? NormalizeCode(string? code) =>
+        string.IsNullOrWhiteSpace(code) ? null : code.Trim();
+
+    // El Id ya no lo elige el admin (ver Feature "Código") — se deriva del nombre, y si
+    // colisiona con uno existente se desambigua agregando un sufijo numérico, mismo
+    // patrón que ya usa Import (línea ~219) para el alta masiva por Excel.
+    private async Task<string> GenerateUniqueIdAsync(string name)
+    {
+        var slug = Validation.Slugify(name);
+        var candidate = slug;
+        var suffix = 2;
+        while (await _db.Products.AnyAsync(p => p.Id == candidate))
+            candidate = $"{slug}-{suffix++}";
+        return candidate;
+    }
+
     private static List<string> NormalizeRoomTags(List<string>? tags) =>
         (tags ?? new())
             .Select(t => t.Trim())
@@ -459,7 +481,7 @@ public class ProductsController : ControllerBase
     }
 
     private static ProductDto ToDto(Product p) => new(
-        p.Id, p.Name, p.CategoryId, p.Category?.Name ?? p.CategoryId,
+        p.Id, p.Code, p.Name, p.CategoryId, p.Category?.Name ?? p.CategoryId,
         p.Material, p.RoomTags, p.Price, p.CardPrice, p.OriginalPrice, p.WholesalePrice, p.Stock, p.Installments,
         p.Note, p.Active, p.Featured,
         p.Specs.OrderBy(s => s.Order).Select(s => new ProductSpecDto(s.Label, s.Value)).ToList(),

@@ -15,6 +15,7 @@ import { CategoryAssignWizard, PENDING_CATEGORY_ID } from '@/components/admin/Ca
 
 type ProductForm = {
   id: string
+  code: string
   name: string
   categoryId: string
   material: string
@@ -40,7 +41,7 @@ type ProductForm = {
 const LOW_STOCK_THRESHOLD = 3
 
 const EMPTY_FORM: ProductForm = {
-  id: '', name: '', categoryId: '', material: '', roomTags: [],
+  id: '', code: '', name: '', categoryId: '', material: '', roomTags: [],
   price: '', cardPrice: '', originalPrice: '', wholesalePrice: '', stock: '0', installments: '', note: '', featured: false, active: true,
   costPrice: '', ivaPercent: '', supplierId: '',
   specs: [], images: [], cutoutImageUrl: '',
@@ -48,12 +49,8 @@ const EMPTY_FORM: ProductForm = {
 
 const ROOM_TAG_OPTIONS = ['Living', 'Comedor', 'Dormitorio', 'Cocina', 'Baño', 'Exterior', 'Oficina', 'Entrada']
 const MAX_ROOM_TAGS = 6
-const SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/
 
-function validateProductForm(form: ProductForm, isNew: boolean): string | null {
-  if (isNew && !SLUG_REGEX.test(form.id)) {
-    return 'El id debe ser un slug (minúsculas-números-guiones)'
-  }
+function validateProductForm(form: ProductForm): string | null {
   if (form.name.length > 200) return 'El nombre no puede superar los 200 caracteres'
   if (form.material.length > 200) return 'El material no puede superar los 200 caracteres'
 
@@ -160,7 +157,7 @@ export default function ProductosAdmin() {
     if (!showInactive && !p.active) return false
     if (filter !== 'all' && p.categoryId !== filter) return false
     if (supplierFilter !== 'all' && String(p.supplierId ?? '') !== supplierFilter) return false
-    if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false
+    if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.code || '').toLowerCase().includes(search.toLowerCase())) return false
     if (lowStockOnly && !(p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD)) return false
     return true
   })
@@ -234,7 +231,7 @@ export default function ProductosAdmin() {
   const openEdit = (p: BackendProduct) => {
     setIsNewForm(false)
     setForm({
-      id: p.id, name: p.name, categoryId: p.categoryId, material: p.material || '',
+      id: p.id, code: p.code || '', name: p.name, categoryId: p.categoryId, material: p.material || '',
       roomTags: [...p.roomTags], price: String(p.price), cardPrice: p.cardPrice ? String(p.cardPrice) : '',
       originalPrice: p.originalPrice ? String(p.originalPrice) : '',
       wholesalePrice: p.wholesalePrice ? String(p.wholesalePrice) : '',
@@ -248,7 +245,7 @@ export default function ProductosAdmin() {
 
   const onSave = async () => {
     if (!form) return
-    const validationError = validateProductForm(form, isNewForm)
+    const validationError = validateProductForm(form)
     if (validationError) {
       setError(validationError)
       toast.error(validationError)
@@ -258,7 +255,7 @@ export default function ProductosAdmin() {
     setError(null)
     try {
       const payload = {
-        id: form.id, name: form.name, categoryId: form.categoryId,
+        code: form.code.trim() || null, name: form.name, categoryId: form.categoryId,
         material: form.material || null, roomTags: form.roomTags,
         price: Number(form.price), cardPrice: form.cardPrice ? Number(form.cardPrice) : null,
         originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
@@ -386,6 +383,7 @@ export default function ProductosAdmin() {
                 <input type="checkbox" checked={allFilteredSelected} onChange={toggleSelectAll} aria-label="Seleccionar todo" />
               </th>
               <th>Nombre</th>
+              <th>Código</th>
               <th>Categoría</th>
               <th>Proveedor</th>
               <th>Precio</th>
@@ -397,7 +395,7 @@ export default function ProductosAdmin() {
           </thead>
           <tbody>
             {loading && (
-              <TableSkeletonRows columns={9} />
+              <TableSkeletonRows columns={10} />
             )}
             {!loading && filtered.map((p) => (
               <tr key={p.id} className={p.active ? '' : 'inactive'}>
@@ -407,6 +405,7 @@ export default function ProductosAdmin() {
                 <td>
                   <div className="adm-table-name">{p.name}{p.featured && ' ★'}</div>
                 </td>
+                <td className="mono">{p.code || <span style={{ color: 'var(--ink-soft)' }}>—</span>}</td>
                 <td>{p.categoryName}</td>
                 <td>{p.supplierName || <span style={{ color: 'var(--ink-soft)' }}>—</span>}</td>
                 <td className="mono">{formatPrice(p.price)}</td>
@@ -531,8 +530,8 @@ function ProductFormModal({ form, categories, suppliers, isNew, saving, onChange
         <h2 className="adm-modal-title">{isNew ? 'Nueva pieza' : 'Editar pieza'}</h2>
 
         <div className="adm-grid-2" style={{ marginBottom: 12 }}>
-          <Field label="Id (slug)">
-            <input className="adm-input" value={form.id} onChange={(e) => set('id', e.target.value)} disabled={!isNew} placeholder="mesa-comedor" style={{ width: '100%' }} />
+          <Field label="Código (opcional)">
+            <input className="adm-input" value={form.code} onChange={(e) => set('code', e.target.value)} placeholder="ej. SOF-001" style={{ width: '100%' }} />
           </Field>
           <Field label="Categoría">
             <select className="adm-select" value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)} style={{ width: '100%' }}>

@@ -15,6 +15,10 @@ const NAV = [
     { href: '/admin/productos', label: 'Productos', icon: '▤' },
     { href: '/admin/categorias', label: 'Categorías', icon: '◫' },
   ] },
+  { group: 'Egresos', items: [
+    { href: '/admin/egresos/compras', label: 'Compras', icon: '⇩' },
+    { href: '/admin/egresos/gastos', label: 'Gastos', icon: '−' },
+  ] },
   { group: 'Contactos', items: [
     { href: '/admin/base-datos/clientes', label: 'Clientes', icon: '◈' },
     { href: '/admin/base-datos/proveedores', label: 'Proveedores', icon: '◇' },

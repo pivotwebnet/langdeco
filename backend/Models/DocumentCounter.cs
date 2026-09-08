@@ -3,7 +3,9 @@ namespace backend.Models;
 public enum DocumentType
 {
     Sale,
-    Budget
+    Budget,
+    Compra,
+    Gasto
 }
 
 public class DocumentCounter

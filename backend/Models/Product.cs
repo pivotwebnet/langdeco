@@ -3,6 +3,10 @@ namespace backend.Models;
 public class Product
 {
     public string Id { get; set; } = string.Empty;
+    // A diferencia de Id (slug interno, autogenerado, nunca lo edita el admin), este es
+    // el código/SKU que el admin elige libremente, sin restricción de formato. Único si
+    // se completa (ver índice en AppDbContext), pero puede quedar vacío.
+    public string? Code { get; set; }
     public string Name { get; set; } = string.Empty;
     public string CategoryId { get; set; } = string.Empty;
     public Category? Category { get; set; }

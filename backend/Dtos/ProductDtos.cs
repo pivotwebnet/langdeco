@@ -5,15 +5,16 @@ public record ProductSpecDto(string Label, string Value);
 public record ProductSpecInput(string Label, string Value);
 
 public record ProductDto(
-    string Id, string Name, string CategoryId, string CategoryName,
+    string Id, string? Code, string Name, string CategoryId, string CategoryName,
     string? Material, List<string> RoomTags,
     decimal Price, decimal? CardPrice, decimal? OriginalPrice, decimal? WholesalePrice, int Stock, int? Installments,
     string? Note, bool Active, bool Featured,
     List<ProductSpecDto> Specs, List<string> Images, string? CutoutImageUrl,
     decimal? CostPrice, decimal? IvaPercent, int? SupplierId, string? SupplierName);
 
+// Id ya no viaja acá: lo genera el servidor a partir del Name (ver ProductsController.Create).
 public record ProductUpsertDto(
-    string Id, string Name, string CategoryId, string? Material, List<string> RoomTags,
+    string Name, string? Code, string CategoryId, string? Material, List<string> RoomTags,
     decimal Price, decimal? CardPrice, decimal? OriginalPrice, decimal? WholesalePrice, int Stock, int? Installments, string? Note, bool Featured,
     List<ProductSpecInput> Specs, List<string> Images, string? CutoutImageUrl, bool Active = true,
     decimal? CostPrice = null, decimal? IvaPercent = null, int? SupplierId = null);
