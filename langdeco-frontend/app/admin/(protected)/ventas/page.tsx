@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { BackendClient, BackendProduct, BackendSale, ClientType, PagedResult, PaymentMethod, SaleStatus } from '@/lib/backend-types'
 import { ReceiptView } from '@/components/admin/ReceiptView'
 import { useEscapeKey } from '@/lib/useEscapeKey'
@@ -36,6 +36,9 @@ export default function VentasAdmin() {
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [receiptSale, setReceiptSale] = useState<BackendSale | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importMsg, setImportMsg] = useState<string | null>(null)
+  const importFileRef = useRef<HTMLInputElement>(null)
 
   const statusQs = statusFilter !== 'all' ? `&status=${statusFilter}` : ''
 
@@ -87,6 +90,36 @@ export default function VentasAdmin() {
     }
   }
 
+  const onImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError(null)
+    setImportMsg(null)
+    setImporting(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/admin/backend/sales/import', { method: 'POST', body: formData })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
+      const parts = [`${data.created} ventas importadas`]
+      if (data.productsCreated) parts.push(`${data.productsCreated} productos nuevos (sin categorizar)`)
+      if (data.duplicatesSkipped) parts.push(`${data.duplicatesSkipped} ya existían y se omitieron`)
+      if (data.errors?.length) parts.push(`${data.errors.length} con error`)
+      const msg = `Importación completa: ${parts.join(', ')}.`
+      setImportMsg(msg)
+      toast.success(msg)
+      await load()
+    } catch (err) {
+      const msg = (err as Error).message
+      setError(msg)
+      toast.error(msg)
+    } finally {
+      setImporting(false)
+      if (importFileRef.current) importFileRef.current.value = ''
+    }
+  }
+
   return (
     <div>
       <div className="adm-page-head">
@@ -94,10 +127,17 @@ export default function VentasAdmin() {
           <h1 className="adm-title">Ventas</h1>
           <p className="adm-eyebrow">{sales.length} de {total} ventas</p>
         </div>
-        <button className="adm-btn" onClick={() => setShowForm(true)}>+ Nueva venta manual</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="adm-btn ghost" onClick={() => importFileRef.current?.click()} disabled={importing}>
+            {importing ? 'Importando...' : 'Importar Excel'}
+          </button>
+          <input ref={importFileRef} type="file" accept=".xlsx" onChange={onImportFile} style={{ display: 'none' }} />
+          <button className="adm-btn" onClick={() => setShowForm(true)}>+ Nueva venta manual</button>
+        </div>
       </div>
 
       {error && <div className="adm-alert error">{error}</div>}
+      {importMsg && <div className="adm-alert success">{importMsg}</div>}
 
       <div className="adm-toolbar">
         {(['all', 'Pending', 'Paid', 'Cancelled'] as const).map((s) => (

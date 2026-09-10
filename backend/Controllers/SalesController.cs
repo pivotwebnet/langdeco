@@ -25,16 +25,183 @@ public class SalesController : ControllerBase
     private readonly ReceiptPdfService _pdf;
     private readonly StockService _stock;
     private readonly BudgetLifecycleService _lifecycle;
+    private readonly SaleExcelService _excel;
 
     public SalesController(
         AppDbContext db, DocumentNumberingService numbering, ReceiptPdfService pdf,
-        StockService stock, BudgetLifecycleService lifecycle)
+        StockService stock, BudgetLifecycleService lifecycle, SaleExcelService excel)
     {
         _db = db;
         _numbering = numbering;
         _pdf = pdf;
         _stock = stock;
         _lifecycle = lifecycle;
+        _excel = excel;
+    }
+
+    // Importa el "Listado de Ventas" exportado del sistema anterior — ver SaleExcelService para
+    // el formato. A diferencia de Create(), esto NO pasa por BuildItemsAsync: son ventas que ya
+    // ocurrieron, así que no se descuenta stock (el stock actual del catálogo ya es el real, y
+    // restarlo de nuevo lo duplicaría) y el Status/Number se toman tal cual del Excel en vez de
+    // calcularse. El Number original del sistema viejo se conserva (evita perder la referencia
+    // que el cliente ya usa en sus propios registros) y al final se avanza el contador de
+    // numeración de Sale para que las ventas nuevas no choquen con los números importados.
+    [HttpPost("import")]
+    [Consumes("multipart/form-data")]
+    [RequireAdminKey]
+    public async Task<ActionResult<SaleImportResultDto>> Import(IFormFile file)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { error = "Archivo vacío" });
+
+        if (!await _db.Categories.AnyAsync(c => c.Id == ProductsController.PendingCategoryId))
+            return BadRequest(new { error = "Falta la categoría 'Sin categoría' — faltan aplicar migraciones" });
+
+        List<SaleImportRow> rows;
+        try
+        {
+            using var stream = file.OpenReadStream();
+            rows = _excel.ParseImport(stream);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+
+        var existingNumbers = (await _db.Sales.Select(s => s.Number).ToListAsync()).ToHashSet();
+        var existingProductIds = (await _db.Products.Select(p => p.Id).ToListAsync()).ToHashSet();
+
+        var productNameLookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var p in await _db.Products.Select(p => new { p.Id, p.Name }).ToListAsync())
+            productNameLookup.TryAdd(p.Name.Trim(), p.Id);
+
+        var errors = new List<ImportRowError>();
+        var created = 0;
+        var duplicatesSkipped = 0;
+        var productsCreated = 0;
+        var maxNumber = 0;
+
+        await using var tx = await _db.Database.BeginTransactionAsync();
+
+        foreach (var row in rows)
+        {
+            if (existingNumbers.Contains(row.OriginalNumber))
+            {
+                duplicatesSkipped++;
+                continue;
+            }
+
+            if (row.ProductNames.Count == 0)
+            {
+                errors.Add(new ImportRowError(row.RowNumber, "La venta no tiene productos listados"));
+                continue;
+            }
+
+            var lineItems = new List<(string ProductId, string Name)>();
+            foreach (var name in row.ProductNames)
+            {
+                if (!productNameLookup.TryGetValue(name, out var productId))
+                {
+                    var slug = Validation.Slugify(name);
+                    var candidate = slug;
+                    var suffix = 2;
+                    while (!existingProductIds.Add(candidate))
+                        candidate = $"{slug}-{suffix++}";
+
+                    _db.Products.Add(new Product
+                    {
+                        Id = candidate,
+                        Name = name,
+                        CategoryId = ProductsController.PendingCategoryId,
+                        Price = 1m,
+                        Stock = 0,
+                        Active = false,
+                        Note = "Creado automáticamente al importar ventas — revisar precio, categoría y stock",
+                    });
+                    productNameLookup[name] = candidate;
+                    productId = candidate;
+                    productsCreated++;
+                }
+
+                lineItems.Add((productId, name));
+            }
+
+            // No hay precio ni cantidad por línea en el Excel de origen — se reparte el subtotal
+            // (antes de descuento, igual que en una venta armada a mano) en partes iguales entre
+            // los productos listados, con el resto de redondeo en el último ítem para que la
+            // suma cierre exacto contra el subtotal real de la venta.
+            var count = lineItems.Count;
+            var baseShare = Math.Round(row.SubtotalBeforeDiscount / count, 2, MidpointRounding.AwayFromZero);
+            var items = new List<SaleItem>();
+            decimal allocated = 0;
+            for (var i = 0; i < count; i++)
+            {
+                var (productId, name) = lineItems[i];
+                var share = i == count - 1 ? row.SubtotalBeforeDiscount - allocated : baseShare;
+                allocated += share;
+                items.Add(new SaleItem
+                {
+                    ProductId = productId,
+                    ProductName = name,
+                    Quantity = 1,
+                    UnitPrice = share,
+                    PriceType = ClientType.Retail,
+                });
+            }
+
+            _db.Sales.Add(new Sale
+            {
+                Number = row.OriginalNumber,
+                ClientId = null,
+                Customer = new CustomerInfo
+                {
+                    Name = row.ClientName,
+                    Contact = row.Phone ?? row.Cell,
+                    Address = row.Address,
+                },
+                ClientType = ClientType.Retail,
+                Status = row.Status,
+                PaymentMethod = MapPaymentMethod(row.PaymentMethodRaw),
+                Subtotal = row.SubtotalBeforeDiscount,
+                DiscountType = DiscountType.Fixed,
+                DiscountFixedAmount = row.DiscountAmount,
+                DiscountAmount = row.DiscountAmount,
+                TaxRatePercent = 0,
+                TaxAmount = 0,
+                Total = row.Total,
+                CreatedAt = DateTime.SpecifyKind(row.Date, DateTimeKind.Utc),
+                Items = items,
+            });
+
+            existingNumbers.Add(row.OriginalNumber);
+            maxNumber = Math.Max(maxNumber, row.OriginalNumber);
+            created++;
+        }
+
+        await _db.SaveChangesAsync();
+
+        if (maxNumber > 0)
+        {
+            await _db.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE \"DocumentCounters\" SET \"LastNumber\" = GREATEST(\"LastNumber\", {maxNumber}) WHERE \"Type\" = 'Sale'");
+        }
+
+        await tx.CommitAsync();
+
+        return Ok(new SaleImportResultDto(created, duplicatesSkipped, productsCreated, errors));
+    }
+
+    private static PaymentMethod MapPaymentMethod(string? raw)
+    {
+        var first = (raw ?? "").Split('-')[0].Trim();
+        if (first.Contains("Banco", StringComparison.OrdinalIgnoreCase) ||
+            first.Contains("Transferencia", StringComparison.OrdinalIgnoreCase) ||
+            first.Contains("PYME", StringComparison.OrdinalIgnoreCase))
+            return PaymentMethod.Transfer;
+        if (first.Contains("Caja", StringComparison.OrdinalIgnoreCase) ||
+            first.Contains("Efectivo", StringComparison.OrdinalIgnoreCase))
+            return PaymentMethod.Cash;
+        return PaymentMethod.Other;
     }
 
     [HttpPost]

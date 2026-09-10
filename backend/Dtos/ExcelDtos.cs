@@ -24,6 +24,15 @@ public record ProductImportResultDto(
     int Created, int SuppliersCreated, int ForcedInactivePriceZero, int StockCorrected,
     List<ImportRowError> Errors);
 
+public record SaleImportRow(
+    int RowNumber, int OriginalNumber, DateTime Date, string ClientName,
+    string? Phone, string? Cell, string? Address,
+    decimal SubtotalBeforeDiscount, decimal DiscountAmount, decimal Total,
+    string? PaymentMethodRaw, backend.Models.SaleStatus Status, List<string> ProductNames);
+
+public record SaleImportResultDto(
+    int Created, int DuplicatesSkipped, int ProductsCreated, List<ImportRowError> Errors);
+
 public record SupplierImportRow(
     int RowNumber,
     string CompanyOrFullName, string? FirstName, string? LastName, string? Cell, string? Phone,
