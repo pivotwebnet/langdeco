@@ -11,6 +11,7 @@ import { ProductPicker } from '@/components/admin/ProductPicker'
 import { formatPrice } from '@/lib/data'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
+import { DateRangeFilter, useDateRangeFilter } from '@/components/admin/DateRangeFilter'
 
 /** Precio unitario según el tipo de cliente — mayorista si el producto tiene precio mayorista cargado, si no cae a minorista. */
 function resolvePrice(product: BackendProduct | undefined, clientType: ClientType): number {
@@ -39,13 +40,17 @@ export default function PresupuestosAdmin() {
   const [receiptSale, setReceiptSale] = useState<BackendSale | null>(null)
   const [convertingBudget, setConvertingBudget] = useState<BackendBudget | null>(null)
 
+  const range = useDateRangeFilter('all')
+
   const statusQs = statusFilter !== 'all' ? `&status=${statusFilter}` : ''
+  const rangeQs = range.queryString ? `&${range.queryString}` : ''
 
   const load = useCallback(async () => {
+    if (!range.ready) return
     setLoading(true)
     setError(null)
     try {
-      const result = await api<PagedResult<BackendBudget>>(`/budgets?page=1&pageSize=${PAGE_SIZE}${statusQs}`)
+      const result = await api<PagedResult<BackendBudget>>(`/budgets?page=1&pageSize=${PAGE_SIZE}${statusQs}${rangeQs}`)
       setBudgets(result.items)
       setTotal(result.total)
       setPage(1)
@@ -54,13 +59,13 @@ export default function PresupuestosAdmin() {
     } finally {
       setLoading(false)
     }
-  }, [statusQs])
+  }, [statusQs, rangeQs, range.ready])
 
   const loadMore = async () => {
     setLoadingMore(true)
     try {
       const nextPage = page + 1
-      const result = await api<PagedResult<BackendBudget>>(`/budgets?page=${nextPage}&pageSize=${PAGE_SIZE}${statusQs}`)
+      const result = await api<PagedResult<BackendBudget>>(`/budgets?page=${nextPage}&pageSize=${PAGE_SIZE}${statusQs}${rangeQs}`)
       setBudgets((prev) => [...prev, ...result.items])
       setPage(nextPage)
     } catch (e) {
@@ -111,6 +116,12 @@ export default function PresupuestosAdmin() {
             {s === 'all' ? 'Todos' : STATUS_LABEL[s]}
           </button>
         ))}
+        <span style={{ width: 1, alignSelf: 'stretch', background: 'var(--adm-border)' }} />
+        <DateRangeFilter
+          preset={range.preset} setPreset={range.setPreset}
+          customFrom={range.customFrom} setCustomFrom={range.setCustomFrom}
+          customTo={range.customTo} setCustomTo={range.setCustomTo}
+        />
       </div>
 
       <div className="adm-card adm-table-wrap">

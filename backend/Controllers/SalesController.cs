@@ -488,12 +488,6 @@ public class SalesController : ControllerBase
             .Take(10)
             .ToList();
 
-        var lowStock = await _db.Products
-            .Where(p => p.Active && p.Stock <= 3)
-            .OrderBy(p => p.Stock)
-            .Select(p => new LowStockDto(p.Id, p.Name, p.Stock))
-            .ToListAsync();
-
         var monthlyRevenue = paidSales
             .GroupBy(s => new DateTime(s.CreatedAt.Year, s.CreatedAt.Month, 1))
             .OrderBy(g => g.Key)
@@ -520,7 +514,7 @@ public class SalesController : ControllerBase
         }
 
         return Ok(new SalesSummaryDto(
-            revenue, averageTicket, paidSales.Count, retailRevenue, wholesaleRevenue, ranking, lowStock,
+            revenue, averageTicket, paidSales.Count, retailRevenue, wholesaleRevenue, ranking,
             monthlyRevenue, previousPeriodRevenue, revenueChangePercent));
     }
 

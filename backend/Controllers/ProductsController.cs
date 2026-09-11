@@ -61,6 +61,22 @@ public class ProductsController : ControllerBase
         return Ok(products.Select(ToDto));
     }
 
+    // Paginado aparte del listado general porque puede haber cientos de productos con stock
+    // bajo (importaciones viejas en $0/stock 0 cuentan) — mandarlos todos de una en el summary
+    // del dashboard era un payload innecesariamente pesado.
+    [HttpGet("low-stock")]
+    [RequireAdminKey]
+    public async Task<ActionResult<PagedResult<LowStockDto>>> LowStock([FromQuery] int page = 1, [FromQuery] int? pageSize = null)
+    {
+        var query = _db.Products
+            .Where(p => p.Active && p.Stock <= 3)
+            .OrderBy(p => p.Stock)
+            .ThenBy(p => p.Name)
+            .Select(p => new LowStockDto(p.Id, p.Name, p.Stock));
+
+        return Ok(await Paging.ApplyAsync(query, page, pageSize ?? 10));
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<ProductDto>> GetById(string id)
     {

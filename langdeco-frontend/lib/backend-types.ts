@@ -191,7 +191,6 @@ export interface SalesSummary {
   retailRevenue: number
   wholesaleRevenue: number
   ranking: ProductRanking[]
-  lowStock: LowStockProduct[]
   monthlyRevenue: MonthlyRevenue[]
   previousPeriodRevenue: number | null
   revenueChangePercent: number | null

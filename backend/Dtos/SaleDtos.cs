@@ -40,6 +40,6 @@ public record MonthlyRevenueDto(string Month, decimal Revenue, int SalesCount);
 public record SalesSummaryDto(
     decimal Revenue, decimal AverageTicket, int SalesCount,
     decimal RetailRevenue, decimal WholesaleRevenue,
-    List<ProductRankingDto> Ranking, List<LowStockDto> LowStock,
+    List<ProductRankingDto> Ranking,
     List<MonthlyRevenueDto> MonthlyRevenue,
     decimal? PreviousPeriodRevenue, decimal? RevenueChangePercent);

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import type { BudgetsSummary, SalesSummary } from '@/lib/backend-types'
+import { useState, useEffect, useCallback } from 'react'
+import type { BudgetsSummary, LowStockProduct, PagedResult, SalesSummary } from '@/lib/backend-types'
 import MonthlyRevenueChart from '@/components/admin/MonthlyRevenueChart'
 import { adminApi as api } from '@/lib/admin/api'
 import { formatPrice } from '@/lib/data'
@@ -22,6 +22,13 @@ export default function AdminDashboard() {
   const [preset, setPreset] = useState<RangePreset>(12)
   const [customFrom, setCustomFrom] = useState('')
   const [customTo, setCustomTo] = useState('')
+
+  const LOW_STOCK_PAGE_SIZE = 10
+  const [lowStock, setLowStock] = useState<LowStockProduct[]>([])
+  const [lowStockTotal, setLowStockTotal] = useState(0)
+  const [lowStockPage, setLowStockPage] = useState(1)
+  const [lowStockLoading, setLowStockLoading] = useState(true)
+  const [lowStockError, setLowStockError] = useState<string | null>(null)
 
   useEffect(() => {
     let from: string | null = null
@@ -54,6 +61,23 @@ export default function AdminDashboard() {
       .then(setBudgetsSummary)
       .catch((e) => setBudgetsSummaryError((e as Error).message))
   }, [])
+
+  const loadLowStock = useCallback((page: number) => {
+    setLowStockLoading(true)
+    setLowStockError(null)
+    api<PagedResult<LowStockProduct>>(`/products/low-stock?page=${page}&pageSize=${LOW_STOCK_PAGE_SIZE}`)
+      .then((result) => {
+        setLowStock(result.items)
+        setLowStockTotal(result.total)
+        setLowStockPage(result.page)
+      })
+      .catch((e) => setLowStockError((e as Error).message))
+      .finally(() => setLowStockLoading(false))
+  }, [])
+
+  useEffect(() => { loadLowStock(1) }, [loadLowStock])
+
+  const lowStockLastPage = Math.max(1, Math.ceil(lowStockTotal / LOW_STOCK_PAGE_SIZE))
 
   const revenueChange = summary?.revenueChangePercent ?? null
   const deltaDirection = revenueChange === null ? 'flat' : revenueChange > 0 ? 'up' : revenueChange < 0 ? 'down' : 'flat'
@@ -179,19 +203,42 @@ export default function AdminDashboard() {
 
         {/* Reposición de stock */}
         <div>
-          <h2 className="adm-section-title">Reposición de stock</h2>
+          <h2 className="adm-section-title">Reposición de stock{lowStockTotal > 0 && ` (${lowStockTotal})`}</h2>
           <div className="adm-card">
-            {loading ? (
+            {lowStockError ? (
+              <div className="adm-alert error" style={{ margin: 16 }}>{lowStockError}</div>
+            ) : lowStockLoading ? (
               <div className="adm-loading">Cargando…</div>
-            ) : summary?.lowStock.length ? (
-              summary.lowStock.map((p, i) => (
-                <div key={p.productId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 22px', borderBottom: i < summary.lowStock.length - 1 ? '1px solid var(--adm-border)' : 'none' }}>
-                  <span style={{ fontSize: 14 }}>{p.productName}</span>
-                  <span className={`adm-badge ${p.stock === 0 ? 'danger' : 'warn'}`}>
-                    {p.stock === 0 ? 'Agotado' : `${p.stock} unidades`}
-                  </span>
-                </div>
-              ))
+            ) : lowStock.length ? (
+              <>
+                {lowStock.map((p, i) => (
+                  <div key={p.productId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 22px', borderBottom: i < lowStock.length - 1 ? '1px solid var(--adm-border)' : 'none' }}>
+                    <span style={{ fontSize: 14 }}>{p.productName}</span>
+                    <span className={`adm-badge ${p.stock === 0 ? 'danger' : 'warn'}`}>
+                      {p.stock === 0 ? 'Agotado' : `${p.stock} unidades`}
+                    </span>
+                  </div>
+                ))}
+                {lowStockLastPage > 1 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 22px', borderTop: '1px solid var(--adm-border)' }}>
+                    <button
+                      type="button" className="adm-btn ghost sm"
+                      onClick={() => loadLowStock(lowStockPage - 1)}
+                      disabled={lowStockPage <= 1}
+                    >
+                      ← Anterior
+                    </button>
+                    <span className="adm-table-sub">Página {lowStockPage} de {lowStockLastPage}</span>
+                    <button
+                      type="button" className="adm-btn ghost sm"
+                      onClick={() => loadLowStock(lowStockPage + 1)}
+                      disabled={lowStockPage >= lowStockLastPage}
+                    >
+                      Siguiente →
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="adm-empty">Todo con stock suficiente.</div>
             )}
