@@ -58,7 +58,9 @@ export function ProductPicker({ products, onSelect, onClose, title = 'Elegir pro
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
                 <div className="adm-table-sub">{p.categoryName}</div>
               </div>
-              <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12, color: 'var(--ink)', flexShrink: 0 }}>{formatPrice(p.price)}</div>
+              <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12, color: 'var(--ink)', flexShrink: 0, textAlign: 'right' }}>
+                {p.cardPrice != null ? `${formatPrice(p.cardPrice)} tarjeta` : `${formatPrice(p.price)} efectivo/transferencia`}
+              </div>
             </button>
           ))}
         </div>

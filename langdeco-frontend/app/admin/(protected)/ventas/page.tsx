@@ -438,7 +438,13 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
               <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product?.name || 'Sin producto'}</div>
-                  {product && <div className="adm-table-sub">Stock: {product.stock}</div>}
+                  {product && (
+                    <div className="adm-table-sub">
+                      Stock: {product.stock} · {product.cardPrice != null
+                        ? `${formatPrice(product.cardPrice)} tarjeta`
+                        : `${formatPrice(product.price)} efectivo/transferencia`}
+                    </div>
+                  )}
                 </div>
                 <button type="button" className="adm-btn ghost sm" onClick={() => setPickerForIndex(i)}>Buscar</button>
                 <input className="adm-input" type="number" min={1} value={it.quantity} onChange={(e) => updateItem(i, { quantity: Number(e.target.value) })} style={{ width: 70 }} />
