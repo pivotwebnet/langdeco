@@ -408,7 +408,12 @@ export default function ProductosAdmin() {
                 <td className="mono">{p.code || <span style={{ color: 'var(--ink-soft)' }}>—</span>}</td>
                 <td>{p.categoryName}</td>
                 <td>{p.supplierName || <span style={{ color: 'var(--ink-soft)' }}>—</span>}</td>
-                <td className="mono">{formatPrice(p.price)}</td>
+                <td className="mono">
+                  {formatPrice(p.cardPrice ?? p.price)}
+                  {p.cardPrice != null && (
+                    <div style={{ fontSize: 11, color: 'var(--ink-soft)' }}>{formatPrice(p.price)} efectivo/transf.</div>
+                  )}
+                </td>
                 <td className="mono">{p.costPrice ? formatPrice(p.costPrice) : <span style={{ color: 'var(--ink-soft)' }}>—</span>}</td>
                 <td className="mono">
                   {p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD ? (
