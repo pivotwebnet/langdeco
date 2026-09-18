@@ -54,6 +54,12 @@ export function ProductoDetalle({ product, related }: Props) {
 
   useEffect(() => { trackRecentlyViewed(product) }, [product])
 
+  // Navegar desde "También te puede gustar" (al pie de la página) a otro producto reutiliza
+  // la misma posición de scroll — Next.js solo hace scroll-to-top si detecta que el Page
+  // anterior "salió" del viewport, y acá técnicamente sigue ahí. Se fuerza a mano porque el
+  // componente remonta por completo en cada producto (ver key={product.id} en page.tsx).
+  useEffect(() => { window.scrollTo(0, 0) }, [])
+
   const onAddRelated = (p: Product) => {
     add(p)
     setAddedRelatedId(p.id)

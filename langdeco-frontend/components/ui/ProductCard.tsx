@@ -25,11 +25,10 @@ interface ProductCardProps {
   added: string | null
   onAdd: (p: Product) => void
   onSelect?: (p: Product) => void
-  onQuickView?: (p: Product) => void
   showBadge?: boolean
 }
 
-export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQuickView, showBadge }: ProductCardProps) {
+export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, showBadge }: ProductCardProps) {
   const [imgError, setImgError] = useState(false)
   const [imgLoaded, setImgLoaded] = useState(false)
   const { has: isSaved, toggle: toggleSaved } = useWishlist()
@@ -45,7 +44,6 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
   const isOutOfStock = p.stock !== undefined && p.stock <= 0
   const isLowStock = p.stock !== undefined && p.stock > 0 && p.stock <= 3
   const roomTags = p.roomTags?.slice(0, 2) ?? []
-  const extraRoomTags = (p.roomTags?.length ?? 0) - roomTags.length
 
   useGSAP(() => {
     if (!isAdded || !addBtnRef.current) return
@@ -115,31 +113,7 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
               -{discountPercent}%
             </span>
           )}
-
-          {roomTags.map((tag) => (
-            <Tooltip key={tag} label="Ambiente">
-              <span className="mono" style={{ padding: 'var(--card-badge-pad)', background: 'rgba(242,241,237,0.92)', fontSize: 'var(--card-badge-font)', letterSpacing: '0.08em', borderRadius: 5 }}>
-                {tag}
-              </span>
-            </Tooltip>
-          ))}
-
-          {extraRoomTags > 0 && (
-            <span className="mono" style={{ padding: 'var(--card-badge-pad)', background: 'rgba(242,241,237,0.92)', fontSize: 'var(--card-badge-font)', borderRadius: 5, color: 'var(--ink-mute)' }}>
-              +{extraRoomTags}
-            </span>
-          )}
         </div>
-
-        {p.material && (
-          <div style={{ position: 'absolute', left: 10, bottom: 10, zIndex: 4 }}>
-            <Tooltip label="Material" side="bottom">
-              <span className="mono" style={{ padding: 'var(--card-badge-pad)', background: 'var(--umber)', color: '#F5EFE0', fontSize: 'var(--card-badge-font)', letterSpacing: '0.08em', borderRadius: 5, boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)' }}>
-                {p.material}
-              </span>
-            </Tooltip>
-          </div>
-        )}
 
         <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 4 }}>
           <Tooltip label={saved ? 'Quitar de guardados' : 'Guardar'}>
@@ -161,28 +135,6 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
             </button>
           </Tooltip>
         </div>
-
-        {onQuickView && (
-          <div className="prod-card-quickview" style={{ position: 'absolute', top: 10, right: 'var(--card-btn-pair-offset)', zIndex: 4 }}>
-            <Tooltip label="Detalle">
-              <button
-                onClick={(e) => { e.stopPropagation(); onQuickView(p) }}
-                aria-label={`Vista rápida de ${p.name}`}
-                style={{
-                  width: 'var(--card-btn-size)', height: 'var(--card-btn-size)', borderRadius: 999,
-                  background: 'rgba(242,241,237,0.92)', color: 'var(--ink)',
-                  border: 0, cursor: 'pointer', display: 'grid', placeItems: 'center',
-                  boxShadow: '0 4px 16px -4px rgba(0,0,0,0.3)',
-                  transition: 'background 0.2s, transform 0.2s',
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--ink)'; e.currentTarget.style.color = 'var(--bg)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(242,241,237,0.92)'; e.currentTarget.style.color = 'var(--ink)' }}
-              >
-                <Icon.Eye width={19} height={19} />
-              </button>
-            </Tooltip>
-          </div>
-        )}
 
         <div style={{ position: 'absolute', right: 'var(--card-btn-pair-offset)', bottom: 10, zIndex: 4 }}>
           <Tooltip label="Consulta rápida">
@@ -235,6 +187,21 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, onQui
         <h3 className="prod-card-title" style={{ fontFamily: 'var(--font-ui)', fontSize: variant === 'strip' ? 21 : 16, fontWeight: 600, margin: '0 0 6px', letterSpacing: '-0.02em', lineHeight: 1.2, color: 'var(--ink)' }}>
           {p.name}
         </h3>
+
+        {(p.material || roomTags.length > 0) && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
+            {p.material && (
+              <span className="mono" style={{ padding: '3px 7px', background: 'var(--umber)', color: '#F5EFE0', fontSize: 9, letterSpacing: '0.06em', borderRadius: 5 }}>
+                {p.material}
+              </span>
+            )}
+            {roomTags.map((tag) => (
+              <span key={tag} className="mono" style={{ padding: '3px 7px', background: 'rgba(242,241,237,0.7)', border: '1px solid var(--line)', color: 'var(--ink-soft)', fontSize: 9, letterSpacing: '0.06em', borderRadius: 5 }}>
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: variant === 'strip' ? 24 : 19, letterSpacing: '-0.01em', color: hasDiscount ? 'var(--leaf)' : 'var(--ink)', fontWeight: 600 }}>

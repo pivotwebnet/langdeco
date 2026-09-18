@@ -7,7 +7,6 @@ import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
 import { Underline } from '@/components/ui/Underline'
 import { SplitChars } from '@/components/ui/SplitChars'
 import { ProductCard } from '@/components/ui/ProductCard'
-import { ProductQuickView } from '@/components/ui/ProductQuickView'
 import * as Icon from '@/components/ui/Icon'
 import type { Product } from '@/lib/types'
 
@@ -19,7 +18,6 @@ interface FavoritosProps {
 export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProps) {
   const [active, setActive] = useState(0)
   const [added, setAdded] = useState<string | null>(null)
-  const [quickView, setQuickView] = useState<Product | null>(null)
   const stripRef = useRef<HTMLDivElement>(null)
   const { add } = useCart()
   const router = useRouter()
@@ -104,7 +102,6 @@ export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProp
                 added={added}
                 showBadge={showBadge && i === 0}
                 onSelect={(prod) => router.push(`/producto/${prod.id}`)}
-                onQuickView={setQuickView}
               />
             </RevealOnScroll>
           ))}
@@ -134,8 +131,6 @@ export function Favoritos({ showBadge = false, items: SELECCION }: FavoritosProp
           />
         ))}
       </div>
-
-      <ProductQuickView product={quickView} onClose={() => setQuickView(null)} onAdd={onAdd} />
     </section>
   )
 }

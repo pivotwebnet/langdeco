@@ -7,13 +7,12 @@ import { RevealOnScroll } from '@/components/ui/RevealOnScroll'
 import { Underline } from '@/components/ui/Underline'
 import { SplitChars } from '@/components/ui/SplitChars'
 import { ProductCard } from '@/components/ui/ProductCard'
-import { ProductQuickView } from '@/components/ui/ProductQuickView'
 import * as Icon from '@/components/ui/Icon'
 import { normalize } from '@/lib/normalize'
 import type { Product } from '@/lib/types'
 import type { BackendCategory } from '@/lib/backend-types'
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 12
 
 const tabStyle = (active: boolean) => ({
   padding: '14px 20px',
@@ -46,7 +45,6 @@ export function Productos({ products, categories, initialCategory, initialQuery 
   const [subcategory, setSubcategory] = useState<string>('all')
   const [added, setAdded] = useState<string | null>(null)
   const [page, setPage] = useState(0)
-  const [quickView, setQuickView] = useState<Product | null>(null)
   const [sortBy, setSortBy] = useState<SortOption>('relevancia')
   const [priceMin, setPriceMin] = useState('')
   const [priceMax, setPriceMax] = useState('')
@@ -295,7 +293,6 @@ export function Productos({ products, categories, initialCategory, initialQuery 
                           onAdd={onAdd}
                           added={added}
                           onSelect={(prod) => router.push(`/producto/${prod.id}`)}
-                          onQuickView={setQuickView}
                         />
                       </RevealOnScroll>
                     ))}
@@ -325,8 +322,6 @@ export function Productos({ products, categories, initialCategory, initialQuery 
             )}
           </div>
         </div>
-
-        <ProductQuickView product={quickView} onClose={() => setQuickView(null)} onAdd={onAdd} />
     </section>
   )
 }
