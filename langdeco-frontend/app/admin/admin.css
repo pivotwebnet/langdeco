@@ -373,3 +373,30 @@
 @media (min-width: 640px) {
   .adm-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 }
+
+/* ── Modal pantalla completa (formularios de alta/edición) ───────────── */
+/* Los diálogos chicos (confirmar, ajustar %, selector de producto) siguen usando .adm-modal
+   a secas; solo los formularios largos suman .adm-modal-full. */
+.adm-modal-backdrop:has(> .adm-modal-full) {
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  padding: clamp(12px, 3vh, 36px) clamp(12px, 6vw, 110px);
+}
+.adm-modal.adm-modal-full {
+  width: 100%; height: 100%; max-width: 1500px; max-height: none;
+  padding: 36px clamp(20px, 3.5vw, 56px) 48px;
+  box-shadow: 0 30px 90px -20px rgba(0,0,0,0.45);
+}
+.adm-modal-full .adm-modal-title { font-size: 32px; margin-bottom: 32px; }
+.adm-modal-full .adm-field-label { font-size: 13px; letter-spacing: 0.06em; margin-bottom: 8px; }
+.adm-modal-full .adm-input,
+.adm-modal-full .adm-select,
+.adm-modal-full .adm-textarea { font-size: 16px; padding: 14px 16px; }
+.adm-modal-full .adm-checkbox-row { font-size: 15px; gap: 10px; }
+.adm-modal-full .adm-btn { font-size: 15px; padding: 15px 26px; }
+.adm-modal-full .adm-btn.sm { font-size: 13px; padding: 10px 16px; }
+.adm-modal-full .adm-table-sub { font-size: 13px; }
+.adm-modal-full .mono { font-size: 14px !important; }
+.adm-modal-full .adm-grid-2 { gap: 20px 24px; }
+@media (min-width: 1280px) {
+  .adm-modal-full .adm-grid-2 { grid-template-columns: 1fr 1fr 1fr; }
+}

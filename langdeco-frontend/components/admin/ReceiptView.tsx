@@ -55,6 +55,7 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
   const [taxRatePercent, setTaxRatePercent] = useState(record.taxRatePercent)
   const [validUntilInput, setValidUntilInput] = useState(validUntil ? validUntil.slice(0, 10) : '')
   const [items, setItems] = useState(record.items.map((it) => ({ productId: it.productId, quantity: it.quantity })))
+  const [note, setNote] = useState(record.note ?? '')
 
   // discountPercent/discountFixedAmount negativos representan un recargo en vez de un descuento
   // (mismo criterio que NewSaleModal/NewBudgetModal en ventas/page.tsx y DocumentTotalsCalculator en el backend).
@@ -97,6 +98,7 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
         customer: { name: customer.name, contact: customer.contact || null, taxId: customer.taxId || null, address: customer.address || null },
         discountType: discountKind, discountPercent, discountFixedAmount, taxRatePercent,
         items: items.map((it) => ({ productId: it.productId, quantity: it.quantity, priceType: clientType })),
+        note: note.trim() || null,
       }
       if (kind === 'budget') body.validUntil = validUntilInput ? new Date(validUntilInput).toISOString() : null
 
@@ -121,6 +123,7 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
     setDiscountIsSurcharge(record.discountType === 'Fixed' ? record.discountFixedAmount < 0 : record.discountPercent < 0)
     setDiscountValue(Math.abs(record.discountType === 'Fixed' ? record.discountFixedAmount : record.discountPercent))
     setTaxRatePercent(record.taxRatePercent)
+    setNote(record.note ?? '')
   }
 
   useEscapeKey(() => (editing ? cancelEdit() : onClose()))
@@ -248,6 +251,17 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
 
           {editing && (
             <button type="button" onClick={addItem} disabled={products.length === 0} style={{ ...smallBtn, marginTop: 8 }}>+ Agregar producto</button>
+          )}
+
+          {(editing || record.note) && (
+            <div style={{ marginTop: 16, fontSize: 12, lineHeight: 1.6 }}>
+              <b>Nota:</b>
+              {editing ? (
+                <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} rows={2} style={{ ...inlineInput, width: '100%', display: 'block', marginTop: 4 }} />
+              ) : (
+                <div style={{ whiteSpace: 'pre-wrap' }}>{record.note}</div>
+              )}
+            </div>
           )}
 
           {editing && missingWholesale.length > 0 && (

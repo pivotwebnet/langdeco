@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import type { BackendGasto, BackendSupplier, GastoCategory, PaymentMethod } from '@/lib/backend-types'
-import { useEscapeKey } from '@/lib/useEscapeKey'
+import { useEscapeKey, backdropClose } from '@/lib/useEscapeKey'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 import { Field } from '@/components/admin/Field'
@@ -191,8 +191,8 @@ export default function GastosAdmin() {
       </div>
 
       {form && (
-        <div className="adm-modal-backdrop">
-          <div className="adm-modal">
+        <div className="adm-modal-backdrop" {...backdropClose(() => setForm(null))}>
+          <div className="adm-modal adm-modal-full">
             <h2 className="adm-modal-title">{form.id ? 'Editar gasto' : 'Nuevo gasto'}</h2>
 
             <div className="adm-grid-2" style={{ marginTop: 12 }}>

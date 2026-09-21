@@ -28,6 +28,7 @@ public class Budget
     public decimal Total { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public string? Note { get; set; }
     public DateTime? ValidUntil { get; set; }
 
     public int? ConvertedSaleId { get; set; }

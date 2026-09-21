@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import type { BackendCompra, BackendProduct, BackendSupplier, CompraStatus, PagedResult, PaymentMethod } from '@/lib/backend-types'
-import { useEscapeKey } from '@/lib/useEscapeKey'
+import { useEscapeKey, backdropClose } from '@/lib/useEscapeKey'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 import { Field } from '@/components/admin/Field'
@@ -201,8 +201,7 @@ function NewCompraModal({ onClose, onCreated }: { onClose: () => void; onCreated
   const discountPercent = discountKind === 'Percent' ? (discountIsSurcharge ? -discountValue : discountValue) : 0
   const discountFixedAmount = discountKind === 'Fixed' ? (discountIsSurcharge ? -discountValue : discountValue) : 0
   const [items, setItems] = useState<{ productId: string; quantity: number; unitCost: string }[]>([])
-  // -1 = agregando una línea nueva; un índice ≥0 = reemplazando el producto de esa línea.
-  const [pickerForIndex, setPickerForIndex] = useState<number | null>(null)
+  const [showPicker, setShowPicker] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -221,9 +220,8 @@ function NewCompraModal({ onClose, onCreated }: { onClose: () => void; onCreated
   const removeItem = (i: number) => setItems(items.filter((_, idx) => idx !== i))
 
   const onPickProduct = (p: BackendProduct) => {
-    if (pickerForIndex === -1) setItems([...items, { productId: p.id, quantity: 1, unitCost: p.costPrice ? String(p.costPrice) : '' }])
-    else if (pickerForIndex !== null) updateItem(pickerForIndex, { productId: p.id })
-    setPickerForIndex(null)
+    setItems([...items, { productId: p.id, quantity: 1, unitCost: p.costPrice ? String(p.costPrice) : '' }])
+    setShowPicker(false)
   }
 
   const subtotal = items.reduce((sum, it) => sum + (Number(it.unitCost) || 0) * it.quantity, 0)
@@ -272,8 +270,8 @@ function NewCompraModal({ onClose, onCreated }: { onClose: () => void; onCreated
   }
 
   return (
-    <div className="adm-modal-backdrop">
-      <form onSubmit={onSubmit} className="adm-modal">
+    <div className="adm-modal-backdrop" {...backdropClose(onClose)}>
+      <form onSubmit={onSubmit} className="adm-modal adm-modal-full">
         <h2 className="adm-modal-title">Nueva compra</h2>
 
         {error && <div className="adm-alert error">{error}</div>}
@@ -329,7 +327,7 @@ function NewCompraModal({ onClose, onCreated }: { onClose: () => void; onCreated
         <div style={{ marginTop: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span className="mono">Productos</span>
-            <button type="button" className="adm-btn ghost sm" onClick={() => setPickerForIndex(-1)} disabled={products.length === 0}>+ Agregar</button>
+            <button type="button" className="adm-btn ghost sm" onClick={() => setShowPicker(true)} disabled={products.length === 0}>+ Agregar</button>
           </div>
           {items.map((it, i) => {
             const product = products.find((p) => p.id === it.productId)
@@ -339,7 +337,6 @@ function NewCompraModal({ onClose, onCreated }: { onClose: () => void; onCreated
                   <div style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product?.name || 'Sin producto'}</div>
                   {product && <div className="adm-table-sub">Stock actual: {product.stock}</div>}
                 </div>
-                <button type="button" className="adm-btn ghost sm" onClick={() => setPickerForIndex(i)}>Buscar</button>
                 <input className="adm-input" type="number" min={1} value={it.quantity} onChange={(e) => updateItem(i, { quantity: Number(e.target.value) })} style={{ width: 60 }} />
                 <PriceInput value={it.unitCost} onChange={(v) => updateItem(i, { unitCost: v })} placeholder="Costo" style={{ width: 90 }} />
                 <button type="button" className="adm-btn ghost sm" onClick={() => removeItem(i)}>✕</button>
@@ -379,12 +376,12 @@ function NewCompraModal({ onClose, onCreated }: { onClose: () => void; onCreated
         </div>
       </form>
 
-      {pickerForIndex !== null && (
+      {showPicker && (
         <ProductPicker
           products={products}
-          title={pickerForIndex === -1 ? 'Agregar producto' : 'Cambiar producto'}
+          title="Agregar producto"
           onSelect={onPickProduct}
-          onClose={() => setPickerForIndex(null)}
+          onClose={() => setShowPicker(false)}
         />
       )}
     </div>
@@ -397,7 +394,7 @@ function CompraDetailModal({ compra, onClose }: { compra: BackendCompra; onClose
 
   return (
     <div className="adm-modal-backdrop" onClick={onClose}>
-      <div className="adm-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="adm-modal adm-modal-full" onClick={(e) => e.stopPropagation()}>
         <h2 className="adm-modal-title">Compra #{compra.number}</h2>
         <p className="adm-table-sub" style={{ marginBottom: 16 }}>
           {compra.supplierName} · {new Date(compra.createdAt).toLocaleString('es-AR')}

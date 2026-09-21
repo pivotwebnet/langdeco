@@ -76,6 +76,7 @@ export interface BackendSale {
   total: number
   createdAt: string
   items: BackendSaleItem[]
+  note: string | null
 }
 
 export interface BackendBudgetItem {
@@ -103,6 +104,7 @@ export interface BackendBudget {
   total: number
   createdAt: string
   items: BackendBudgetItem[]
+  note: string | null
 }
 
 export type IvaCondition = 'ResponsableInscripto' | 'Monotributo' | 'Exento' | 'ConsumidorFinal' | 'NoCategorizado'

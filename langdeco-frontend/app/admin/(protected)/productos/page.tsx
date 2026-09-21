@@ -7,6 +7,7 @@ import { adminApi as api } from '@/lib/admin/api'
 import { Field } from '@/components/admin/Field'
 import { PriceInput } from '@/components/admin/PriceInput'
 import { formatPrice } from '@/lib/data'
+import { useEscapeKey, backdropClose } from '@/lib/useEscapeKey'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
 import { BulkActionBar } from '@/components/admin/BulkActionBar'
@@ -504,6 +505,7 @@ function ProductFormModal({ form, categories, suppliers, isNew, saving, onChange
   onCancel: () => void
   onSave: () => void
 }) {
+  useEscapeKey(onCancel)
   const set = <K extends keyof ProductForm>(key: K, value: ProductForm[K]) => onChange({ ...form, [key]: value })
 
   const addSpec = () => set('specs', [...form.specs, { label: '', value: '' }])
@@ -530,8 +532,8 @@ function ProductFormModal({ form, categories, suppliers, isNew, saving, onChange
   }
 
   return (
-    <div className="adm-modal-backdrop">
-      <div className="adm-modal">
+    <div className="adm-modal-backdrop" {...backdropClose(onCancel)}>
+      <div className="adm-modal adm-modal-full">
         <h2 className="adm-modal-title">{isNew ? 'Nueva pieza' : 'Editar pieza'}</h2>
 
         <div className="adm-grid-2" style={{ marginBottom: 12 }}>

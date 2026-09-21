@@ -239,6 +239,7 @@ public class SalesController : ControllerBase
             DiscountPercent = input.DiscountPercent,
             DiscountFixedAmount = input.DiscountFixedAmount,
             TaxRatePercent = input.TaxRatePercent,
+            Note = NormalizeNote(input.Note),
             CreatedAt = DateTime.UtcNow,
         };
 
@@ -338,6 +339,7 @@ public class SalesController : ControllerBase
         sale.DiscountPercent = input.DiscountPercent;
         sale.DiscountFixedAmount = input.DiscountFixedAmount;
         sale.TaxRatePercent = input.TaxRatePercent;
+        sale.Note = NormalizeNote(input.Note);
 
         var totals = DocumentTotalsCalculator.Compute(
             subtotal, input.DiscountType, input.DiscountPercent, input.DiscountFixedAmount, input.TaxRatePercent);
@@ -565,7 +567,11 @@ public class SalesController : ControllerBase
         s.Subtotal, s.DiscountType, s.DiscountPercent, s.DiscountFixedAmount, s.DiscountAmount,
         s.TaxRatePercent, s.TaxAmount, s.Total,
         s.CreatedAt, s.BudgetId,
-        s.Items.Select(i => new SaleItemDto(i.ProductId, i.ProductName, i.Quantity, i.UnitPrice, i.PriceType)).ToList());
+        s.Items.Select(i => new SaleItemDto(i.ProductId, i.ProductName, i.Quantity, i.UnitPrice, i.PriceType)).ToList(),
+        s.Note);
+
+    internal static string? NormalizeNote(string? note) =>
+        string.IsNullOrWhiteSpace(note) ? null : (note.Trim().Length > 500 ? note.Trim()[..500] : note.Trim());
 }
 
 internal class StockException : Exception

@@ -41,6 +41,7 @@ public class Sale
     public decimal Total { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public string? Note { get; set; }
 
     public int? BudgetId { get; set; }
     public Budget? Budget { get; set; }

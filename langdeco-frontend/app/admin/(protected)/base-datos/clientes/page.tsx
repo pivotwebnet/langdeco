@@ -5,7 +5,7 @@ import type { BackendClient, DefaultReceiptType, IvaCondition } from '@/lib/back
 import { isValidCuit } from '@/lib/cuit'
 import { IVA_CONDITION_LABEL, RECEIPT_TYPE_LABEL } from '@/lib/party-labels'
 import { formatPrice } from '@/lib/data'
-import { useEscapeKey } from '@/lib/useEscapeKey'
+import { useEscapeKey, backdropClose } from '@/lib/useEscapeKey'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 import { Field } from '@/components/admin/Field'
@@ -342,8 +342,8 @@ function ClientFormModal({ form, isNew, saving, onChange, onCancel, onSave }: {
   const removeField = (i: number) => set('customFields', form.customFields.filter((_, idx) => idx !== i))
 
   return (
-    <div className="adm-modal-backdrop">
-      <div className="adm-modal" style={{ width: 680 }}>
+    <div className="adm-modal-backdrop" {...backdropClose(onCancel)}>
+      <div className="adm-modal adm-modal-full">
         <h2 className="adm-modal-title">{isNew ? 'Nuevo Cliente' : 'Editar Cliente'}</h2>
 
         <SectionTitle>Cliente</SectionTitle>

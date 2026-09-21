@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { BackendBudget, BackendClient, BackendProduct, BackendSale, BudgetStatus, ClientType, PagedResult, PaymentMethod } from '@/lib/backend-types'
 import { ReceiptView } from '@/components/admin/ReceiptView'
-import { useEscapeKey } from '@/lib/useEscapeKey'
+import { useEscapeKey, backdropClose } from '@/lib/useEscapeKey'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 import { Field } from '@/components/admin/Field'
@@ -290,6 +290,7 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
   const [clientContact, setClientContact] = useState('')
   const [clientTaxId, setClientTaxId] = useState('')
   const [clientAddress, setClientAddress] = useState('')
+  const [note, setNote] = useState('')
   const [clientType, setClientType] = useState<ClientType>('Retail')
   const [validUntil, setValidUntil] = useState('')
   const [discountKind, setDiscountKind] = useState<'Percent' | 'Fixed'>('Percent')
@@ -301,8 +302,7 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
   const discountPercent = discountKind === 'Percent' ? (discountIsSurcharge ? -discountValue : discountValue) : 0
   const discountFixedAmount = discountKind === 'Fixed' ? (discountIsSurcharge ? -discountValue : discountValue) : 0
   const [items, setItems] = useState<{ productId: string; quantity: number }[]>([])
-  // -1 = agregando una línea nueva; un índice ≥0 = reemplazando el producto de esa línea.
-  const [pickerForIndex, setPickerForIndex] = useState<number | null>(null)
+  const [showPicker, setShowPicker] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -333,9 +333,8 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
   const removeItem = (i: number) => setItems(items.filter((_, idx) => idx !== i))
 
   const onPickProduct = (p: BackendProduct) => {
-    if (pickerForIndex === -1) setItems([...items, { productId: p.id, quantity: 1 }])
-    else if (pickerForIndex !== null) updateItem(pickerForIndex, { productId: p.id })
-    setPickerForIndex(null)
+    setItems([...items, { productId: p.id, quantity: 1 }])
+    setShowPicker(false)
   }
 
   const subtotal = items.reduce((sum, it) => {
@@ -370,6 +369,7 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
         body: JSON.stringify({
           clientId: selectedClientId || null,
           customer: { name: clientName, contact: clientContact || null, taxId: clientTaxId || null, address: clientAddress || null },
+          note: note.trim() || null,
           clientType,
           validUntil: validUntil ? new Date(validUntil).toISOString() : null,
           discountType: discountKind, discountPercent, discountFixedAmount, taxRatePercent,
@@ -388,8 +388,8 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
   }
 
   return (
-    <div className="adm-modal-backdrop">
-      <form onSubmit={onSubmit} className="adm-modal">
+    <div className="adm-modal-backdrop" {...backdropClose(onClose)}>
+      <form onSubmit={onSubmit} className="adm-modal adm-modal-full">
         <h2 className="adm-modal-title">Nuevo presupuesto</h2>
 
         {error && <div className="adm-alert error">{error}</div>}
@@ -441,7 +441,7 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
         <div style={{ marginTop: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <span className="mono">Productos</span>
-            <button type="button" className="adm-btn ghost sm" onClick={() => setPickerForIndex(-1)} disabled={products.length === 0}>+ Agregar</button>
+            <button type="button" className="adm-btn ghost sm" onClick={() => setShowPicker(true)} disabled={products.length === 0}>+ Agregar</button>
           </div>
           {items.map((it, i) => {
             const product = products.find((p) => p.id === it.productId)
@@ -452,7 +452,6 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
                   <div style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product?.name || 'Sin producto'}</div>
                   {product && <div className="adm-table-sub">Stock: {product.stock}</div>}
                 </div>
-                <button type="button" className="adm-btn ghost sm" onClick={() => setPickerForIndex(i)}>Buscar</button>
                 <input className="adm-input" type="number" min={1} value={it.quantity} onChange={(e) => updateItem(i, { quantity: Number(e.target.value) })} style={{ width: 70 }} />
                 <span className="mono" style={{ fontSize: 11, width: 90, textAlign: 'right', color: noWholesale ? 'var(--adm-danger)' : undefined }}>
                   {product ? formatPrice(resolvePrice(product, clientType) * it.quantity) : ''}
@@ -466,6 +465,12 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
               Sin precio mayorista cargado: {missingWholesale.map((p) => p.name).join(', ')}. No vas a poder guardar el presupuesto hasta cargarles precio mayorista en Productos, o cambiar el tipo de cliente a minorista.
             </div>
           )}
+        </div>
+
+        <div style={{ marginTop: 16 }}>
+          <Field label="Nota (opcional)">
+            <textarea className="adm-textarea" value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} rows={3} placeholder="Ej: entrega el viernes, cliente retira en el local..." />
+          </Field>
         </div>
 
         <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--adm-border)', display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -499,12 +504,12 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
         </div>
       </form>
 
-      {pickerForIndex !== null && (
+      {showPicker && (
         <ProductPicker
           products={products}
-          title={pickerForIndex === -1 ? 'Agregar producto' : 'Cambiar producto'}
+          title="Agregar producto"
           onSelect={onPickProduct}
-          onClose={() => setPickerForIndex(null)}
+          onClose={() => setShowPicker(false)}
         />
       )}
     </div>

@@ -83,6 +83,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Sale>(entity =>
         {
             entity.Property(s => s.Subtotal).HasPrecision(12, 2);
+            entity.Property(s => s.Note).HasMaxLength(500);
             entity.Property(s => s.DiscountType).HasConversion<string>().HasMaxLength(20);
             entity.Property(s => s.DiscountPercent).HasPrecision(5, 2);
             entity.Property(s => s.DiscountFixedAmount).HasPrecision(12, 2);
@@ -135,6 +136,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Budget>(entity =>
         {
             entity.Property(b => b.Subtotal).HasPrecision(12, 2);
+            entity.Property(b => b.Note).HasMaxLength(500);
             entity.Property(b => b.DiscountType).HasConversion<string>().HasMaxLength(20);
             entity.Property(b => b.DiscountPercent).HasPrecision(5, 2);
             entity.Property(b => b.DiscountFixedAmount).HasPrecision(12, 2);

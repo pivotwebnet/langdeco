@@ -12,12 +12,12 @@ public record SaleCreateDto(
     int? ClientId, CustomerInput Customer, ClientType ClientType,
     PaymentMethod PaymentMethod, SaleStatus? Status,
     DiscountType DiscountType, decimal DiscountPercent, decimal DiscountFixedAmount, decimal TaxRatePercent,
-    List<SaleItemInput> Items);
+    List<SaleItemInput> Items, string? Note = null);
 
 public record SaleUpdateDto(
     int? ClientId, CustomerInput Customer,
     DiscountType DiscountType, decimal DiscountPercent, decimal DiscountFixedAmount, decimal TaxRatePercent,
-    List<SaleItemInput> Items);
+    List<SaleItemInput> Items, string? Note = null);
 
 public record SaleItemDto(string ProductId, string ProductName, int Quantity, decimal UnitPrice, ClientType PriceType);
 
@@ -27,7 +27,7 @@ public record SaleDto(
     decimal Subtotal, DiscountType DiscountType, decimal DiscountPercent, decimal DiscountFixedAmount, decimal DiscountAmount,
     decimal TaxRatePercent, decimal TaxAmount, decimal Total,
     DateTime CreatedAt, int? BudgetId,
-    List<SaleItemDto> Items);
+    List<SaleItemDto> Items, string? Note);
 
 public record SaleStatusUpdateDto(SaleStatus Status);
 

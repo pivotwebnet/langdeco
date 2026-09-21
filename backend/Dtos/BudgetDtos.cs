@@ -8,12 +8,12 @@ public record BudgetCreateDto(
     int? ClientId, CustomerInput Customer, ClientType ClientType,
     DateTime? ValidUntil,
     DiscountType DiscountType, decimal DiscountPercent, decimal DiscountFixedAmount, decimal TaxRatePercent,
-    List<BudgetItemInput> Items);
+    List<BudgetItemInput> Items, string? Note = null);
 
 public record BudgetUpdateDto(
     int? ClientId, CustomerInput Customer, DateTime? ValidUntil,
     DiscountType DiscountType, decimal DiscountPercent, decimal DiscountFixedAmount, decimal TaxRatePercent,
-    List<BudgetItemInput> Items);
+    List<BudgetItemInput> Items, string? Note = null);
 
 public record BudgetItemDto(string ProductId, string ProductName, int Quantity, decimal UnitPrice, ClientType PriceType);
 
@@ -23,7 +23,7 @@ public record BudgetDto(
     decimal Subtotal, DiscountType DiscountType, decimal DiscountPercent, decimal DiscountFixedAmount, decimal DiscountAmount,
     decimal TaxRatePercent, decimal TaxAmount, decimal Total,
     DateTime CreatedAt, int? ConvertedSaleId, DateTime? ConvertedAt,
-    List<BudgetItemDto> Items);
+    List<BudgetItemDto> Items, string? Note);
 
 public record BudgetStatusUpdateDto(BudgetStatus Status);
 

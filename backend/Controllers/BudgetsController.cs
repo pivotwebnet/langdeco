@@ -69,6 +69,7 @@ public class BudgetsController : ControllerBase
             DiscountPercent = input.DiscountPercent,
             DiscountFixedAmount = input.DiscountFixedAmount,
             TaxRatePercent = input.TaxRatePercent,
+            Note = SalesController.NormalizeNote(input.Note),
             CreatedAt = DateTime.UtcNow,
         };
 
@@ -158,6 +159,7 @@ public class BudgetsController : ControllerBase
         budget.DiscountPercent = input.DiscountPercent;
         budget.DiscountFixedAmount = input.DiscountFixedAmount;
         budget.TaxRatePercent = input.TaxRatePercent;
+        budget.Note = SalesController.NormalizeNote(input.Note);
 
         var totals = DocumentTotalsCalculator.Compute(
             subtotal, input.DiscountType, input.DiscountPercent, input.DiscountFixedAmount, input.TaxRatePercent);
@@ -308,6 +310,7 @@ public class BudgetsController : ControllerBase
             DiscountPercent = budget.DiscountPercent,
             DiscountFixedAmount = budget.DiscountFixedAmount,
             TaxRatePercent = budget.TaxRatePercent,
+            Note = budget.Note,
             BudgetId = budget.Id,
             CreatedAt = DateTime.UtcNow,
         };
@@ -418,7 +421,8 @@ public class BudgetsController : ControllerBase
         b.Subtotal, b.DiscountType, b.DiscountPercent, b.DiscountFixedAmount, b.DiscountAmount,
         b.TaxRatePercent, b.TaxAmount, b.Total,
         b.CreatedAt, b.ConvertedSaleId, b.ConvertedAt,
-        b.Items.Select(i => new BudgetItemDto(i.ProductId, i.ProductName, i.Quantity, i.UnitPrice, i.PriceType)).ToList());
+        b.Items.Select(i => new BudgetItemDto(i.ProductId, i.ProductName, i.Quantity, i.UnitPrice, i.PriceType)).ToList(),
+        b.Note);
 }
 
 internal class ItemValidationException : Exception
