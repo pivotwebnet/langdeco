@@ -99,6 +99,7 @@ export default function ProductosAdmin() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkConfirm, setBulkConfirm] = useState<'activate' | 'deactivate' | null>(null)
   const [showPercentDialog, setShowPercentDialog] = useState(false)
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
   const [bulkBusy, setBulkBusy] = useState(false)
 
   const load = useCallback(async () => {
@@ -202,6 +203,26 @@ export default function ProductosAdmin() {
       await runBulkAction('/products/bulk-activate', (r) => `${r.updated} pieza${r.updated === 1 ? '' : 's'} activada${r.updated === 1 ? '' : 's'}.`)
     } else if (action === 'deactivate') {
       await runBulkAction('/products/bulk-deactivate', (r) => `${r.updated} pieza${r.updated === 1 ? '' : 's'} desactivada${r.updated === 1 ? '' : 's'}.`)
+    }
+  }
+
+  const onBulkDeleteConfirm = async () => {
+    setBulkDeleteConfirm(false)
+    setBulkBusy(true)
+    try {
+      const result = await api<{ deleted: number; deactivated: number }>('/products/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids: [...selectedIds] }),
+      })
+      const parts = [`${result.deleted} eliminada${result.deleted === 1 ? '' : 's'}`]
+      if (result.deactivated > 0) parts.push(`${result.deactivated} desactivada${result.deactivated === 1 ? '' : 's'} (tenían ventas o presupuestos asociados)`)
+      toast.success(`${parts.join(', ')}.`)
+      setSelectedIds(new Set())
+      await load()
+    } catch (e) {
+      toast.error((e as Error).message)
+    } finally {
+      setBulkBusy(false)
     }
   }
 
@@ -373,6 +394,12 @@ export default function ProductosAdmin() {
           <button type="button" className="adm-btn ghost sm" disabled={bulkBusy} onClick={() => setBulkConfirm('activate')}>Activar</button>
           <button type="button" className="adm-btn ghost sm" disabled={bulkBusy} onClick={() => setBulkConfirm('deactivate')}>Desactivar</button>
           <button type="button" className="adm-btn sm" disabled={bulkBusy} onClick={() => setShowPercentDialog(true)}>Ajustar precio %</button>
+          {/* Separado a propósito del resto (divisor + margen) para que "Eliminar" nunca
+              quede pegado a "Desactivar" y evitar un clic accidental entre ambos. */}
+          <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--adm-border)', margin: '0 4px' }} />
+          <button type="button" className="adm-btn danger sm" disabled={bulkBusy} onClick={() => setBulkDeleteConfirm(true)} style={{ marginLeft: 4 }}>
+            Eliminar
+          </button>
         </BulkActionBar>
       )}
 
@@ -473,6 +500,17 @@ export default function ProductosAdmin() {
           danger={bulkConfirm === 'deactivate'}
           onConfirm={onBulkConfirm}
           onCancel={() => setBulkConfirm(null)}
+        />
+      )}
+
+      {bulkDeleteConfirm && (
+        <ConfirmDialog
+          title="Eliminar piezas"
+          message={`¿Estás seguro de eliminar ${selectedIds.size} producto${selectedIds.size === 1 ? '' : 's'}? Te recordamos que es una acción irreversible.`}
+          confirmLabel="Eliminar"
+          danger
+          onConfirm={onBulkDeleteConfirm}
+          onCancel={() => setBulkDeleteConfirm(false)}
         />
       )}
 

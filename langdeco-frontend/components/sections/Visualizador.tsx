@@ -38,6 +38,7 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
   const [dragOver, setDragOver] = useState(false)
   const [addedId, setAddedId] = useState<string | null>(null)
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
+  const [dragProduct, setDragProduct] = useState<{ product: Product; clientX: number; clientY: number; overCanvas: boolean } | null>(null)
 
   const changeCategoryFilter = (id: string | null) => setCategoryFilter(id)
 
@@ -50,6 +51,7 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
   const wrapperRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const catalogRef = useRef<HTMLDivElement>(null)
+  const catRowRef = useRef<HTMLDivElement>(null)
   const canvasColRef = useRef<HTMLDivElement>(null)
   const catTitleRef = useRef<HTMLDivElement>(null)
   const zCounter = useRef(1)
@@ -75,7 +77,9 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
   // El límite de altura solo aplica cuando el layout está en fila (desktop) —
   // en mobile las columnas van apiladas, ahí las categorías deben mostrarse
   // completas sin recortarse.
-  const [isRowLayout, setIsRowLayout] = useState(false)
+  const [isRowLayout, setIsRowLayout] = useState(() =>
+    typeof window === 'undefined' ? false : window.matchMedia('(min-width: 900px)').matches
+  )
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 900px)')
     const update = () => setIsRowLayout(mq.matches)
@@ -86,6 +90,10 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
 
   const withImage = products.filter((p) => p.cutoutImageUrl)
   const filteredProducts = categoryFilter ? withImage.filter((p) => p.category === categoryFilter) : withImage
+  // Filtrar una categoría para terminar con el catálogo vacío (porque ninguna de sus
+  // piezas tiene foto recortada cargada) es un callejón sin salida — de paso, mostrar
+  // solo las categorías con al menos una pieza arrastrable achica la lista bastante.
+  const categoriesWithProducts = categories.filter((c) => withImage.some((p) => p.category === c.id))
 
   // Flechas en vez de la barra de scroll nativa — igual siguen pudiendo deslizar
   // con el dedo/mouse, las flechas solo dan otra forma de moverse por la fila.
@@ -98,8 +106,48 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4)
   }
   useEffect(() => { updateCatalogScroll() }, [filteredProducts.length])
+  // scrollBy({behavior:'smooth'}) via JS tiene soporte inconsistente en navegadores
+  // mobile (en algunos ni se mueve) — la animación se deja en manos del CSS
+  // `scroll-behavior: smooth` del contenedor, acá solo se asigna scrollLeft directo,
+  // que sí es universal.
   const scrollCatalog = (dir: 1 | -1) => {
-    catalogRef.current?.scrollBy({ left: dir * catalogRef.current.clientWidth * 0.8, behavior: 'smooth' })
+    const el = catalogRef.current
+    if (!el) return
+    el.scrollLeft += dir * el.clientWidth * 0.8
+  }
+
+  // Mismo patrón que el catálogo de muebles de abajo, aplicado a las categorías
+  // en mobile: en vez de una lista vertical que se come toda la pantalla (o un
+  // cuadro con scroll interno anidado dentro del scroll de la página, incómodo
+  // al toque), una sola fila horizontal de ancho fijo con flechas — el mismo
+  // lenguaje visual que ya usa el catálogo, sin necesidad de desplegar/colapsar.
+  const [canCatScrollLeft, setCanCatScrollLeft] = useState(false)
+  // Arranca en "true" a propósito (optimista, no medido): si hay más de una
+  // categoría casi siempre va a sobrar ancho para scrollear, y esa medición real
+  // (scrollWidth de los chips) puede no estar lista todavía en el primer render
+  // — con "false" por defecto, esa carrera dejaba la flecha "siguiente" marcada
+  // como deshabilitada aunque sí había contenido, pareciendo rota. Peor caso acá
+  // es al revés: la flecha responde pero no hay nada más para mostrar, inofensivo.
+  const [canCatScrollRight, setCanCatScrollRight] = useState(categoriesWithProducts.length > 1)
+  const updateCatRowScroll = () => {
+    const el = catRowRef.current
+    if (!el) return
+    setCanCatScrollLeft(el.scrollLeft > 4)
+    setCanCatScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4)
+  }
+  useEffect(() => {
+    const el = catRowRef.current
+    if (!el) return
+    updateCatRowScroll()
+    const ro = new ResizeObserver(() => updateCatRowScroll())
+    ro.observe(el)
+    document.fonts?.ready?.then(updateCatRowScroll)
+    return () => ro.disconnect()
+  }, [categoriesWithProducts.length])
+  const scrollCatRow = (dir: 1 | -1) => {
+    const el = catRowRef.current
+    if (!el) return
+    el.scrollLeft += dir * el.clientWidth * 0.8
   }
 
   function handlePhotoFile(file?: File) {
@@ -145,25 +193,48 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
   function handleCanvasDrop(e: React.DragEvent) {
     e.preventDefault()
     setDragOver(false)
-
-    if (e.dataTransfer.files?.length) {
-      handlePhotoFile(e.dataTransfer.files[0])
-      return
-    }
-    const productId = e.dataTransfer.getData('text/plain')
-    if (!productId || !wrapperRef.current) return
-    const product = products.find((p) => p.id === productId)
-    if (!product) return
-
-    const rect = wrapperRef.current.getBoundingClientRect()
-    const xPct = ((e.clientX - rect.left) / rect.width) * 100
-    const yPct = ((e.clientY - rect.top) / rect.height) * 100
-    addItem(product, xPct, yPct)
+    if (e.dataTransfer.files?.length) handlePhotoFile(e.dataTransfer.files[0])
   }
 
-  function handleThumbDragStart(e: React.DragEvent, product: Product) {
-    e.dataTransfer.setData('text/plain', product.id)
-    e.dataTransfer.effectAllowed = 'copy'
+  // Reemplaza el drag nativo HTML5 (dataTransfer/dragstart), que en la práctica
+  // no dispara con touch en navegadores mobile — con Pointer Events el mismo
+  // gesto de "tocar y arrastrar" funciona igual con mouse y con el dedo.
+  const THUMB_TAP_THRESHOLD = 6
+  function handleThumbPointerDown(e: React.PointerEvent, product: Product) {
+    if (!photoUrl) return
+    e.preventDefault()
+    const startX = e.clientX
+    const startY = e.clientY
+    setDragProduct({ product, clientX: startX, clientY: startY, overCanvas: false })
+
+    function isOverCanvas(clientX: number, clientY: number) {
+      const rect = wrapperRef.current?.getBoundingClientRect()
+      return !!rect && clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom
+    }
+
+    function onMove(ev: PointerEvent) {
+      setDragProduct((prev) => (prev ? { ...prev, clientX: ev.clientX, clientY: ev.clientY, overCanvas: isOverCanvas(ev.clientX, ev.clientY) } : prev))
+    }
+    function onUp(ev: PointerEvent) {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+
+      const dist = Math.hypot(ev.clientX - startX, ev.clientY - startY)
+      const rect = wrapperRef.current?.getBoundingClientRect()
+      if (dist < THUMB_TAP_THRESHOLD) {
+        // Toque simple (sin arrastre real): coloca la pieza en el centro, como antes.
+        addItem(product)
+      } else if (rect && isOverCanvas(ev.clientX, ev.clientY)) {
+        const xPct = ((ev.clientX - rect.left) / rect.width) * 100
+        const yPct = ((ev.clientY - rect.top) / rect.height) * 100
+        addItem(product, xPct, yPct)
+      }
+      setDragProduct(null)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
   }
 
   function bringToFront(uid: string) {
@@ -419,36 +490,84 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
           />
         </div>
 
-        {/* ── Categorías, a la derecha del cuadro de subir foto ── */}
-        {categories.length > 0 && (
+        {/* ── Categorías, a la derecha del cuadro de subir foto (desktop) /
+            fila horizontal con flechas debajo (mobile) ── */}
+        {categoriesWithProducts.length > 0 && (
           <div className="viz-cat-block">
             <div ref={catTitleRef} className="mono" style={{ fontSize: 9, letterSpacing: '0.18em' }}>
               Categorías
             </div>
-            <div
-              className="viz-cat-col"
-              style={isRowLayout && catColMaxHeight ? { maxHeight: catColMaxHeight, overflowY: 'auto' } : undefined}
-            >
-              <button
-                type="button"
-                onClick={() => changeCategoryFilter(null)}
-                className="viz-cat-chip"
-                data-active={categoryFilter === null}
+            {isRowLayout ? (
+              <div
+                className="viz-cat-col"
+                style={catColMaxHeight ? { maxHeight: catColMaxHeight, overflowY: 'auto' } : undefined}
               >
-                Todas
-              </button>
-              {categories.map((c) => (
                 <button
-                  key={c.id}
                   type="button"
-                  onClick={() => changeCategoryFilter(c.id)}
+                  onClick={() => changeCategoryFilter(null)}
                   className="viz-cat-chip"
-                  data-active={categoryFilter === c.id}
+                  data-active={categoryFilter === null}
                 >
-                  {c.name}
+                  Todas
                 </button>
-              ))}
-            </div>
+                {categoriesWithProducts.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => changeCategoryFilter(c.id)}
+                    className="viz-cat-chip"
+                    data-active={categoryFilter === c.id}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              // Fila horizontal de ancho fijo en vez de lista vertical: no importa cuántas
+              // categorías haya, siempre ocupa el mismo alto (no tapa el resto de la sección) —
+              // mismo patrón que ya usa el catálogo de muebles de acá abajo.
+              <div className="viz-catalog">
+                <button
+                  type="button"
+                  className="viz-catalog-arrow prev"
+                  onClick={() => scrollCatRow(-1)}
+                  disabled={!canCatScrollLeft}
+                  aria-label="Ver categorías anteriores"
+                >
+                  <Icon.Arrow style={{ transform: 'rotate(180deg)' }} />
+                </button>
+                <div className="viz-cat-row" ref={catRowRef} onScroll={updateCatRowScroll}>
+                  <button
+                    type="button"
+                    onClick={() => changeCategoryFilter(null)}
+                    className="viz-cat-chip"
+                    data-active={categoryFilter === null}
+                  >
+                    Todas
+                  </button>
+                  {categoriesWithProducts.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => changeCategoryFilter(c.id)}
+                      className="viz-cat-chip"
+                      data-active={categoryFilter === c.id}
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="viz-catalog-arrow next"
+                  onClick={() => scrollCatRow(1)}
+                  disabled={!canCatScrollRight}
+                  aria-label="Ver más categorías"
+                >
+                  <Icon.Arrow />
+                </button>
+              </div>
+            )}
           </div>
         )}
         </div>
@@ -475,14 +594,13 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
               <div key={p.id} className="viz-thumb">
                 <div
                   className="viz-thumb-img"
-                  draggable={!!photoUrl}
-                  onDragStart={(e) => handleThumbDragStart(e, p)}
-                  onClick={() => photoUrl && addItem(p)}
+                  onPointerDown={(e) => handleThumbPointerDown(e, p)}
+                  onClick={(e) => { if (photoUrl && e.detail === 0) addItem(p) }}
                   role="button"
                   tabIndex={photoUrl ? 0 : -1}
                   aria-disabled={!photoUrl}
-                  title={photoUrl ? `Arrastrar o tocar para colocar «${p.name}»` : 'Subí una foto primero'}
-                  style={!photoUrl ? { cursor: 'default', opacity: 0.5 } : undefined}
+                  title={photoUrl ? `Arrastrá o tocá para colocar «${p.name}»` : 'Subí una foto primero'}
+                  style={!photoUrl ? { cursor: 'default', opacity: 0.5 } : { touchAction: 'none' }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={p.cutoutImageUrl} alt={p.name} draggable={false} />
@@ -526,6 +644,26 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
           </div>
         </aside>
       </div>
+
+      {/* ── Ghost que sigue el dedo/cursor mientras se arrastra una pieza ── */}
+      {dragProduct && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={dragProduct.product.cutoutImageUrl}
+          alt=""
+          style={{
+            position: 'fixed',
+            left: dragProduct.clientX,
+            top: dragProduct.clientY,
+            width: 84,
+            transform: 'translate(-50%, -50%)',
+            pointerEvents: 'none',
+            zIndex: 999,
+            opacity: dragProduct.overCanvas ? 0.95 : 0.55,
+            filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.35))',
+          }}
+        />
+      )}
     </section>
   )
 }

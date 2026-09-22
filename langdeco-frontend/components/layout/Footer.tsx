@@ -156,8 +156,13 @@ export function Footer() {
             <ContactRow href="mailto:laslangdeco@gmail.com" icon={<Icon.Mail />}>
               laslangdeco@gmail.com
             </ContactRow>
-            <div style={{ marginTop: 4, fontSize: 12, color: 'rgba(242,241,237,0.36)', lineHeight: 1.55 }}>
-              9:00 – 12:00<br />15:30 – 19:30
+            <div style={{ marginTop: 4 }}>
+              <div className="mono" style={{ color: 'rgba(242,241,237,0.3)', marginBottom: 4, fontSize: 9, letterSpacing: '0.08em' }}>
+                Horario
+              </div>
+              <div style={{ fontSize: 13, color: 'rgba(242,241,237,0.58)', lineHeight: 1.4 }}>
+                9:00 – 12:00<br />16:00 – 20:00
+              </div>
             </div>
           </div>
         </div>

@@ -358,6 +358,15 @@ body {
   padding: 10px;
   transition: transform 0.38s cubic-bezier(.2,.8,.2,1), box-shadow 0.38s, border-color 0.38s;
   cursor: pointer;
+  /* La grilla estira cada item a la altura de la fila (comportamiento por defecto de
+     CSS grid), pero eso solo estira la CAJA de .prod-card — sin flex column + height:100%
+     acá, el contenido de texto seguía teniendo su alto natural y las cards quedaban de
+     alturas distintas según tuvieran o no material/tags/cuotas/precio tarjeta. Con esto
+     + "Ver detalles" anclado abajo (marginTop: auto en ProductCard.tsx), todas las cards
+     de una misma fila terminan a la misma altura sin importar cuánto contenido tengan. */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 .prod-card:hover { transform: translateY(-6px); box-shadow: 0 28px 72px -24px rgba(0,0,0,0.18); border-color: transparent; }
 
@@ -1974,6 +1983,20 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
 }
 .viz-canvas-actions .btn:disabled { opacity: 0.4; cursor: default; pointer-events: none; }
 
+.viz-cat-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  overscroll-behavior: contain;
+  scroll-snap-type: x proximity;
+  scroll-behavior: smooth;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.viz-cat-row::-webkit-scrollbar { display: none; }
+.viz-cat-row .viz-cat-chip { flex: 0 0 auto; scroll-snap-align: start; }
+
 .viz-cat-chip {
   padding: 6px 12px;
   border: 1px solid var(--line);
@@ -2020,6 +2043,7 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
   overflow-x: auto;
   overscroll-behavior: contain;
   scroll-snap-type: x proximity;
+  scroll-behavior: smooth;
   padding-bottom: 4px;
   /* la barra de scroll nativa se reemplaza por las flechas de .viz-catalog-arrow —
      el gesto de deslizar con el dedo/mouse sigue andando igual, solo se esconde la UI */

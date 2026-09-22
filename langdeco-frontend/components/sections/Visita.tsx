@@ -27,7 +27,7 @@ const SOCIALS = [
 
 const INFO = [
   { label: 'Dirección', value: <>Sgto. Cabral 104<br />S2300 Rafaela · Santa Fe</> },
-  { label: 'Horario', value: <>9:00—12:00<br />15:30—19:30</> },
+  { label: 'Horario', value: <>9:00—12:00<br />16:00—20:00</> },
   { label: 'Teléfono', value: '3492 28-7864' },
   { label: 'Cita previa', value: 'laslangdeco@gmail.com' },
 ]

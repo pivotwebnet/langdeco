@@ -377,6 +377,35 @@ public class ProductsController : ControllerBase
         return Ok(new BulkResultDto(products.Count - skipped.Count, skipped));
     }
 
+    // Misma regla que el delete individual (borra o desactiva según si tiene
+    // ventas/presupuestos asociados), aplicada a varios productos en una sola pasada.
+    [HttpPost("bulk-delete")]
+    [RequireAdminKey]
+    public async Task<ActionResult<BulkDeleteResultDto>> BulkDelete(BulkIdsDto input)
+    {
+        var products = await _db.Products.Where(p => input.Ids.Contains(p.Id)).ToListAsync();
+        int deleted = 0, deactivated = 0;
+
+        foreach (var product in products)
+        {
+            var isReferenced = await _db.SaleItems.AnyAsync(i => i.ProductId == product.Id)
+                || await _db.BudgetItems.AnyAsync(i => i.ProductId == product.Id);
+            if (isReferenced)
+            {
+                product.Active = false;
+                deactivated++;
+            }
+            else
+            {
+                _db.Products.Remove(product);
+                deleted++;
+            }
+        }
+
+        await _db.SaveChangesAsync();
+        return Ok(new BulkDeleteResultDto(deleted, deactivated));
+    }
+
     [HttpDelete("{id}")]
     [RequireAdminKey]
     public async Task<IActionResult> Delete(string id)

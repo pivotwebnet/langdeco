@@ -183,8 +183,15 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, showB
         </div>
       </div>
 
-      <div>
-        <h3 className="prod-card-title" style={{ fontFamily: 'var(--font-ui)', fontSize: variant === 'strip' ? 21 : 16, fontWeight: 600, margin: '0 0 6px', letterSpacing: '-0.02em', lineHeight: 1.2, color: 'var(--ink)' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <h3
+          className="prod-card-title"
+          style={{
+            fontFamily: 'var(--font-ui)', fontSize: variant === 'strip' ? 21 : 16, fontWeight: 600,
+            margin: '0 0 6px', letterSpacing: '-0.02em', lineHeight: 1.2, color: 'var(--ink)',
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          }}
+        >
           {p.name}
         </h3>
 
@@ -231,7 +238,7 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, showB
             className="prod-card-detail-btn"
             onClick={(e) => { e.stopPropagation(); onSelect(p) }}
             style={{
-              width: '100%', marginTop: 10,
+              width: '100%', marginTop: 'auto',
               padding: '13px 16px', borderRadius: 8,
               fontFamily: 'var(--font-ui)', fontSize: 12, fontWeight: 600,
               letterSpacing: '0.08em', textTransform: 'uppercase',
