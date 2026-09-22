@@ -12,7 +12,9 @@ import { normalize } from '@/lib/normalize'
 import type { Product } from '@/lib/types'
 import type { BackendCategory } from '@/lib/backend-types'
 
-const PAGE_SIZE = 12
+// 2 filas × 4 columnas en desktop (ver grid-template-columns en globals.css) — así la grilla
+// no se alarga tanto por página.
+const PAGE_SIZE = 8
 
 const tabStyle = (active: boolean) => ({
   padding: '14px 20px',
@@ -308,14 +310,10 @@ export function Productos({ products, categories, initialCategory, initialQuery 
                   </button>
                 </div>
 
-                {/* ── Page dots ────────────────────────────────── */}
+                {/* ── Page indicator ───────────────────────────── */}
                 {totalPages > 1 && (
-                  <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 32 }}>
-                    {Array.from({ length: totalPages }).map((_, i) => (
-                      <button key={i} onClick={() => setPage(i)} aria-label={`Página ${i + 1}`}
-                        style={{ width: i === page ? 24 : 8, height: 2, border: 0, padding: 0, cursor: 'pointer', background: i === page ? 'var(--ink)' : 'var(--line)', transition: 'width 0.3s, background 0.3s' }}
-                      />
-                    ))}
+                  <div className="mono" style={{ textAlign: 'center', marginTop: 32, fontSize: 12, letterSpacing: '0.08em', color: 'var(--ink-mute)' }}>
+                    Página {page + 1} de {totalPages}
                   </div>
                 )}
               </>

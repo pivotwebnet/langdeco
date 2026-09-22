@@ -37,7 +37,7 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, showB
   const showImage = !!p.imageUrl && !imgError
   const addBtnRef = useRef<HTMLButtonElement>(null)
   // Aspect fijo por variante — todas las cards del mismo listado miden igual.
-  const aspect = variant === 'strip' ? '3/4' : '1/1'
+  const aspect = variant === 'strip' ? '3/4' : '4/3'
   const installment = p.priceNum > 0 && p.installments ? formatPrice(p.priceNum / p.installments) : null
   const hasDiscount = !!p.originalPriceNum && p.originalPriceNum > p.priceNum
   const discountPercent = hasDiscount ? Math.round((1 - p.priceNum / p.originalPriceNum!) * 100) : null
