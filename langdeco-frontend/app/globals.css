@@ -412,6 +412,14 @@ body {
   }
 }
 
+/* En mobile la card ya es angosta — badges y botones flotando sobre la foto la tapan más de
+   lo que informan. Se sacan del todo (guardar/whatsapp/agregar siguen disponibles en el
+   detalle del producto, a un toque de distancia) y se deja solo el aviso de "Sin stock",
+   que es información crítica y no decorativa. */
+@media (max-width: 899px) {
+  .prod-card-badges, .prod-card-float-btn { display: none !important; }
+}
+
 .img-skeleton {
   position: absolute; inset: 0; z-index: 1;
   background: linear-gradient(100deg, #ECEAE4 30%, #F5F3EE 50%, #ECEAE4 70%);
@@ -553,6 +561,14 @@ body {
   padding: 48px 24px 32px;
 }
 .footer-bottom { padding: 0 24px 32px; }
+
+/* La columna "Navegación" repite los mismos destinos que el drawer del menú hamburguesa
+   (Header.tsx, DRAWER_LINKS) — en mobile, donde el footer ya apila 5 bloques uno debajo del
+   otro, sacarla achica bastante el footer sin perder ningún acceso. En desktop (sin menú
+   hamburguesa) se restaura dentro del @media (min-width: 900px) de más abajo. */
+@media (max-width: 899px) {
+  .footer-col-nav { display: none; }
+}
 .footer-bottom-row {
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 12px;

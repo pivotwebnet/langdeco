@@ -116,8 +116,10 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Navegación */}
-        <div className="footer-col">
+        {/* Navegación — se repite en el menú hamburguesa de mobile (ver DRAWER_LINKS en
+            Header.tsx), así que en mobile esta columna se oculta para no duplicar y alargar
+            el footer; en desktop, sin menú hamburguesa, se mantiene. */}
+        <div className="footer-col footer-col-nav">
           <div className="mono" style={{ color: 'rgba(242,241,237,0.28)', marginBottom: 18, fontSize: 9 }}>
             Navegación
           </div>

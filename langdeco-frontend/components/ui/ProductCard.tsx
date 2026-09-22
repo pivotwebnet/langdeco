@@ -93,7 +93,7 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, showB
           )}
         </div>
 
-        <div style={{ position: 'absolute', top: 10, left: 10, right: 'var(--card-badges-clearance)', zIndex: 3, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'flex-start' }}>
+        <div className="prod-card-badges" style={{ position: 'absolute', top: 10, left: 10, right: 'var(--card-badges-clearance)', zIndex: 3, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'flex-start' }}>
           {isLowStock && !isOutOfStock && (
             <Tooltip label="Quedan pocas unidades en stock">
               <span className="mono" style={{ padding: 'var(--card-badge-pad)', background: URGENT, color: '#fff', fontSize: 'var(--card-badge-font)', letterSpacing: '0.1em', fontWeight: 600, borderRadius: 5 }}>
@@ -115,7 +115,7 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, showB
           )}
         </div>
 
-        <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 4 }}>
+        <div className="prod-card-float-btn" style={{ position: 'absolute', top: 10, right: 10, zIndex: 4 }}>
           <Tooltip label={saved ? 'Quitar de guardados' : 'Guardar'}>
             <button
               onClick={(e) => { e.stopPropagation(); toggleSaved(p.id) }}
@@ -136,7 +136,7 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, showB
           </Tooltip>
         </div>
 
-        <div style={{ position: 'absolute', right: 'var(--card-btn-pair-offset)', bottom: 10, zIndex: 4 }}>
+        <div className="prod-card-float-btn" style={{ position: 'absolute', right: 'var(--card-btn-pair-offset)', bottom: 10, zIndex: 4 }}>
           <Tooltip label="Consulta rápida">
             <a
               href={whatsappHref(p)}
@@ -159,7 +159,7 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, showB
           </Tooltip>
         </div>
 
-        <div style={{ position: 'absolute', right: 10, bottom: 10, zIndex: 4 }}>
+        <div className="prod-card-float-btn" style={{ position: 'absolute', right: 10, bottom: 10, zIndex: 4 }}>
           <Tooltip label="Agregar">
             <button
               ref={addBtnRef}

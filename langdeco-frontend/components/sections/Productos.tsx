@@ -283,7 +283,7 @@ export function Productos({ products, categories, initialCategory, initialQuery 
 
                   <div
                     className={tab === 'mayores' ? 'prod-grid-mayores' : 'prod-grid-tesoros'}
-                    style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '32px 16px' }}
+                    style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px 10px' }}
                   >
                     {pageItems.map((p, i) => (
                       <RevealOnScroll key={`${p.id}-${page}`} delay={Math.min(i, 3)}>
