@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Linq;
 using ClosedXML.Excel;
 using backend.Dtos;
 
@@ -19,7 +20,12 @@ public class ProductExcelService
     public List<ProductImportRow> ParseImport(Stream fileStream)
     {
         using var workbook = new XLWorkbook(fileStream);
-        var sheet = workbook.Worksheet("Productos");
+        // Se prefiere una hoja llamada "Productos" si existe, pero no todas las exportaciones
+        // del sistema viejo la nombran así (algunas traen "Hoja1"/"Sheet1") — en producción esto
+        // tiraba System.ArgumentException y el import fallaba entero. Se cae a la primera hoja
+        // del archivo en vez de exigir el nombre exacto, mismo criterio que ya usa SaleExcelService.
+        var sheet = workbook.Worksheets.FirstOrDefault(w => w.Name.Equals("Productos", StringComparison.OrdinalIgnoreCase))
+            ?? workbook.Worksheets.First();
         var rows = new List<ProductImportRow>();
 
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
