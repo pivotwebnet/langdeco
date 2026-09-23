@@ -209,8 +209,15 @@ public class ProductsController : ControllerBase
             return BadRequest(new { error = "Falta la categoría 'Sin categoría' — faltan aplicar migraciones" });
 
         List<ProductImportRow> rows;
-        using (var stream = file.OpenReadStream())
+        try
+        {
+            using var stream = file.OpenReadStream();
             rows = _excel.ParseImport(stream);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException or FormatException)
+        {
+            return BadRequest(new { error = $"No se pudo leer el archivo como Excel (.xlsx): {ex.Message}" });
+        }
 
         var existingIds = (await _db.Products.Select(p => p.Id).ToListAsync()).ToHashSet();
 
