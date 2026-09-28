@@ -149,3 +149,15 @@ export function Trash(props: IconProps) {
     </svg>
   )
 }
+
+export function Gift(props: IconProps) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
+      <rect x="3" y="8" width="14" height="9" rx="1"/>
+      <path d="M3 8h14v3H3z"/>
+      <path d="M10 8v9"/>
+      <path d="M10 8c0-2.2-1.4-4-3.2-4C5.6 4 5 4.9 5 5.8 5 7 6 8 7.5 8H10z"/>
+      <path d="M10 8c0-2.2 1.4-4 3.2-4C14.4 4 15 4.9 15 5.8 15 7 14 8 12.5 8H10z"/>
+    </svg>
+  )
+}

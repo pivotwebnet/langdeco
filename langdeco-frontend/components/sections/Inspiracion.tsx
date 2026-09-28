@@ -129,8 +129,8 @@ export function Inspiracion({ items, products }: InspiracionProps) {
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.45) 100%)' }} />
                   <span style={{
                     position: 'absolute',
-                    top: -18,
-                    right: -8,
+                    top: -8,
+                    right: -2,
                     color: 'var(--bg)',
                     fontSize: 56,
                     fontFamily: 'var(--font-edit)',

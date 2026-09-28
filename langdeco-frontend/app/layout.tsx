@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
 import { CartProvider, CartUIProvider } from '@/lib/cart'
 import { WishlistProvider } from '@/lib/wishlist'
+import { GiftCardUIProvider } from '@/lib/gift-card'
 import { FloatingDock } from '@/components/layout/FloatingDock'
 import { CartDrawerHost } from '@/components/layout/CartDrawerHost'
+import { GiftCardModalHost } from '@/components/layout/GiftCardModalHost'
 import { SmoothScroll } from '@/components/ui/SmoothScroll'
 import { SITE_URL } from '@/lib/site-url'
 import './globals.css'
@@ -38,10 +40,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CartProvider>
           <CartUIProvider>
             <WishlistProvider>
-              <SmoothScroll />
-              {children}
-              <CartDrawerHost />
-              <FloatingDock />
+              <GiftCardUIProvider>
+                <SmoothScroll />
+                {children}
+                <CartDrawerHost />
+                <GiftCardModalHost />
+                <FloatingDock />
+              </GiftCardUIProvider>
             </WishlistProvider>
           </CartUIProvider>
         </CartProvider>

@@ -276,7 +276,11 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
     window.addEventListener('pointerup', onUp)
   }
 
-  function handleResizePointerDown(e: React.PointerEvent<HTMLDivElement>, uid: string) {
+  // fromLeft: las bolitas de la izquierda (arriba/abajo) agrandan hacia la izquierda,
+  // así que además de invertir el signo del arrastre hay que correr `x` para que el
+  // borde derecho quede como ancla (igual que el borde izquierdo lo es para la bolita
+  // de abajo-derecha, que no toca `x`).
+  function handleResizePointerDown(e: React.PointerEvent<HTMLDivElement>, uid: string, fromLeft = false) {
     e.stopPropagation()
     e.preventDefault()
     if (!wrapperRef.current) return
@@ -285,11 +289,19 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
     const rect = wrapperRef.current.getBoundingClientRect()
     const startClientX = e.clientX
     const startWidth = item.width
+    const startX = item.x
 
     function onMove(ev: PointerEvent) {
       const dxPct = ((ev.clientX - startClientX) / rect.width) * 100
       setItems((prev) =>
-        prev.map((i) => (i.uid === uid ? { ...i, width: clamp(startWidth + dxPct, 8, 92) } : i))
+        prev.map((i) => {
+          if (i.uid !== uid) return i
+          if (fromLeft) {
+            const width = clamp(startWidth - dxPct, 8, 92)
+            return { ...i, width, x: startX + (startWidth - width) }
+          }
+          return { ...i, width: clamp(startWidth + dxPct, 8, 92) }
+        })
       )
     }
     function onUp() {
@@ -459,8 +471,16 @@ export function Visualizador({ products, categories = [], compact = false }: Pro
                           </button>
                         </Tooltip>
                         <div
-                          className="viz-item-resize"
-                          onPointerDown={(e) => handleResizePointerDown(e, item.uid)}
+                          className="viz-item-resize tl"
+                          onPointerDown={(e) => handleResizePointerDown(e, item.uid, true)}
+                        />
+                        <div
+                          className="viz-item-resize bl"
+                          onPointerDown={(e) => handleResizePointerDown(e, item.uid, true)}
+                        />
+                        <div
+                          className="viz-item-resize br"
+                          onPointerDown={(e) => handleResizePointerDown(e, item.uid, false)}
                         />
                       </>
                     )}

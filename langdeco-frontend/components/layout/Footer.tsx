@@ -4,6 +4,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import Link from 'next/link'
 import * as Icon from '@/components/ui/Icon'
 import { useSiteLogo } from '@/lib/useSiteLogo'
+import { useGiftCardUI } from '@/lib/gift-card'
 
 const FOOTER_LINKS = {
   navegacion: [
@@ -54,6 +55,41 @@ function FooterLink({ href, children }: { href: string; children: ReactNode }) {
   )
 }
 
+// Mismo trato visual que FooterLink — es la única entrada del footer que
+// dispara una acción (abre el popup) en vez de navegar.
+function FooterGiftLink({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{ ...linkStyle, background: 'none', border: 0, padding: 0, cursor: 'pointer', textAlign: 'left' }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(242,241,237,0.95)' }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(242,241,237,0.58)' }}
+    >
+      {children}
+    </button>
+  )
+}
+
+// Se renderiza dos veces (ver más abajo): anidado bajo Navegación en desktop
+// — para que caiga naturalmente a la altura de "Horario" en vez de saltar al
+// final de la fila más alta del grid — y suelto en mobile, donde Navegación
+// se oculta (duplica el menú hamburguesa) pero la Gift Card debe seguir visible.
+function GiftCardFooterBlock({ onClick }: { onClick: () => void }) {
+  return (
+    <>
+      <div className="mono" style={{ color: 'rgba(242,241,237,0.28)', margin: '24px 0 18px', fontSize: 9 }}>
+        Gift Card
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: 13, lineHeight: 1.4, color: 'rgba(242,241,237,0.5)' }}>
+          El regalo justo, aunque no sepas qué elegir.
+        </span>
+        <FooterGiftLink onClick={onClick}>Comprar Gift Card</FooterGiftLink>
+      </div>
+    </>
+  )
+}
+
 function ContactRow({ href, icon, children, external }: { href: string; icon: ReactNode; children: ReactNode; external?: boolean }) {
   return (
     <a
@@ -69,6 +105,7 @@ function ContactRow({ href, icon, children, external }: { href: string; icon: Re
 
 export function Footer() {
   const logoUrl = useSiteLogo()
+  const { open: openGiftCard } = useGiftCardUI()
 
   return (
     <footer className="site-footer">
@@ -130,7 +167,8 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Ayuda */}
+        {/* Ayuda — la Gift Card va anidada debajo de estos links (Ayuda se ve
+            tanto en mobile como en desktop, a diferencia de Navegación). */}
         <div className="footer-col">
           <div className="mono" style={{ color: 'rgba(242,241,237,0.28)', marginBottom: 18, fontSize: 9 }}>
             Ayuda
@@ -140,6 +178,7 @@ export function Footer() {
               <FooterLink key={l.label} href={l.href}>{l.label}</FooterLink>
             ))}
           </div>
+          <GiftCardFooterBlock onClick={openGiftCard} />
         </div>
 
         {/* Contacto */}

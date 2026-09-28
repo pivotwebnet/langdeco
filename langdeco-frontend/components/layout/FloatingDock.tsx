@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Magnetic } from '@/components/ui/Magnetic'
 import * as Icon from '@/components/ui/Icon'
+import { useGiftCardUI } from '@/lib/gift-card'
 
 export function FloatingDock() {
   const [scrollY, setScrollY] = useState(0)
+  const { open: openGiftCard } = useGiftCardUI()
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY)
@@ -25,6 +27,18 @@ export function FloatingDock() {
             aria-label="Volver al inicio"
           >
             <Icon.ArrowDown style={{ transform: 'rotate(180deg)' }} />
+          </button>
+        </Magnetic>
+      </Tooltip>
+
+      <Tooltip label="Gift Card" side="top">
+        <Magnetic>
+          <button
+            className="scroll-top-btn"
+            onClick={openGiftCard}
+            aria-label="Regalar una Gift Card"
+          >
+            <Icon.Gift width={18} height={18} />
           </button>
         </Magnetic>
       </Tooltip>

@@ -97,7 +97,7 @@ export function ProductCard({ p, variant = 'grid', added, onAdd, onSelect, showB
           {isLowStock && !isOutOfStock && (
             <Tooltip label="Quedan pocas unidades en stock">
               <span className="mono" style={{ padding: 'var(--card-badge-pad)', background: URGENT, color: '#fff', fontSize: 'var(--card-badge-font)', letterSpacing: '0.1em', fontWeight: 600, borderRadius: 5 }}>
-                ¡Últimas {p.stock}!
+                {p.stock === 1 ? '¡Última unidad!' : `¡Últimas ${p.stock}!`}
               </span>
             </Tooltip>
           )}

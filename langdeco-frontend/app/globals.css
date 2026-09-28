@@ -636,6 +636,56 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
   color: rgba(242,241,237,0.4);
 }
 
+/* ── Gift Card popup (GiftCardModal.tsx) ──────────────────────────────
+   Modal centrado, no en bottom-sheet como el de producto: se ve como una
+   invitación puntual, no como una pantalla de detalle. */
+.giftcard-modal {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(400px, calc(100vw - 32px));
+  background: var(--bg);
+  border-radius: 20px;
+  padding: 40px 32px 32px;
+  text-align: center;
+  animation: giftcardPopIn 0.4s cubic-bezier(.2,.8,.2,1);
+  box-shadow: 0 30px 80px -20px rgba(0,0,0,0.45);
+}
+@keyframes giftcardPopIn {
+  from { transform: translate(-50%, -50%) scale(0.92); opacity: 0; }
+  to   { transform: translate(-50%, -50%) scale(1);    opacity: 1; }
+}
+.giftcard-modal-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 32px; height: 32px; border-radius: 999px;
+  display: grid; place-items: center;
+  background: transparent; border: 0; cursor: pointer;
+  color: var(--ink-mute); transition: background 0.2s, color 0.2s;
+}
+.giftcard-modal-close:hover { background: var(--bg-deep); color: var(--ink); }
+.giftcard-modal-badge {
+  width: 56px; height: 56px; border-radius: 999px;
+  margin: 0 auto 18px;
+  display: grid; place-items: center;
+  background: var(--rust); color: var(--rust-bg);
+}
+.giftcard-modal-eyebrow { color: var(--ink-mute); margin-bottom: 10px; }
+.giftcard-modal-title {
+  font-family: var(--font-edit); font-style: italic;
+  font-size: 30px; font-weight: 500; line-height: 1.15;
+  color: var(--ink); margin: 0 0 12px;
+}
+.giftcard-modal-body {
+  font-family: var(--font-ui); font-size: 14px; line-height: 1.55;
+  color: var(--ink-soft); margin: 0 0 26px;
+}
+.giftcard-modal-cta { width: 100%; justify-content: center; margin-bottom: 14px; }
+.giftcard-modal-dismiss {
+  background: transparent; border: 0; cursor: pointer;
+  font-family: var(--font-ui); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-mute); padding: 4px; transition: color 0.2s;
+}
+.giftcard-modal-dismiss:hover { color: var(--ink); }
+
 /* ── Desktop/mobile utils ───────────────────────────────────────────── */
 .dt-only { display: none; }
 .mb-only { display: initial; }
@@ -1983,14 +2033,15 @@ a.footer-contact-row:hover { color: rgba(242,241,237,0.95); }
 
 .viz-item-resize {
   position: absolute;
-  right: -6px; bottom: -6px;
   width: 16px; height: 16px;
   border-radius: 999px;
   background: var(--bg);
   border: 1.5px solid var(--ink);
-  cursor: nwse-resize;
   touch-action: none;
 }
+.viz-item-resize.br { right: -6px; bottom: -6px; cursor: nwse-resize; }
+.viz-item-resize.bl { left: -6px; bottom: -6px; cursor: nesw-resize; }
+.viz-item-resize.tl { left: -6px; top: -6px; cursor: nwse-resize; }
 
 .viz-canvas-actions {
   display: flex;

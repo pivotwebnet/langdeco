@@ -202,7 +202,7 @@ export function ProductoDetalle({ product, related }: Props) {
                   </span>
                 ) : isLowStock && (
                   <span className="mono" style={{ padding: '5px 10px', background: URGENT, color: '#fff', fontSize: 9, fontWeight: 600, letterSpacing: '0.12em', borderRadius: 5 }}>
-                    ¡Últimas {product.stock}!
+                    {product.stock === 1 ? '¡Última unidad!' : `¡Últimas ${product.stock}!`}
                   </span>
                 )}
               </div>
