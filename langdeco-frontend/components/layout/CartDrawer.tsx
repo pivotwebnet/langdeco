@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useCart } from '@/lib/cart'
 import { Tooltip } from '@/components/ui/Tooltip'
 import * as Icon from '@/components/ui/Icon'
@@ -69,13 +70,30 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
         </div>
 
         {/* Items */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 24px 0' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: items.length === 0 ? 0 : '24px 24px 0' }}>
           {items.length === 0 ? (
-            <div style={{ paddingTop: 80, textAlign: 'center' }}>
+            <div style={{
+              height: '100%', minHeight: 320,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              textAlign: 'center', padding: '24px',
+            }}>
+              <div style={{
+                width: 72, height: 72, borderRadius: '50%',
+                background: 'var(--bg-deep)',
+                display: 'grid', placeItems: 'center',
+                marginBottom: 24, color: 'var(--ink-mute)',
+              }}>
+                <Icon.Cart width={30} height={30} />
+              </div>
               <div style={{ fontFamily: 'var(--font-edit)', fontStyle: 'italic', fontSize: 28, marginBottom: 12 }}>
                 La selección está vacía.
               </div>
-              <p className="mono">Añade piezas desde el catálogo.</p>
+              <p className="mono" style={{ marginBottom: 28, maxWidth: 240 }}>
+                Añade piezas desde el catálogo para verlas acá.
+              </p>
+              <Link href="/catalogo" onClick={onClose} className="btn ghost" style={{ textDecoration: 'none' }}>
+                Ver catálogo
+              </Link>
             </div>
           ) : (
             items.map((item) => (
