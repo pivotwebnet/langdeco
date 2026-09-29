@@ -176,14 +176,41 @@ body {
 .header .cart-pill:hover { opacity: 0.82; transform: translateY(-1px); }
 
 /* ── Drawer del carrito (CartDrawer.tsx) ──────────────────────────────
-   100vh como fallback + 100dvh encima: en mobile (barra de direcciones
-   dinámica) 100vh se calcula contra el viewport más grande posible, así que
-   el cálculo se pasa de la altura real visible y puede tapar el botón
-   "Vaciar selección". Si el navegador no entiende dvh, ignora esa línea
-   entera y se queda con el 100vh de arriba — no rompe nada. */
+   Panel flotante (con margen a los cuatro lados) anclado a la derecha,
+   ocupando menos de la mitad del ancho de pantalla; el resto queda como
+   fondo difuminado (ver el backdrop en CartDrawer.tsx). Se usa top+bottom
+   en vez de height para que la altura se ajuste sola al viewport real
+   (funciona igual de bien con la barra de direcciones dinámica de mobile
+   que si hubiera puesto 100vh/100dvh a mano). */
 .cart-drawer {
-  max-height: calc(100vh - var(--header-h) - var(--promo-h) - 32px);
-  max-height: calc(100dvh - var(--header-h) - var(--promo-h) - 32px);
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  width: 38vw;
+  max-width: 480px;
+  min-width: 360px;
+  border-radius: 20px;
+}
+@media (max-width: 768px) {
+  .cart-drawer { width: calc(100vw - 32px); min-width: 0; max-width: calc(100vw - 32px); }
+}
+
+/* Botón de cerrar del carrito: redondo, con un giro juguetón al pasar el mouse. */
+.cart-close-btn {
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  background: var(--bg-deep);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform 0.35s cubic-bezier(.2,.7,.2,1), background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.cart-close-btn:hover {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+  transform: rotate(90deg);
 }
 
 /* ── Buscador inline del navbar ───────────────────────────────────────

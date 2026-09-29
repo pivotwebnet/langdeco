@@ -24,14 +24,15 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop: difuminado estilo "premium" detrás del panel flotante */}
       {open && (
         <div
           onClick={onClose}
           style={{
             position: 'fixed', inset: 0, zIndex: 200,
-            background: 'rgba(10,10,10,0.4)',
-            backdropFilter: 'blur(4px)',
+            background: 'linear-gradient(to right, rgba(10,10,10,0.38), rgba(10,10,10,0.12))',
+            backdropFilter: 'blur(14px) saturate(140%)',
+            WebkitBackdropFilter: 'blur(14px) saturate(140%)',
             animation: 'fadeIn 0.3s ease',
           }}
         />
@@ -42,11 +43,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
         className="cart-drawer"
         style={{
           position: 'fixed',
-          top: 'calc(var(--header-h) + var(--promo-h) + 16px)',
-          right: 16,
-          width: 'min(420px, calc(100vw - 32px))',
           background: 'var(--bg)',
-          borderRadius: 20,
           zIndex: 201,
           display: 'flex', flexDirection: 'column',
           overflow: 'hidden',
@@ -65,7 +62,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
             {count > 0 && <span className="mono" style={{ marginLeft: 8 }}>{count} {count === 1 ? 'pieza' : 'piezas'}</span>}
           </div>
           <Tooltip label="Cerrar">
-            <button className="icon-btn" onClick={onClose} aria-label="Cerrar carrito">
+            <button className="cart-close-btn" onClick={onClose} aria-label="Cerrar carrito">
               <Icon.Close />
             </button>
           </Tooltip>
