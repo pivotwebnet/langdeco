@@ -50,13 +50,16 @@ public class CategoriesController : ControllerBase
     [RequireAdminKey]
     public async Task<ActionResult<CategoryDto>> Create(CategoryUpsertDto input)
     {
-        if (!Validation.IsValidSlug(input.Id))
-            return BadRequest(new { error = "El id debe ser un slug (minúsculas-números-guiones)" });
+        var id = input.Id.Trim();
+        if (id.Length == 0)
+            return BadRequest(new { error = "El id es obligatorio" });
+        if (id.Length > 80)
+            return BadRequest(new { error = "El id no puede superar los 80 caracteres" });
 
-        if (await _db.Categories.AnyAsync(c => c.Id == input.Id))
+        if (await _db.Categories.AnyAsync(c => c.Id == id))
             return BadRequest(new { error = "Ya existe una categoría con ese id" });
 
-        var category = new Category { Id = input.Id, Name = input.Name, Group = input.Group, Active = input.Active };
+        var category = new Category { Id = id, Name = input.Name, Group = input.Group, Active = input.Active };
         _db.Categories.Add(category);
         await _db.SaveChangesAsync();
 

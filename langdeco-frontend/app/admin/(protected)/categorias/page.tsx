@@ -154,7 +154,7 @@ export default function CategoriasAdmin() {
       {error && <div className="adm-alert error">{error}</div>}
 
       <form onSubmit={onCreate} className="adm-toolbar">
-        <input className="adm-input" value={newId} onChange={(e) => setNewId(e.target.value)} placeholder="id-slug" required style={{ width: 160 }} />
+        <input className="adm-input" value={newId} onChange={(e) => setNewId(e.target.value)} placeholder="id (texto libre)" required style={{ width: 160 }} />
         <input className="adm-input" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nombre visible" required style={{ flex: 1, maxWidth: 320 }} />
         <select className="adm-select" value={newGroup} onChange={(e) => setNewGroup(e.target.value as CategoryGroup)}>
           <option value="Mayor">Piezas Mayores</option>
