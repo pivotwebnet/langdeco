@@ -24,13 +24,169 @@ public class ComprasController : ControllerBase
     private readonly DocumentNumberingService _numbering;
     private readonly ReceiptPdfService _pdf;
     private readonly StockService _stock;
+    private readonly CompraExcelService _excel;
 
-    public ComprasController(AppDbContext db, DocumentNumberingService numbering, ReceiptPdfService pdf, StockService stock)
+    public ComprasController(
+        AppDbContext db, DocumentNumberingService numbering, ReceiptPdfService pdf, StockService stock,
+        CompraExcelService excel)
     {
         _db = db;
         _numbering = numbering;
         _pdf = pdf;
         _stock = stock;
+        _excel = excel;
+    }
+
+    // Mismo patrón que ProductsController.Import: columnas fijas (ver CompraExcelService), se cae
+    // a la primera hoja sea cual sea su nombre, crea Proveedor si no existe por nombre (igual que
+    // el import de productos) y Producto si no existe por nombre (igual que SalesController.Import,
+    // inactivo y con nota para que el admin lo revise), todo en una única transacción. A diferencia
+    // de Create(), NO aplica efectos de stock/costo aunque la fila venga marcada "Recibida": son
+    // compras históricas que se cargan para llevar registro, y el stock actual del producto ya es
+    // el real — aplicarlos de nuevo lo duplicaría (mismo criterio que SalesController.Import con
+    // ventas históricas).
+    [HttpPost("import")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<CompraImportResultDto>> Import(IFormFile file)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { error = "Archivo vacío" });
+
+        if (!await _db.Categories.AnyAsync(c => c.Id == ProductsController.PendingCategoryId))
+            return BadRequest(new { error = "Falta la categoría 'Sin categoría' — faltan aplicar migraciones" });
+
+        List<CompraImportRow> rows;
+        try
+        {
+            using var stream = file.OpenReadStream();
+            rows = _excel.ParseImport(stream);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException or FormatException)
+        {
+            return BadRequest(new { error = $"No se pudo leer el archivo como Excel (.xlsx): {ex.Message}" });
+        }
+
+        var supplierLookup = await PartyImportMatcher.PrefetchAsync(
+            _db.Suppliers,
+            rows.Select(r => ((string?)null, r.SupplierName)));
+
+        var existingProductIds = (await _db.Products.Select(p => p.Id).ToListAsync()).ToHashSet();
+        var productNameLookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var p in await _db.Products.Select(p => new { p.Id, p.Name }).ToListAsync())
+            productNameLookup.TryAdd(p.Name.Trim(), p.Id);
+
+        var errors = new List<ImportRowError>();
+        var created = 0;
+        var suppliersCreated = 0;
+        var productsCreated = 0;
+
+        await using var tx = await _db.Database.BeginTransactionAsync();
+
+        foreach (var row in rows)
+        {
+            if (row.Quantity <= 0)
+            {
+                errors.Add(new ImportRowError(row.RowNumber, "La cantidad debe ser mayor a 0"));
+                continue;
+            }
+
+            if (row.UnitCost <= 0)
+            {
+                errors.Add(new ImportRowError(row.RowNumber, "El costo unitario debe ser mayor a 0"));
+                continue;
+            }
+
+            var supplier = supplierLookup.Find(null, row.SupplierName);
+            if (supplier is null)
+            {
+                supplier = new Supplier
+                {
+                    CompanyOrFullName = row.SupplierName.Trim(),
+                    BillingCompanyOrFullName = row.SupplierName.Trim(),
+                };
+                _db.Suppliers.Add(supplier);
+                supplierLookup.Register(supplier);
+                suppliersCreated++;
+            }
+
+            if (!productNameLookup.TryGetValue(row.ProductName, out var productId))
+            {
+                var slug = Validation.Slugify(row.ProductName);
+                var candidate = slug;
+                var suffix = 2;
+                while (!existingProductIds.Add(candidate))
+                    candidate = $"{slug}-{suffix++}";
+
+                _db.Products.Add(new Product
+                {
+                    Id = candidate,
+                    Name = row.ProductName,
+                    CategoryId = ProductsController.PendingCategoryId,
+                    Price = 1m,
+                    Stock = 0,
+                    Active = false,
+                    Note = "Creado automáticamente al importar compras — revisar precio, categoría y stock",
+                });
+                productNameLookup[row.ProductName] = candidate;
+                productId = candidate;
+                productsCreated++;
+            }
+
+            var status = MapStatus(row.StatusRaw);
+            var subtotal = row.Quantity * row.UnitCost;
+
+            _db.Compras.Add(new Compra
+            {
+                // Navegación en vez de SupplierId directo: un proveedor recién creado en esta
+                // misma importación todavía no tiene Id asignado (identity de la base) hasta el
+                // SaveChangesAsync de más abajo — asignar el Id a mano acá insertaría 0 y violaría
+                // la FK. Mismo criterio que ProductsController.Import con Product.Supplier.
+                Supplier = supplier,
+                SupplierName = supplier.CompanyOrFullName,
+                PaymentMethod = MapPaymentMethod(row.PaymentMethodRaw),
+                Status = status,
+                Note = row.Note,
+                DiscountType = DiscountType.Fixed,
+                DiscountPercent = 0,
+                DiscountFixedAmount = 0,
+                DiscountAmount = 0,
+                TaxRatePercent = 0,
+                TaxAmount = 0,
+                Subtotal = subtotal,
+                Total = subtotal,
+                Number = await _numbering.NextNumberAsync(DocumentType.Compra),
+                CreatedAt = DateTime.SpecifyKind(row.Date, DateTimeKind.Utc),
+                ReceivedAt = status == CompraStatus.Received ? DateTime.SpecifyKind(row.Date, DateTimeKind.Utc) : null,
+                Items = new List<CompraItem>
+                {
+                    new() { ProductId = productId, ProductName = row.ProductName, Quantity = row.Quantity, UnitCost = row.UnitCost },
+                },
+            });
+            created++;
+        }
+
+        await _db.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        return Ok(new CompraImportResultDto(created, suppliersCreated, productsCreated, errors));
+    }
+
+    private static CompraStatus MapStatus(string? raw)
+    {
+        var value = (raw ?? "").Trim();
+        if (value.Contains("Recib", StringComparison.OrdinalIgnoreCase)) return CompraStatus.Received;
+        if (value.Contains("Cancel", StringComparison.OrdinalIgnoreCase)) return CompraStatus.Cancelled;
+        return CompraStatus.Pending;
+    }
+
+    private static PaymentMethod MapPaymentMethod(string? raw)
+    {
+        var value = (raw ?? "").Trim();
+        if (value.Contains("Transfer", StringComparison.OrdinalIgnoreCase) || value.Contains("Banco", StringComparison.OrdinalIgnoreCase))
+            return PaymentMethod.Transfer;
+        if (value.Contains("Efectivo", StringComparison.OrdinalIgnoreCase) || value.Contains("Cash", StringComparison.OrdinalIgnoreCase))
+            return PaymentMethod.Cash;
+        return PaymentMethod.Other;
     }
 
     [HttpPost]

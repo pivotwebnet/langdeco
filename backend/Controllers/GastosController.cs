@@ -15,11 +15,110 @@ public class GastosController : ControllerBase
 {
     private readonly AppDbContext _db;
     private readonly DocumentNumberingService _numbering;
+    private readonly GastoExcelService _excel;
 
-    public GastosController(AppDbContext db, DocumentNumberingService numbering)
+    public GastosController(AppDbContext db, DocumentNumberingService numbering, GastoExcelService excel)
     {
         _db = db;
         _numbering = numbering;
+        _excel = excel;
+    }
+
+    // Mismo patrón que ProductsController.Import: formato de columnas fijo (ver GastoExcelService),
+    // se cae a la primera hoja del archivo sea cual sea su nombre, crea el Proveedor si no existe
+    // por nombre (igual que el import de productos crea el Proveedor que trae la planilla), y
+    // corre todo dentro de una única transacción. A diferencia de Compras/Ventas, un Gasto
+    // importado no afecta stock ni ningún otro estado — es un alta directa fila a fila.
+    [HttpPost("import")]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<GastoImportResultDto>> Import(IFormFile file)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { error = "Archivo vacío" });
+
+        List<GastoImportRow> rows;
+        try
+        {
+            using var stream = file.OpenReadStream();
+            rows = _excel.ParseImport(stream);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or IOException or FormatException)
+        {
+            return BadRequest(new { error = $"No se pudo leer el archivo como Excel (.xlsx): {ex.Message}" });
+        }
+
+        var supplierLookup = await PartyImportMatcher.PrefetchAsync(
+            _db.Suppliers,
+            rows.Where(r => !string.IsNullOrWhiteSpace(r.SupplierName)).Select(r => ((string?)null, r.SupplierName!)));
+
+        var errors = new List<ImportRowError>();
+        var created = 0;
+        var suppliersCreated = 0;
+
+        await using var tx = await _db.Database.BeginTransactionAsync();
+
+        foreach (var row in rows)
+        {
+            if (string.IsNullOrWhiteSpace(row.Description))
+            {
+                errors.Add(new ImportRowError(row.RowNumber, "Falta la descripción"));
+                continue;
+            }
+
+            if (row.Amount <= 0)
+            {
+                errors.Add(new ImportRowError(row.RowNumber, "El monto debe ser mayor a cero"));
+                continue;
+            }
+
+            Supplier? supplier = null;
+            if (!string.IsNullOrWhiteSpace(row.SupplierName))
+            {
+                supplier = supplierLookup.Find(null, row.SupplierName);
+                if (supplier is null)
+                {
+                    supplier = new Supplier
+                    {
+                        CompanyOrFullName = row.SupplierName.Trim(),
+                        BillingCompanyOrFullName = row.SupplierName.Trim(),
+                    };
+                    _db.Suppliers.Add(supplier);
+                    supplierLookup.Register(supplier);
+                    suppliersCreated++;
+                }
+            }
+
+            _db.Gastos.Add(new Gasto
+            {
+                Date = DateTime.SpecifyKind(row.Date, DateTimeKind.Utc),
+                Category = MapCategory(row.CategoryRaw),
+                Description = row.Description,
+                Amount = row.Amount,
+                PaymentMethod = MapPaymentMethod(row.PaymentMethodRaw),
+                Supplier = supplier,
+                Number = await _numbering.NextNumberAsync(DocumentType.Gasto),
+                CreatedAt = DateTime.UtcNow,
+            });
+            created++;
+        }
+
+        await _db.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        return Ok(new GastoImportResultDto(created, suppliersCreated, errors));
+    }
+
+    private static GastoCategory MapCategory(string raw) =>
+        Enum.TryParse<GastoCategory>(raw.Trim(), ignoreCase: true, out var category) ? category : GastoCategory.Otro;
+
+    private static PaymentMethod MapPaymentMethod(string? raw)
+    {
+        var value = (raw ?? "").Trim();
+        if (value.Contains("Transfer", StringComparison.OrdinalIgnoreCase) || value.Contains("Banco", StringComparison.OrdinalIgnoreCase))
+            return PaymentMethod.Transfer;
+        if (value.Contains("Efectivo", StringComparison.OrdinalIgnoreCase) || value.Contains("Cash", StringComparison.OrdinalIgnoreCase))
+            return PaymentMethod.Cash;
+        return PaymentMethod.Other;
     }
 
     [HttpPost]

@@ -33,6 +33,20 @@ public record SaleImportRow(
 public record SaleImportResultDto(
     int Created, int DuplicatesSkipped, int ProductsCreated, List<ImportRowError> Errors);
 
+public record GastoImportRow(
+    int RowNumber, DateTime Date, string CategoryRaw, string Description, decimal Amount,
+    string? PaymentMethodRaw, string? SupplierName);
+
+public record GastoImportResultDto(
+    int Created, int SuppliersCreated, List<ImportRowError> Errors);
+
+public record CompraImportRow(
+    int RowNumber, DateTime Date, string SupplierName, string ProductName,
+    int Quantity, decimal UnitCost, string? PaymentMethodRaw, string? StatusRaw, string? Note);
+
+public record CompraImportResultDto(
+    int Created, int SuppliersCreated, int ProductsCreated, List<ImportRowError> Errors);
+
 public record SupplierImportRow(
     int RowNumber,
     string CompanyOrFullName, string? FirstName, string? LastName, string? Cell, string? Phone,

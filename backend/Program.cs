@@ -25,6 +25,8 @@ builder.Services.AddScoped<ClientExcelService>();
 builder.Services.AddScoped<SupplierExcelService>();
 builder.Services.AddScoped<ProductExcelService>();
 builder.Services.AddScoped<SaleExcelService>();
+builder.Services.AddScoped<GastoExcelService>();
+builder.Services.AddScoped<CompraExcelService>();
 builder.Services.AddScoped<StockService>();
 builder.Services.AddScoped<BudgetLifecycleService>();
 

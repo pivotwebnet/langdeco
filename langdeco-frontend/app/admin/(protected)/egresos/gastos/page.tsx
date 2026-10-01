@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { BackendGasto, BackendSupplier, GastoCategory, PaymentMethod } from '@/lib/backend-types'
 import { useEscapeKey, backdropClose } from '@/lib/useEscapeKey'
 import { useAdminToast } from '@/components/admin/AdminToast'
@@ -46,6 +46,9 @@ export default function GastosAdmin() {
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState<GastoForm | null>(null)
   const [saving, setSaving] = useState(false)
+  const [importMsg, setImportMsg] = useState<string | null>(null)
+  const [importing, setImporting] = useState(false)
+  const importFileRef = useRef<HTMLInputElement>(null)
 
   useEscapeKey(() => setForm(null))
 
@@ -66,6 +69,36 @@ export default function GastosAdmin() {
   useEffect(() => { api<BackendSupplier[]>('/suppliers').then(setSuppliers).catch(() => {}) }, [])
 
   const openCreate = () => setForm({ ...EMPTY_FORM })
+
+  // Mismo patrón que la importación de Productos (app/admin/(protected)/productos/page.tsx).
+  const onImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError(null)
+    setImportMsg(null)
+    setImporting(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/admin/backend/gastos/import', { method: 'POST', body: formData })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(data?.error || `Error ${res.status}`)
+      const parts = [`${data.created} gastos creados`]
+      if (data.suppliersCreated) parts.push(`${data.suppliersCreated} proveedores nuevos`)
+      if (data.errors?.length) parts.push(`${data.errors.length} con error`)
+      const msg = `Importación completa: ${parts.join(', ')}.`
+      setImportMsg(msg)
+      toast.success(msg)
+      await load()
+    } catch (err) {
+      const msg = (err as Error).message
+      setError(msg)
+      toast.error(msg)
+    } finally {
+      setImporting(false)
+      if (importFileRef.current) importFileRef.current.value = ''
+    }
+  }
 
   const openEdit = (g: BackendGasto) => setForm({
     id: g.id, date: g.date.slice(0, 10), category: g.category, description: g.description,
@@ -138,10 +171,17 @@ export default function GastosAdmin() {
           <h1 className="adm-title">Gastos</h1>
           <p className="adm-eyebrow">{gastos.length} gastos · {formatPrice(total)}</p>
         </div>
-        <button className="adm-btn" onClick={openCreate}>+ Nuevo gasto</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="adm-btn ghost" onClick={() => importFileRef.current?.click()} disabled={importing}>
+            {importing ? 'Importando...' : 'Importar Excel'}
+          </button>
+          <input ref={importFileRef} type="file" accept=".xlsx" onChange={onImportFile} style={{ display: 'none' }} />
+          <button className="adm-btn" onClick={openCreate}>+ Nuevo gasto</button>
+        </div>
       </div>
 
       {error && <div className="adm-alert error">{error}</div>}
+      {importMsg && <div className="adm-alert success">{importMsg}</div>}
 
       <div className="adm-toolbar">
         <button onClick={() => setCategoryFilter('all')} className={`adm-btn sm ${categoryFilter === 'all' ? '' : 'ghost'}`}>Todas</button>
