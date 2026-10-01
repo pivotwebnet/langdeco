@@ -430,7 +430,7 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
           <Field label={discountKind === 'Percent' ? 'Valor del ajuste (%)' : 'Valor del ajuste ($)'}>
             <input
               className="adm-input" type="number" min={0} max={discountKind === 'Percent' ? 100 : undefined}
-              value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))} style={{ width: '100%' }}
+              value={discountValue === 0 ? '' : discountValue} onChange={(e) => setDiscountValue(e.target.value === '' ? 0 : Number(e.target.value))} style={{ width: '100%' }}
             />
           </Field>
           <Field label="Alícuota IVA % (0 = exento)">
