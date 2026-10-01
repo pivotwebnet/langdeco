@@ -43,22 +43,22 @@ export function ProductPicker({ products, onSelect, onClose, title = 'Elegir pro
               key={p.id}
               onClick={() => onSelect(p)}
               style={{
-                display: 'flex', alignItems: 'center', gap: 12, width: '100%',
-                padding: '8px 6px', background: 'none', border: 0, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 14, width: '100%',
+                padding: '12px 6px', background: 'none', border: 0, cursor: 'pointer',
                 borderBottom: '1px solid var(--adm-border)', textAlign: 'left',
               }}
             >
-              <div style={{ width: 40, height: 48, flexShrink: 0, background: 'var(--adm-surface-2)', overflow: 'hidden', borderRadius: 4 }}>
+              <div style={{ width: 48, height: 56, flexShrink: 0, background: 'var(--adm-surface-2)', overflow: 'hidden', borderRadius: 4 }}>
                 {p.images[0] && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={p.images[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink)', lineHeight: 1.3 }}>{p.name}</div>
-                <div className="adm-table-sub">{p.categoryName}</div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: 15, color: 'var(--ink)', lineHeight: 1.35 }}>{p.name}</div>
+                <div className="adm-table-sub" style={{ fontSize: 11, marginTop: 4 }}>{p.categoryName}</div>
               </div>
-              <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12, color: 'var(--ink)', flexShrink: 0, textAlign: 'right', whiteSpace: 'nowrap' }}>
+              <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 13, color: 'var(--ink)', flexShrink: 0, textAlign: 'right', whiteSpace: 'nowrap' }}>
                 {p.cardPrice != null ? `${formatPrice(p.cardPrice)} tarjeta` : `${formatPrice(p.price)} efectivo/transferencia`}
               </div>
             </button>
