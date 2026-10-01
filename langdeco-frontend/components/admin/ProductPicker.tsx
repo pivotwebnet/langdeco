@@ -24,7 +24,7 @@ export function ProductPicker({ products, onSelect, onClose, title = 'Elegir pro
 
   return (
     <div className="adm-modal-backdrop" style={{ zIndex: 110 }} onClick={(e) => { e.stopPropagation(); onClose() }}>
-      <div className="adm-modal" style={{ width: 420, padding: 20 }} onClick={(e) => e.stopPropagation()}>
+      <div className="adm-modal" style={{ width: 560, maxWidth: '92vw', padding: 20 }} onClick={(e) => e.stopPropagation()}>
         <h2 className="adm-modal-title" style={{ marginBottom: 12 }}>{title}</h2>
         <input
           autoFocus
@@ -55,10 +55,10 @@ export function ProductPicker({ products, onSelect, onClose, title = 'Elegir pro
                 )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink)', lineHeight: 1.3 }}>{p.name}</div>
                 <div className="adm-table-sub">{p.categoryName}</div>
               </div>
-              <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12, color: 'var(--ink)', flexShrink: 0, textAlign: 'right' }}>
+              <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 12, color: 'var(--ink)', flexShrink: 0, textAlign: 'right', whiteSpace: 'nowrap' }}>
                 {p.cardPrice != null ? `${formatPrice(p.cardPrice)} tarjeta` : `${formatPrice(p.price)} efectivo/transferencia`}
               </div>
             </button>

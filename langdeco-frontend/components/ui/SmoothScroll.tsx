@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import Lenis from 'lenis'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -10,7 +11,15 @@ import { setLenisInstance } from '@/lib/lenis'
 gsap.registerPlugin(ScrollTrigger)
 
 export function SmoothScroll() {
+  const pathname = usePathname()
+  // El panel admin comparte este layout raíz con el sitio público, pero es un panel de
+  // formularios y modales con su propio scroll interno — el scroll suavizado de Lenis
+  // intercepta la rueda del mouse a nivel de documento y pisa el overflow de esos modales
+  // (ej. no se podía scrollear la lista de productos al cargar una venta).
+  const isAdmin = pathname?.startsWith('/admin') ?? false
+
   useEffect(() => {
+    if (isAdmin) return
     if (prefersReducedMotion()) return
 
     const lenis = new Lenis({
@@ -31,7 +40,7 @@ export function SmoothScroll() {
       setLenisInstance(null)
       lenis.destroy()
     }
-  }, [])
+  }, [isAdmin])
 
   return null
 }
