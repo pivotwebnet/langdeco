@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Magnetic } from '@/components/ui/Magnetic'
 import * as Icon from '@/components/ui/Icon'
@@ -9,6 +10,7 @@ import { useGiftCardUI } from '@/lib/gift-card'
 export function FloatingDock() {
   const [scrollY, setScrollY] = useState(0)
   const { open: openGiftCard } = useGiftCardUI()
+  const isAdmin = usePathname().startsWith('/admin')
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY)
@@ -31,6 +33,7 @@ export function FloatingDock() {
         </Magnetic>
       </Tooltip>
 
+      {!isAdmin && (<>
       <Tooltip label="Gift Card" side="top">
         <Magnetic>
           <button
@@ -53,6 +56,7 @@ export function FloatingDock() {
           <span>Hablar con nosotros</span>
         </button>
       </Magnetic>
+      </>)}
     </div>
   )
 }
