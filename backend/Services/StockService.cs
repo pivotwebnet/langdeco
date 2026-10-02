@@ -13,7 +13,7 @@ public class StockService
     public async Task<bool> TryDecrementAsync(string productId, int quantity)
     {
         var rowsUpdated = await _db.Products
-            .Where(p => p.Id == productId && p.Stock >= quantity)
+            .Where(p => p.Id == productId && (!p.Active || p.Stock >= quantity))
             .ExecuteUpdateAsync(s => s.SetProperty(p => p.Stock, p => p.Stock - quantity));
 
         return rowsUpdated > 0;

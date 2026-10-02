@@ -76,7 +76,7 @@ export default function PresupuestosAdmin() {
   }
 
   useEffect(() => { load() }, [load])
-  useEffect(() => { api<BackendProduct[]>('/products').then(setProducts).catch(() => {}) }, [])
+  useEffect(() => { api<BackendProduct[]>('/products?includeInactive=true').then(setProducts).catch(() => {}) }, [])
 
   const [confirmCancel, setConfirmCancel] = useState<BackendBudget | null>(null)
 
@@ -309,7 +309,7 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
   useEscapeKey(onClose)
 
   useEffect(() => {
-    api<BackendProduct[]>('/products').then(setProducts).catch((e) => setError((e as Error).message))
+    api<BackendProduct[]>('/products?includeInactive=true').then(setProducts).catch((e) => setError((e as Error).message))
     api<BackendClient[]>('/clients').then(setClients).catch(() => {})
   }, [])
 

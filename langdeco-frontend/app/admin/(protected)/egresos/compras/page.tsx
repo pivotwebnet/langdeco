@@ -251,7 +251,7 @@ function NewCompraModal({ onClose, onCreated }: { onClose: () => void; onCreated
   useEscapeKey(onClose)
 
   useEffect(() => {
-    api<BackendProduct[]>('/products').then(setProducts).catch((e) => setError((e as Error).message))
+    api<BackendProduct[]>('/products?includeInactive=true').then(setProducts).catch((e) => setError((e as Error).message))
     api<BackendSupplier[]>('/suppliers').then(setSuppliers).catch(() => {})
   }, [])
 

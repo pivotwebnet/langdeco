@@ -76,7 +76,7 @@ export default function VentasAdmin() {
   }
 
   useEffect(() => { load() }, [load])
-  useEffect(() => { api<BackendProduct[]>('/products').then(setProducts).catch(() => {}) }, [])
+  useEffect(() => { api<BackendProduct[]>('/products?includeInactive=true').then(setProducts).catch(() => {}) }, [])
 
   const [confirmCancel, setConfirmCancel] = useState<BackendSale | null>(null)
 
@@ -278,7 +278,7 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   useEscapeKey(onClose)
 
   useEffect(() => {
-    api<BackendProduct[]>('/products').then(setProducts).catch((e) => setError((e as Error).message))
+    api<BackendProduct[]>('/products?includeInactive=true').then(setProducts).catch((e) => setError((e as Error).message))
     api<BackendClient[]>('/clients').then(setClients).catch(() => {})
   }, [])
 
@@ -329,7 +329,7 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const insufficientStock = items
     .filter((it) => {
       const product = products.find((p) => p.id === it.productId)
-      return !!product && it.quantity > product.stock
+      return !!product && product.active && it.quantity > product.stock
     })
     .map((it) => products.find((p) => p.id === it.productId) as BackendProduct)
 

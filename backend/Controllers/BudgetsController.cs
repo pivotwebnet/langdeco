@@ -388,7 +388,7 @@ public class BudgetsController : ControllerBase
         decimal subtotal = 0;
 
         var productIds = inputs.Select(i => i.ProductId).Distinct().ToList();
-        var products = await _db.Products.Where(p => productIds.Contains(p.Id) && p.Active).ToDictionaryAsync(p => p.Id);
+        var products = await _db.Products.Where(p => productIds.Contains(p.Id)).ToDictionaryAsync(p => p.Id);
 
         foreach (var itemInput in inputs)
         {
@@ -396,7 +396,7 @@ public class BudgetsController : ControllerBase
                 throw new ItemValidationException("La cantidad debe ser mayor a 0");
 
             if (!products.TryGetValue(itemInput.ProductId, out var product))
-                throw new ItemValidationException($"Producto '{itemInput.ProductId}' no existe o está inactivo");
+                throw new ItemValidationException($"Producto '{itemInput.ProductId}' no existe");
 
             var unitPrice = PricingService.ResolveUnitPrice(product, itemInput.PriceType);
             subtotal += unitPrice * itemInput.Quantity;
