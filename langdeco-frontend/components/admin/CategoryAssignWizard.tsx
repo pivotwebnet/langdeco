@@ -76,7 +76,7 @@ export function CategoryAssignWizard({ categories, onClose, onDone }: {
             <div className="adm-card" style={{ padding: 16, marginBottom: 16 }}>
               <div className="adm-table-name" style={{ marginBottom: 4 }}>{current.name}</div>
               <div className="mono" style={{ fontSize: 12, color: 'var(--ink-soft)' }}>
-                {formatPrice(current.price)} · {current.supplierName || 'Sin proveedor'}
+                {formatPrice(current.cardPrice ?? current.price)} · {current.supplierName || 'Sin proveedor'}
               </div>
             </div>
 

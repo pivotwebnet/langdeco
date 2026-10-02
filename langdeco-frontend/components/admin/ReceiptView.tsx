@@ -6,11 +6,11 @@ import { useEscapeKey } from '@/lib/useEscapeKey'
 import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 
-/** Precio unitario según el tipo de cliente — mayorista si el producto tiene precio mayorista cargado, si no cae a minorista. */
+/** Precio unitario según el tipo de cliente — mayorista si el producto tiene precio mayorista cargado, si no cae a minorista (precio de tarjeta si lo tiene). */
 function resolvePrice(product: BackendProduct | null | undefined, clientType: ClientType): number {
   if (!product) return 0
   if (clientType === 'Wholesale' && product.wholesalePrice != null) return product.wholesalePrice
-  return product.price
+  return product.cardPrice ?? product.price
 }
 
 type ReceiptKind = 'sale' | 'budget'

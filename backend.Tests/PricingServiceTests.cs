@@ -25,6 +25,17 @@ public class PricingServiceTests
     }
 
     [Fact]
+    public void Retail_UsesCardPrice_WhenSet()
+    {
+        var product = MakeProduct(price: 100_000m, wholesalePrice: null);
+        product.CardPrice = 120_000m;
+
+        var result = PricingService.ResolveUnitPrice(product, ClientType.Retail);
+
+        Assert.Equal(120_000m, result);
+    }
+
+    [Fact]
     public void Wholesale_UsesWholesalePrice_WhenSet()
     {
         var product = MakeProduct(price: 100_000m, wholesalePrice: 70_000m);

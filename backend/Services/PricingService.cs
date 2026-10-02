@@ -18,6 +18,6 @@ public static class PricingService
             return product.WholesalePrice.Value;
         }
 
-        return product.Price;
+        return product.CardPrice ?? product.Price;
     }
 }

@@ -719,7 +719,7 @@ function HotspotEditorModal({ item, products, onChange, onClose }: {
                     <div style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {prod ? prod.name : <em style={{ color: 'var(--adm-danger)' }}>Producto no encontrado</em>}
                     </div>
-                    {prod && <div className="adm-table-sub">{formatPrice(prod.price)}</div>}
+                    {prod && <div className="adm-table-sub">{formatPrice(prod.cardPrice ?? prod.price)}</div>}
                   </div>
                   <button type="button" className="adm-link-btn" onClick={() => setPickerForIndex(i)}>Cambiar</button>
                   <button type="button" className="adm-link-btn danger" onClick={() => removeHotspot(i)}>Quitar</button>

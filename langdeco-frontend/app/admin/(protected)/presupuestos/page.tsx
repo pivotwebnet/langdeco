@@ -13,11 +13,11 @@ import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
 import { DateRangeFilter, useDateRangeFilter } from '@/components/admin/DateRangeFilter'
 
-/** Precio unitario según el tipo de cliente — mayorista si el producto tiene precio mayorista cargado, si no cae a minorista. */
+/** Precio unitario según el tipo de cliente — mayorista si el producto tiene precio mayorista cargado, si no cae a minorista (precio de tarjeta si lo tiene). */
 function resolvePrice(product: BackendProduct | undefined, clientType: ClientType): number {
   if (!product) return 0
   if (clientType === 'Wholesale' && product.wholesalePrice != null) return product.wholesalePrice
-  return product.price
+  return product.cardPrice ?? product.price
 }
 
 const STATUS_LABEL: Record<BudgetStatus, string> = { Open: 'Abierto', Converted: 'Convertido en venta', Expired: 'Vencido', Cancelled: 'Cancelado' }
