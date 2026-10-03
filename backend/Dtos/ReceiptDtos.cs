@@ -10,6 +10,8 @@ public record ReceiptItemData(
     decimal TaxRatePercent,
     decimal SubtotalWithTax);
 
+public record ReceiptPaymentData(string Method, DateTime PaidAt, decimal Amount);
+
 public record ReceiptData(
     string DocumentTitle,
     int Number,
@@ -26,4 +28,6 @@ public record ReceiptData(
     decimal TaxRatePercent,
     decimal TaxAmount,
     decimal NetAmount,
-    decimal Total);
+    decimal Total,
+    List<ReceiptPaymentData> Payments,
+    decimal AmountDue);

@@ -7,6 +7,7 @@ import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 import { Field } from '@/components/admin/Field'
 import { ProductPicker } from '@/components/admin/ProductPicker'
+import { PartyPickerField } from '@/components/admin/PartyPicker'
 import { PriceInput } from '@/components/admin/PriceInput'
 import { formatPrice } from '@/lib/data'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
@@ -231,7 +232,7 @@ function NewCompraModal({ onClose, onCreated }: { onClose: () => void; onCreated
   const toast = useAdminToast()
   const [products, setProducts] = useState<BackendProduct[]>([])
   const [suppliers, setSuppliers] = useState<BackendSupplier[]>([])
-  const [supplierId, setSupplierId] = useState<number | ''>('')
+  const [supplier, setSupplier] = useState<BackendSupplier | null>(null)
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Transfer')
   const [status, setStatus] = useState<'Pending' | 'Received'>('Pending')
   const [discountKind, setDiscountKind] = useState<'Percent' | 'Fixed'>('Percent')
@@ -278,7 +279,7 @@ function NewCompraModal({ onClose, onCreated }: { onClose: () => void; onCreated
     e.preventDefault()
     setError(null)
 
-    if (!supplierId) {
+    if (!supplier) {
       setError('Elegí un proveedor')
       return
     }
@@ -296,7 +297,7 @@ function NewCompraModal({ onClose, onCreated }: { onClose: () => void; onCreated
       const compra = await api<BackendCompra>('/compras', {
         method: 'POST',
         body: JSON.stringify({
-          supplierId, paymentMethod, status, note: note || null,
+          supplierId: supplier.id, paymentMethod, status, note: note || null,
           discountType: discountKind, discountPercent, discountFixedAmount, taxRatePercent,
           items: items.map((it) => ({ productId: it.productId, quantity: it.quantity, unitCost: Number(it.unitCost) })),
         }),
@@ -321,10 +322,7 @@ function NewCompraModal({ onClose, onCreated }: { onClose: () => void; onCreated
 
         <div className="adm-grid-2" style={{ marginTop: 12 }}>
           <Field label="Proveedor">
-            <select className="adm-select" value={supplierId} onChange={(e) => setSupplierId(e.target.value ? Number(e.target.value) : '')} required style={{ width: '100%' }}>
-              <option value="">— Elegir proveedor —</option>
-              {suppliers.map((s) => <option key={s.id} value={s.id}>{s.companyOrFullName}</option>)}
-            </select>
+            <PartyPickerField items={suppliers} entityLabel="Proveedor" value={supplier} onChange={setSupplier} />
           </Field>
           <Field label="Medio de pago">
             <select className="adm-select" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)} style={{ width: '100%' }}>

@@ -425,7 +425,8 @@ public class ComprasController : ControllerBase
                 i.Quantity * i.UnitCost, compra.TaxRatePercent,
                 i.Quantity * i.UnitCost * (1 + compra.TaxRatePercent / 100m))).ToList(),
             compra.Subtotal, compra.DiscountPercent, compra.DiscountAmount,
-            compra.TaxRatePercent, compra.TaxAmount, netAmount, compra.Total);
+            compra.TaxRatePercent, compra.TaxAmount, netAmount, compra.Total,
+            new List<ReceiptPaymentData>(), 0m);
 
         var bytes = _pdf.Generate(receipt, company);
         return File(bytes, "application/pdf", $"compra-{compra.Number}.pdf");

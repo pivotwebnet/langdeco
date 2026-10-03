@@ -9,6 +9,7 @@ import { Field } from '@/components/admin/Field'
 import { PriceInput } from '@/components/admin/PriceInput'
 import { formatPrice } from '@/lib/data'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
+import { PartyPickerField } from '@/components/admin/PartyPicker'
 import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
 
 const CATEGORY_LABEL: Record<GastoCategory, string> = {
@@ -261,10 +262,13 @@ export default function GastosAdmin() {
               </Field>
               <div style={{ gridColumn: '1 / -1' }}>
                 <Field label="Proveedor (opcional)">
-                  <select className="adm-select" value={form.supplierId} onChange={(e) => setForm({ ...form, supplierId: e.target.value })} style={{ width: '100%' }}>
-                    <option value="">— Sin proveedor —</option>
-                    {suppliers.map((s) => <option key={s.id} value={s.id}>{s.companyOrFullName}</option>)}
-                  </select>
+                  <PartyPickerField
+                    items={suppliers}
+                    entityLabel="Proveedor"
+                    value={suppliers.find((s) => String(s.id) === form.supplierId) ?? null}
+                    onChange={(s) => setForm({ ...form, supplierId: s ? String(s.id) : '' })}
+                    allowNoneLabel="— Sin proveedor —"
+                  />
                 </Field>
               </div>
             </div>

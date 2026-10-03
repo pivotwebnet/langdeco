@@ -58,6 +58,20 @@ export interface BackendSaleItem {
   unitPrice: number
 }
 
+export interface BackendSalePayment {
+  id: number
+  amount: number
+  paymentMethodOptionId: number
+  paymentMethodOptionName: string
+  paidAt: string
+}
+
+export interface BackendPaymentMethodOption {
+  id: number
+  name: string
+  active: boolean
+}
+
 export interface BackendSale {
   id: number
   number: number
@@ -77,6 +91,9 @@ export interface BackendSale {
   createdAt: string
   items: BackendSaleItem[]
   note: string | null
+  amountCollected: number
+  amountDue: number
+  payments: BackendSalePayment[]
 }
 
 export interface BackendBudgetItem {
@@ -123,7 +140,7 @@ export interface BackendCustomField {
   value: string
 }
 
-interface BackendPartyBase {
+export interface BackendPartyBase {
   id: number
   companyOrFullName: string
   firstName: string | null

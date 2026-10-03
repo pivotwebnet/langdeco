@@ -14,6 +14,7 @@ const NAV = [
   { group: 'Catálogo', items: [
     { href: '/admin/productos', label: 'Productos', icon: '▤' },
     { href: '/admin/categorias', label: 'Categorías', icon: '◫' },
+    { href: '/admin/medios-de-pago', label: 'Medios de pago', icon: '⊡' },
   ] },
   { group: 'Egresos', items: [
     { href: '/admin/egresos/compras', label: 'Compras', icon: '⇩' },

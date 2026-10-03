@@ -47,4 +47,5 @@ public class Sale
     public Budget? Budget { get; set; }
 
     public List<SaleItem> Items { get; set; } = new();
+    public List<SalePayment> Payments { get; set; } = new();
 }

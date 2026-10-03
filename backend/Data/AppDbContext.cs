@@ -13,6 +13,8 @@ public class AppDbContext : DbContext
     public DbSet<ProductImage> ProductImages => Set<ProductImage>();
     public DbSet<Sale> Sales => Set<Sale>();
     public DbSet<SaleItem> SaleItems => Set<SaleItem>();
+    public DbSet<SalePayment> SalePayments => Set<SalePayment>();
+    public DbSet<PaymentMethodOption> PaymentMethodOptions => Set<PaymentMethodOption>();
     public DbSet<Budget> Budgets => Set<Budget>();
     public DbSet<BudgetItem> BudgetItems => Set<BudgetItem>();
     public DbSet<Compra> Compras => Set<Compra>();
@@ -130,6 +132,28 @@ public class AppDbContext : DbContext
             entity.HasOne(i => i.Product)
                 .WithMany()
                 .HasForeignKey(i => i.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PaymentMethodOption>(entity =>
+        {
+            entity.Property(p => p.Name).IsRequired().HasMaxLength(60);
+        });
+
+        modelBuilder.Entity<SalePayment>(entity =>
+        {
+            entity.Property(p => p.Amount).HasPrecision(12, 2);
+
+            entity.HasOne(p => p.Sale)
+                .WithMany(s => s.Payments)
+                .HasForeignKey(p => p.SaleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // No se puede borrar un medio de pago ya usado en un cobro real — solo desactivarlo
+            // (mismo criterio que Category/Supplier: el historial no se toca).
+            entity.HasOne(p => p.PaymentMethodOption)
+                .WithMany()
+                .HasForeignKey(p => p.PaymentMethodOptionId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

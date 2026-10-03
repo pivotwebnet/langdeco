@@ -373,7 +373,8 @@ public class BudgetsController : ControllerBase
                 i.Quantity * i.UnitPrice, budget.TaxRatePercent,
                 i.Quantity * i.UnitPrice * (1 + budget.TaxRatePercent / 100m))).ToList(),
             budget.Subtotal, budget.DiscountPercent, budget.DiscountAmount,
-            budget.TaxRatePercent, budget.TaxAmount, netAmount, budget.Total);
+            budget.TaxRatePercent, budget.TaxAmount, netAmount, budget.Total,
+            new List<Dtos.ReceiptPaymentData>(), 0m);
 
         var bytes = _pdf.Generate(receipt, company);
         return File(bytes, "application/pdf", $"presupuesto-{budget.Number}.pdf");

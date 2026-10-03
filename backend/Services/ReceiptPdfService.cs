@@ -203,7 +203,45 @@ public class ReceiptPdfService
                     r.RelativeItem().Text($"Total {TitleCase(data.DocumentTitle)}").FontColor(Colors.White).Bold();
                     r.AutoItem().Text(FormatMoney(data.Total)).FontColor(Colors.White).Bold();
                 });
+
+                if (data.AmountDue > 0)
+                {
+                    col.Item().Background(Colors.Red.Darken2).Padding(6).Row(r =>
+                    {
+                        r.RelativeItem().Text("Saldo pendiente").FontColor(Colors.White);
+                        r.AutoItem().Text(FormatMoney(data.AmountDue)).FontColor(Colors.White);
+                    });
+                }
             });
+
+            if (data.Payments.Count > 0)
+            {
+                column.Item().PaddingTop(14).Text("COBRANZA").FontSize(12).Bold();
+
+                column.Item().PaddingTop(6).Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.RelativeColumn(2f);
+                        columns.RelativeColumn(2f);
+                        columns.RelativeColumn(1.5f);
+                    });
+
+                    table.Header(header =>
+                    {
+                        HeaderCell(header, "Fecha");
+                        HeaderCell(header, "Medio de pago");
+                        HeaderCell(header, "Monto");
+                    });
+
+                    foreach (var payment in data.Payments)
+                    {
+                        table.Cell().Padding(5).Text(payment.PaidAt.ToString("dd/MM/yyyy"));
+                        table.Cell().Padding(5).Text(payment.Method);
+                        table.Cell().Padding(5).AlignRight().Text(FormatMoney(payment.Amount));
+                    }
+                });
+            }
         });
     }
 

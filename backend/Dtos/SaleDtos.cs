@@ -27,7 +27,8 @@ public record SaleDto(
     decimal Subtotal, DiscountType DiscountType, decimal DiscountPercent, decimal DiscountFixedAmount, decimal DiscountAmount,
     decimal TaxRatePercent, decimal TaxAmount, decimal Total,
     DateTime CreatedAt, int? BudgetId,
-    List<SaleItemDto> Items, string? Note);
+    List<SaleItemDto> Items, string? Note,
+    decimal AmountCollected, decimal AmountDue, List<SalePaymentDto> Payments);
 
 public record SaleStatusUpdateDto(SaleStatus Status);
 

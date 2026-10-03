@@ -13,6 +13,7 @@ import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
 import { BulkActionBar } from '@/components/admin/BulkActionBar'
 import { PercentAdjustDialog } from '@/components/admin/PercentAdjustDialog'
 import { CategoryAssignWizard, PENDING_CATEGORY_ID } from '@/components/admin/CategoryAssignWizard'
+import { PartyPickerField } from '@/components/admin/PartyPicker'
 
 type ProductForm = {
   id: string
@@ -375,10 +376,15 @@ export default function ProductosAdmin() {
           <option value="all">Todas las categorías</option>
           {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <select className="adm-select" value={supplierFilter} onChange={(e) => { setSupplierFilter(e.target.value); setSelectedIds(new Set()) }}>
-          <option value="all">Todos los proveedores</option>
-          {suppliers.map((s) => <option key={s.id} value={String(s.id)}>{s.companyOrFullName}</option>)}
-        </select>
+        <div style={{ width: 220 }}>
+          <PartyPickerField
+            items={suppliers}
+            entityLabel="Proveedor"
+            value={suppliers.find((s) => String(s.id) === supplierFilter) ?? null}
+            onChange={(s) => { setSupplierFilter(s ? String(s.id) : 'all'); setSelectedIds(new Set()) }}
+            allowNoneLabel="Todos los proveedores"
+          />
+        </div>
         <label className="adm-checkbox-row">
           <input type="checkbox" checked={showInactive} onChange={(e) => { setShowInactive(e.target.checked); setSelectedIds(new Set()) }} />
           Mostrar inactivos
@@ -598,10 +604,13 @@ function ProductFormModal({ form, categories, suppliers, isNew, saving, onChange
           <Field label="Costo (opcional)"><PriceInput value={form.costPrice} onChange={(v) => set('costPrice', v)} style={{ width: '100%' }} /></Field>
           <Field label="IVA % (opcional)"><input className="adm-input" type="number" min="0" max="100" step="0.01" value={form.ivaPercent} onChange={(e) => set('ivaPercent', e.target.value)} placeholder="ej. 21" style={{ width: '100%' }} /></Field>
           <Field label="Proveedor (opcional)">
-            <select className="adm-select" value={form.supplierId} onChange={(e) => set('supplierId', e.target.value)} style={{ width: '100%' }}>
-              <option value="">Sin proveedor</option>
-              {suppliers.map((s) => <option key={s.id} value={s.id}>{s.companyOrFullName}</option>)}
-            </select>
+            <PartyPickerField
+              items={suppliers}
+              entityLabel="Proveedor"
+              value={suppliers.find((s) => String(s.id) === form.supplierId) ?? null}
+              onChange={(s) => set('supplierId', s ? String(s.id) : '')}
+              allowNoneLabel="Sin proveedor"
+            />
           </Field>
           <Field label="Destacado">
             <label className="adm-checkbox-row" style={{ marginTop: 8 }}>

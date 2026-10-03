@@ -8,6 +8,8 @@ import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 import { Field } from '@/components/admin/Field'
 import { ProductPicker } from '@/components/admin/ProductPicker'
+import { PartyPickerField } from '@/components/admin/PartyPicker'
+import { CobranzaModal } from '@/components/admin/CobranzaModal'
 import { formatPrice } from '@/lib/data'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
@@ -37,6 +39,7 @@ export default function VentasAdmin() {
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [receiptSale, setReceiptSale] = useState<BackendSale | null>(null)
+  const [cobranzaSale, setCobranzaSale] = useState<BackendSale | null>(null)
   const [importing, setImporting] = useState(false)
   const [importMsg, setImportMsg] = useState<string | null>(null)
   const importFileRef = useRef<HTMLInputElement>(null)
@@ -187,11 +190,19 @@ export default function VentasAdmin() {
                 </td>
                 <td>{s.items.map((it) => `${it.quantity}× ${it.productName}`).join(', ')}</td>
                 <td className="mono">{new Date(s.createdAt).toLocaleString('es-AR')}</td>
-                <td className="mono">{formatPrice(s.total)}</td>
+                <td className="mono">
+                  {formatPrice(s.total)}
+                  {s.amountDue > 0 && (
+                    <div style={{ fontSize: 11, color: 'var(--adm-danger, #c0392b)' }}>A cobrar: {formatPrice(s.amountDue)}</div>
+                  )}
+                </td>
                 <td><span className={`adm-badge ${STATUS_BADGE[s.status]}`}>{STATUS_LABEL[s.status]}</span></td>
                 <td>
                   <div className="adm-table-actions">
                     <button className="adm-link-btn" onClick={() => setReceiptSale(s)}>Ver comprobante</button>
+                    {s.status !== 'Cancelled' && (
+                      <button className="adm-link-btn" onClick={() => setCobranzaSale(s)}>Cobranza</button>
+                    )}
                     {s.status === 'Pending' && (
                       <>
                         <button className="adm-link-btn success" onClick={() => changeStatus(s.id, 'Paid')}>Marcar pagada</button>
@@ -221,7 +232,7 @@ export default function VentasAdmin() {
       {showForm && (
         <NewSaleModal
           onClose={() => setShowForm(false)}
-          onCreated={(sale) => { setShowForm(false); load(); setReceiptSale(sale) }}
+          onCreated={(sale) => { setShowForm(false); load(); setCobranzaSale(sale) }}
         />
       )}
 
@@ -232,6 +243,17 @@ export default function VentasAdmin() {
           products={products}
           onClose={() => setReceiptSale(null)}
           onUpdated={(updated) => { setReceiptSale(updated as BackendSale); load() }}
+        />
+      )}
+
+      {cobranzaSale && (
+        <CobranzaModal
+          sale={cobranzaSale}
+          onClose={() => { setCobranzaSale(null); load() }}
+          onUpdated={(updated) => {
+            setCobranzaSale(updated)
+            setSales((prev) => prev.map((s) => (s.id === updated.id ? updated : s)))
+          }}
         />
       )}
 
@@ -253,7 +275,7 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const toast = useAdminToast()
   const [products, setProducts] = useState<BackendProduct[]>([])
   const [clients, setClients] = useState<BackendClient[]>([])
-  const [selectedClientId, setSelectedClientId] = useState<number | ''>('')
+  const [selectedClient, setSelectedClient] = useState<BackendClient | null>(null)
   const [clientName, setClientName] = useState('')
   const [clientContact, setClientContact] = useState('')
   const [clientTaxId, setClientTaxId] = useState('')
@@ -261,7 +283,6 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const [note, setNote] = useState('')
   const [clientType, setClientType] = useState<ClientType>('Retail')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Transfer')
-  const [status, setStatus] = useState<'Pending' | 'Paid'>('Pending')
   const [discountKind, setDiscountKind] = useState<'Percent' | 'Fixed'>('Percent')
   const [discountIsSurcharge, setDiscountIsSurcharge] = useState(false)
   const [discountValue, setDiscountValue] = useState(0)
@@ -282,10 +303,8 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     api<BackendClient[]>('/clients').then(setClients).catch(() => {})
   }, [])
 
-  const onSelectClient = (value: string) => {
-    const id = value ? Number(value) : ''
-    setSelectedClientId(id)
-    const c = clients.find((cl) => cl.id === id)
+  const onSelectClient = (c: BackendClient | null) => {
+    setSelectedClient(c)
     if (c) {
       setClientName(c.companyOrFullName)
       setClientContact(c.email || c.phone || c.cell || '')
@@ -347,10 +366,10 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
       const sale = await api<BackendSale>('/sales', {
         method: 'POST',
         body: JSON.stringify({
-          clientId: selectedClientId || null,
+          clientId: selectedClient?.id ?? null,
           customer: { name: clientName, contact: clientContact || null, taxId: clientTaxId || null, address: clientAddress || null },
           note: note.trim() || null,
-          clientType, paymentMethod, status, discountType: discountKind, discountPercent, discountFixedAmount, taxRatePercent,
+          clientType, paymentMethod, discountType: discountKind, discountPercent, discountFixedAmount, taxRatePercent,
           items: items.map((it) => ({ productId: it.productId, quantity: it.quantity, priceType: clientType })),
         }),
       })
@@ -373,10 +392,13 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         {error && <div className="adm-alert error">{error}</div>}
 
         <Field label="Cliente guardado (opcional)">
-          <select className="adm-select" value={selectedClientId} onChange={(e) => onSelectClient(e.target.value)} style={{ width: '100%' }}>
-            <option value="">— Cliente ocasional —</option>
-            {clients.map((c) => <option key={c.id} value={c.id}>{c.companyOrFullName}</option>)}
-          </select>
+          <PartyPickerField
+            items={clients}
+            entityLabel="Cliente"
+            value={selectedClient}
+            onChange={onSelectClient}
+            allowNoneLabel="— Cliente ocasional —"
+          />
         </Field>
 
         <div className="adm-grid-2" style={{ marginTop: 12 }}>
@@ -395,12 +417,6 @@ function NewSaleModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
               <option value="Transfer">Transferencia</option>
               <option value="Cash">Efectivo</option>
               <option value="Other">Otro</option>
-            </select>
-          </Field>
-          <Field label="Estado inicial">
-            <select className="adm-select" value={status} onChange={(e) => setStatus(e.target.value as 'Pending' | 'Paid')} style={{ width: '100%' }}>
-              <option value="Pending">Pendiente</option>
-              <option value="Paid">Pagada</option>
             </select>
           </Field>
           <Field label="Ajuste">

@@ -8,6 +8,7 @@ import { useAdminToast } from '@/components/admin/AdminToast'
 import { adminApi as api } from '@/lib/admin/api'
 import { Field } from '@/components/admin/Field'
 import { ProductPicker } from '@/components/admin/ProductPicker'
+import { PartyPickerField } from '@/components/admin/PartyPicker'
 import { formatPrice } from '@/lib/data'
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog'
 import { TableSkeletonRows } from '@/components/admin/TableSkeleton'
@@ -285,7 +286,7 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
   const toast = useAdminToast()
   const [products, setProducts] = useState<BackendProduct[]>([])
   const [clients, setClients] = useState<BackendClient[]>([])
-  const [selectedClientId, setSelectedClientId] = useState<number | ''>('')
+  const [selectedClient, setSelectedClient] = useState<BackendClient | null>(null)
   const [clientName, setClientName] = useState('')
   const [clientContact, setClientContact] = useState('')
   const [clientTaxId, setClientTaxId] = useState('')
@@ -313,10 +314,8 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
     api<BackendClient[]>('/clients').then(setClients).catch(() => {})
   }, [])
 
-  const onSelectClient = (value: string) => {
-    const id = value ? Number(value) : ''
-    setSelectedClientId(id)
-    const c = clients.find((cl) => cl.id === id)
+  const onSelectClient = (c: BackendClient | null) => {
+    setSelectedClient(c)
     if (c) {
       setClientName(c.companyOrFullName)
       setClientContact(c.email || c.phone || c.cell || '')
@@ -367,7 +366,7 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
       const budget = await api<BackendBudget>('/budgets', {
         method: 'POST',
         body: JSON.stringify({
-          clientId: selectedClientId || null,
+          clientId: selectedClient?.id ?? null,
           customer: { name: clientName, contact: clientContact || null, taxId: clientTaxId || null, address: clientAddress || null },
           note: note.trim() || null,
           clientType,
@@ -395,10 +394,13 @@ function NewBudgetModal({ onClose, onCreated }: { onClose: () => void; onCreated
         {error && <div className="adm-alert error">{error}</div>}
 
         <Field label="Cliente guardado (opcional)">
-          <select className="adm-select" value={selectedClientId} onChange={(e) => onSelectClient(e.target.value)} style={{ width: '100%' }}>
-            <option value="">— Cliente ocasional —</option>
-            {clients.map((c) => <option key={c.id} value={c.id}>{c.companyOrFullName}</option>)}
-          </select>
+          <PartyPickerField
+            items={clients}
+            entityLabel="Cliente"
+            value={selectedClient}
+            onChange={onSelectClient}
+            allowNoneLabel="— Cliente ocasional —"
+          />
         </Field>
 
         <div className="adm-grid-2" style={{ marginTop: 12 }}>

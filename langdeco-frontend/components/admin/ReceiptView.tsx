@@ -43,6 +43,7 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
   const validUntil = kind === 'budget' ? (record as BackendBudget).validUntil : null
   const isEditable = kind === 'sale' ? record.status === 'Pending' : record.status === 'Open'
   const clientType = record.clientType
+  const sale = kind === 'sale' ? (record as BackendSale) : null
 
   const [customer, setCustomer] = useState<BackendCustomer>(record.customer)
   const [discountKind, setDiscountKind] = useState<DiscountType>(record.discountType)
@@ -324,8 +325,38 @@ export function ReceiptView({ kind, record, products, onClose, onUpdated }: Rece
                 <span>Total {title === 'VENTA' ? 'Venta' : 'Presupuesto'}</span>
                 <span>{formatMoney(editing ? previewTotal : record.total)}</span>
               </div>
+              {sale && sale.amountDue > 0 && (
+                <div style={{ background: '#991B1B', color: 'white', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                  <span>Saldo pendiente</span>
+                  <span>{formatMoney(sale.amountDue)}</span>
+                </div>
+              )}
             </div>
           </div>
+
+          {sale && sale.payments.length > 0 && (
+            <>
+              <div style={{ fontSize: 14, fontWeight: 700, marginTop: 20, marginBottom: 8 }}>COBRANZA</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ background: '#334155', color: 'white' }}>
+                    <th style={th}>Fecha</th>
+                    <th style={th}>Medio de pago</th>
+                    <th style={{ ...th, textAlign: 'right' }}>Monto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sale.payments.map((p) => (
+                    <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={td}>{formatDate(p.paidAt)}</td>
+                      <td style={td}>{p.paymentMethodOptionName}</td>
+                      <td style={{ ...td, textAlign: 'right' }}>{formatMoney(p.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
         </div>
       </div>
     </div>

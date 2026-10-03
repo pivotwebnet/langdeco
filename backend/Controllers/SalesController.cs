@@ -298,7 +298,9 @@ public class SalesController : ControllerBase
 
         await using var tx = await _db.Database.BeginTransactionAsync();
 
-        var sale = await _db.Sales.Include(s => s.Items).FirstOrDefaultAsync(s => s.Id == id);
+        var sale = await _db.Sales.Include(s => s.Items)
+            .Include(s => s.Payments).ThenInclude(p => p.PaymentMethodOption)
+            .FirstOrDefaultAsync(s => s.Id == id);
         if (sale is null) return NotFound();
 
         if (sale.Status != SaleStatus.Pending)
@@ -371,7 +373,9 @@ public class SalesController : ControllerBase
         [FromQuery] int? page = null,
         [FromQuery] int? pageSize = null)
     {
-        var query = _db.Sales.Include(s => s.Items).AsNoTracking().AsQueryable();
+        var query = _db.Sales.Include(s => s.Items)
+            .Include(s => s.Payments).ThenInclude(p => p.PaymentMethodOption)
+            .AsNoTracking().AsQueryable();
 
         if (status is not null) query = query.Where(s => s.Status == status);
         if (clientType is not null) query = query.Where(s => s.ClientType == clientType);
@@ -393,7 +397,9 @@ public class SalesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<SaleDto>> GetById(int id)
     {
-        var sale = await _db.Sales.Include(s => s.Items).AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+        var sale = await _db.Sales.Include(s => s.Items)
+            .Include(s => s.Payments).ThenInclude(p => p.PaymentMethodOption)
+            .AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
         if (sale is null) return NotFound();
         return Ok(ToDto(sale));
     }
@@ -403,7 +409,9 @@ public class SalesController : ControllerBase
     {
         await using var tx = await _db.Database.BeginTransactionAsync();
 
-        var sale = await _db.Sales.Include(s => s.Items).FirstOrDefaultAsync(s => s.Id == id);
+        var sale = await _db.Sales.Include(s => s.Items)
+            .Include(s => s.Payments).ThenInclude(p => p.PaymentMethodOption)
+            .FirstOrDefaultAsync(s => s.Id == id);
         if (sale is null) return NotFound();
 
         if (!ValidTransitions[sale.Status].Contains(input.Status))
@@ -440,7 +448,9 @@ public class SalesController : ControllerBase
     [HttpGet("{id}/pdf")]
     public async Task<IActionResult> GetPdf(int id)
     {
-        var sale = await _db.Sales.Include(s => s.Items).AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+        var sale = await _db.Sales.Include(s => s.Items)
+            .Include(s => s.Payments).ThenInclude(p => p.PaymentMethodOption)
+            .AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
         if (sale is null) return NotFound();
 
         var company = await _db.CompanySettings.AsNoTracking().FirstOrDefaultAsync() ?? new CompanySettings();
@@ -454,10 +464,104 @@ public class SalesController : ControllerBase
                 i.Quantity * i.UnitPrice, sale.TaxRatePercent,
                 i.Quantity * i.UnitPrice * (1 + sale.TaxRatePercent / 100m))).ToList(),
             sale.Subtotal, sale.DiscountPercent, sale.DiscountAmount,
-            sale.TaxRatePercent, sale.TaxAmount, netAmount, sale.Total);
+            sale.TaxRatePercent, sale.TaxAmount, netAmount, sale.Total,
+            sale.Payments.OrderBy(p => p.PaidAt)
+                .Select(p => new Dtos.ReceiptPaymentData(p.PaymentMethodOption.Name, p.PaidAt, p.Amount)).ToList(),
+            ComputeAmountDue(sale));
 
         var bytes = _pdf.Generate(receipt, company);
         return File(bytes, "application/pdf", $"venta-{sale.Number}.pdf");
+    }
+
+    // Cobranza: registra un cobro parcial o total sobre la venta, pudiendo combinar varios
+    // medios de pago y hacerlo en varias veces. Si el saldo llega a $0, la venta pasa sola a
+    // Paid (si antes estaba Pending) — ver ComputeAmountDue para el criterio de "ventas viejas
+    // sin ningún SalePayment ya se consideran cobradas en su totalidad".
+    [HttpPost("{id}/payments")]
+    public async Task<ActionResult<SaleDto>> AddPayment(int id, SalePaymentCreateDto input)
+    {
+        if (input.Amount <= 0)
+            return BadRequest(new { error = "El monto a cobrar debe ser mayor a cero" });
+
+        var methodOption = await _db.PaymentMethodOptions.FirstOrDefaultAsync(p => p.Id == input.PaymentMethodOptionId);
+        if (methodOption is null || !methodOption.Active)
+            return BadRequest(new { error = "El medio de pago indicado no existe o está inactivo" });
+
+        await using var tx = await _db.Database.BeginTransactionAsync();
+
+        var sale = await _db.Sales.Include(s => s.Items)
+            .Include(s => s.Payments).ThenInclude(p => p.PaymentMethodOption)
+            .FirstOrDefaultAsync(s => s.Id == id);
+        if (sale is null) return NotFound();
+
+        if (sale.Status == SaleStatus.Cancelled)
+            return BadRequest(new { error = "No se pueden registrar cobros sobre una venta cancelada" });
+
+        // Saldo recalculado fresco dentro de la misma transacción justo antes de insertar —
+        // cierra el caso común de dos cobros simultáneos sobre la misma venta.
+        var amountDue = ComputeAmountDue(sale);
+        if (input.Amount > amountDue)
+            return BadRequest(new { error = $"El monto supera el saldo pendiente (${amountDue:0.00})" });
+
+        sale.Payments.Add(new SalePayment
+        {
+            Amount = input.Amount,
+            PaymentMethodOptionId = input.PaymentMethodOptionId,
+            PaymentMethodOption = methodOption,
+            PaidAt = DateTime.UtcNow,
+        });
+
+        if (ComputeAmountDue(sale) <= 0 && sale.Status == SaleStatus.Pending)
+            sale.Status = SaleStatus.Paid;
+
+        await _db.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        return Ok(ToDto(sale));
+    }
+
+    [HttpDelete("{id}/payments/{paymentId}")]
+    public async Task<ActionResult<SaleDto>> DeletePayment(int id, int paymentId)
+    {
+        await using var tx = await _db.Database.BeginTransactionAsync();
+
+        var sale = await _db.Sales.Include(s => s.Items)
+            .Include(s => s.Payments).ThenInclude(p => p.PaymentMethodOption)
+            .FirstOrDefaultAsync(s => s.Id == id);
+        if (sale is null) return NotFound();
+
+        if (sale.Status == SaleStatus.Cancelled)
+            return BadRequest(new { error = "No se pueden modificar los cobros de una venta cancelada" });
+
+        var payment = sale.Payments.FirstOrDefault(p => p.Id == paymentId);
+        if (payment is null) return NotFound();
+
+        sale.Payments.Remove(payment);
+        _db.SalePayments.Remove(payment);
+
+        // Cálculo literal (sin el criterio "grandfather" de ComputeAmountDue para ventas viejas
+        // sin pagos) porque acá sabemos con certeza que cualquier saldo restante es real: recién
+        // mutamos la colección de pagos en este mismo request, no es una venta vieja intacta.
+        var remainingDue = sale.Total - sale.Payments.Sum(p => p.Amount);
+        if (sale.Status == SaleStatus.Paid && remainingDue > 0)
+            sale.Status = SaleStatus.Pending;
+
+        await _db.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        return Ok(ToDto(sale));
+    }
+
+    // Una venta Paid/Cancelled sin ningún SalePayment es de antes de que existiera Cobranza
+    // (altas manuales viejas, conversión de Presupuesto, import de Excel histórico) — se
+    // considera cobrada en su totalidad para no mostrar un saldo pendiente fantasma. Una venta
+    // Pending sin pagos (incluida una recién convertida desde un Presupuesto) sí arranca con
+    // saldo completo, que es lo correcto.
+    internal static decimal ComputeAmountDue(Sale sale)
+    {
+        if (sale.Payments.Count == 0 && sale.Status != SaleStatus.Pending) return 0;
+        var collected = sale.Payments.Sum(p => p.Amount);
+        return sale.Total - collected;
     }
 
     [HttpGet("summary")]
@@ -560,15 +664,25 @@ public class SalesController : ControllerBase
         return subtotal;
     }
 
-    internal static SaleDto ToDto(Sale s) => new(
-        s.Id, s.Number, s.ClientId,
-        new CustomerDto(s.Customer.Name, s.Customer.Contact, s.Customer.TaxId, s.Customer.Address),
-        s.ClientType, s.Status, s.PaymentMethod,
-        s.Subtotal, s.DiscountType, s.DiscountPercent, s.DiscountFixedAmount, s.DiscountAmount,
-        s.TaxRatePercent, s.TaxAmount, s.Total,
-        s.CreatedAt, s.BudgetId,
-        s.Items.Select(i => new SaleItemDto(i.ProductId, i.ProductName, i.Quantity, i.UnitPrice, i.PriceType)).ToList(),
-        s.Note);
+    internal static SaleDto ToDto(Sale s)
+    {
+        var amountDue = ComputeAmountDue(s);
+        var amountCollected = s.Total - amountDue;
+
+        return new(
+            s.Id, s.Number, s.ClientId,
+            new CustomerDto(s.Customer.Name, s.Customer.Contact, s.Customer.TaxId, s.Customer.Address),
+            s.ClientType, s.Status, s.PaymentMethod,
+            s.Subtotal, s.DiscountType, s.DiscountPercent, s.DiscountFixedAmount, s.DiscountAmount,
+            s.TaxRatePercent, s.TaxAmount, s.Total,
+            s.CreatedAt, s.BudgetId,
+            s.Items.Select(i => new SaleItemDto(i.ProductId, i.ProductName, i.Quantity, i.UnitPrice, i.PriceType)).ToList(),
+            s.Note,
+            amountCollected, amountDue,
+            s.Payments.OrderBy(p => p.PaidAt)
+                .Select(p => new SalePaymentDto(p.Id, p.Amount, p.PaymentMethodOptionId, p.PaymentMethodOption.Name, p.PaidAt))
+                .ToList());
+    }
 
     internal static string? NormalizeNote(string? note) =>
         string.IsNullOrWhiteSpace(note) ? null : (note.Trim().Length > 500 ? note.Trim()[..500] : note.Trim());
